@@ -1,0 +1,154 @@
+{
+	"$addons": [
+		"eu-en16931-v2017",
+		"peppol-pint-v1"
+	],
+	"$regime": "NZ",
+	"code": "SAMPLE-001",
+	"currency": "NZD",
+	"customer": {
+		"addresses": [
+			{
+				"code": "1010",
+				"country": "NZ",
+				"locality": "Auckland",
+				"street": "Queen Street 1010"
+			}
+		],
+		"identities": [
+			{
+				"code": "9429000000001",
+				"ext": {
+					"iso-scheme-id": "0088"
+				},
+				"scope": "legal"
+			}
+		],
+		"inboxes": [
+			{
+				"code": "9429000000001",
+				"scheme": "0088"
+			}
+		],
+		"name": "Sample Customer Limited",
+		"tax_id": {
+			"code": "136410132",
+			"country": "NZ"
+		}
+	},
+	"issue_date": "2024-05-15",
+	"lines": [
+		{
+			"i": 1,
+			"item": {
+				"name": "Consulting services",
+				"price": "100.00",
+				"unit": "h"
+			},
+			"quantity": "10",
+			"sum": "1000.00",
+			"taxes": [
+				{
+					"cat": "GST",
+					"ext": {
+						"untdid-tax-category": "O"
+					},
+					"key": "standard",
+					"percent": "15.0%"
+				}
+			],
+			"total": "1000.00"
+		}
+	],
+	"ordering": {
+		"code": "PO-2024-0031"
+	},
+	"payment": {
+		"instructions": {
+			"credit_transfer": [
+				{
+					"name": "Bank of New Zealand",
+					"number": "02-1234-0123456-000"
+				}
+			],
+			"ext": {
+				"untdid-payment-means": "30"
+			},
+			"key": "credit-transfer"
+		},
+		"terms": {
+			"due_dates": [
+				{
+					"amount": "1150.00",
+					"date": "2024-06-15",
+					"percent": "100%"
+				}
+			]
+		}
+	},
+	"supplier": {
+		"addresses": [
+			{
+				"code": "6011",
+				"country": "NZ",
+				"locality": "Wellington",
+				"street": "Lambton Quay 1"
+			}
+		],
+		"identities": [
+			{
+				"code": "9429000000000",
+				"ext": {
+					"iso-scheme-id": "0088"
+				},
+				"scope": "legal"
+			}
+		],
+		"inboxes": [
+			{
+				"code": "9429000000000",
+				"scheme": "0088"
+			}
+		],
+		"name": "Provide One Limited",
+		"tax_id": {
+			"code": "49091850",
+			"country": "NZ"
+		}
+	},
+	"tax": {
+		"ext": {
+			"untdid-document-type": "380"
+		},
+		"rounding": "currency"
+	},
+	"totals": {
+		"payable": "1150.00",
+		"sum": "1000.00",
+		"tax": "150.00",
+		"taxes": {
+			"categories": [
+				{
+					"amount": "150.00",
+					"code": "GST",
+					"rates": [
+						{
+							"amount": "150.00",
+							"base": "1000.00",
+							"ext": {
+								"untdid-tax-category": "O"
+							},
+							"key": "standard",
+							"percent": "15.0%"
+						}
+					]
+				}
+			],
+			"sum": "150.00"
+		},
+		"total": "1000.00",
+		"total_with_tax": "1150.00"
+	},
+	"type": "standard",
+	"uuid": "00000000-0000-0000-0000-000000000000"
+}
