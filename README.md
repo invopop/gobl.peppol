@@ -1,6 +1,8 @@
 # GOBL ➡️ Peppol
 
-Peppol addons for [GOBL](https://github.com/invopop/gobl).
+Peppol PINT support for [GOBL](https://github.com/invopop/gobl): the tax addons
+plus a UBL converter built on [`gobl.ubl`](https://github.com/invopop/gobl.ubl)'s
+EN 16931 base.
 
 Released under the Apache 2.0 [LICENSE](https://github.com/invopop/gobl.peppol/blob/main/LICENSE), Copyright 2026 [Invopop S.L.](https://invopop.com).
 
@@ -46,3 +48,25 @@ $addons:
 ```
 
 See the [`examples`](./examples) directory for complete invoices.
+
+## Conversion
+
+The root package converts a GOBL envelope to a Peppol PINT A-NZ UBL document,
+reusing `gobl.ubl`'s EN 16931 conversion and stamping the A-NZ customization,
+profile and VESID identifiers:
+
+```go
+import peppol "github.com/invopop/gobl.peppol"
+
+doc, err := peppol.ConvertInvoice(env)            // billing context
+data, err := peppol.Bytes(doc)                    // indented UBL XML
+```
+
+Pass a context option for self-billing, or the wildcard contexts used for SMP
+registration:
+
+```go
+import ubl "github.com/invopop/gobl.ubl"
+
+doc, err := peppol.ConvertInvoice(env, ubl.WithContext(peppol.ContextPINTSelfBilled))
+```
