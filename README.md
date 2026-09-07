@@ -16,9 +16,10 @@ billing model as a set of GOBL tax addons:
 - **PINT** (`peppol-pint-v1`) — the base Peppol International billing model, the
   common layer shared by the country-specific PINT specifications. It builds on
   EN 16931 but recognises indirect tax schemes beyond VAT (such as GST).
-- **Australia** (`peppol-pint-au-v1`) — the Australia jurisdiction extension of
-  PINT, adding the requirement that Australian parties carry their Australian
-  Business Number (ABN) as a legal registration identity.
+- **A-NZ** (`peppol-pint-aunz-v1`) — the Australia/New Zealand jurisdiction
+  extension of PINT, adding the requirement that Australian parties carry their
+  Australian Business Number (ABN) and New Zealand parties their New Zealand
+  Business Number (NZBN) as a legal registration identity.
 
 The country-specific addons require the base PINT addon; a document must declare
 the specific addon that applies to it.
@@ -34,14 +35,14 @@ import _ "github.com/invopop/gobl.peppol/addon"
 Or import an individual addon directly:
 
 ```go
-import _ "github.com/invopop/gobl.peppol/addon/au"
+import _ "github.com/invopop/gobl.peppol/addon/aunz"
 ```
 
 Then declare the addon on the document:
 
 ```yaml
 $addons:
-  - "peppol-pint-au-v1"
+  - "peppol-pint-aunz-v1"
 ```
 
 See the [`examples`](./examples) directory for complete invoices.

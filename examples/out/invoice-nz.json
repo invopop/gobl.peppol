@@ -4,103 +4,101 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "35dd0fe5c03cb0efc3901aad147ae8e0b15d90d9545765dbf3f6adbadc0fcb86"
+			"val": "33a0e303dbc58014d505f15cbf75855d5d8d2ce3246c000d41bbb43bc1a20f96"
 		},
-		"from": "iso6523-actorid-upis::0151:51824753556",
-		"to": "iso6523-actorid-upis::0151:53004085616"
+		"from": "iso6523-actorid-upis::0088:9429000000000",
+		"to": "iso6523-actorid-upis::0088:9429000000001"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
-		"$regime": "AU",
+		"$regime": "NZ",
 		"$addons": [
 			"eu-en16931-v2017",
 			"peppol-pint-v1",
 			"peppol-pint-aunz-v1"
 		],
-		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0b3",
 		"type": "standard",
 		"series": "SAMPLE",
 		"code": "001",
 		"issue_date": "2024-05-15",
-		"currency": "AUD",
+		"currency": "NZD",
 		"tax": {
 			"ext": {
 				"untdid-document-type": "380"
 			}
 		},
 		"supplier": {
-			"name": "Provide One Pty Ltd",
+			"name": "Provide One Limited",
 			"tax_id": {
-				"country": "AU",
-				"code": "51824753556"
+				"country": "NZ",
+				"code": "49091850"
 			},
 			"identities": [
 				{
 					"scope": "legal",
-					"code": "51824753556",
+					"code": "9429000000000",
 					"ext": {
-						"iso-scheme-id": "0151"
+						"iso-scheme-id": "0088"
 					}
 				}
 			],
 			"endpoints": [
 				{
-					"uri": "iso6523-actorid-upis::0151:51824753556"
+					"uri": "iso6523-actorid-upis::0088:9429000000000"
 				}
 			],
 			"inboxes": [
 				{
 					"key": "peppol",
-					"scheme": "0151",
-					"code": "51824753556"
-				}
-			],
-			"addresses": [
-				{
-					"num": "100",
-					"street": "Queen Street",
-					"locality": "Melbourne",
-					"region": "VIC",
-					"code": "3000",
-					"country": "AU"
-				}
-			]
-		},
-		"customer": {
-			"name": "Sample Customer Pty Ltd",
-			"tax_id": {
-				"country": "AU",
-				"code": "53004085616"
-			},
-			"identities": [
-				{
-					"scope": "legal",
-					"code": "53004085616",
-					"ext": {
-						"iso-scheme-id": "0151"
-					}
-				}
-			],
-			"endpoints": [
-				{
-					"uri": "iso6523-actorid-upis::0151:53004085616"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0151",
-					"code": "53004085616"
+					"scheme": "0088",
+					"code": "9429000000000"
 				}
 			],
 			"addresses": [
 				{
 					"num": "1",
-					"street": "Martin Place",
-					"locality": "Sydney",
-					"region": "NSW",
-					"code": "2000",
-					"country": "AU"
+					"street": "Lambton Quay",
+					"locality": "Wellington",
+					"code": "6011",
+					"country": "NZ"
+				}
+			]
+		},
+		"customer": {
+			"name": "Sample Customer Limited",
+			"tax_id": {
+				"country": "NZ",
+				"code": "136410132"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "9429000000001",
+					"ext": {
+						"iso-scheme-id": "0088"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0088:9429000000001"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0088",
+					"code": "9429000000001"
+				}
+			],
+			"addresses": [
+				{
+					"num": "1010",
+					"street": "Queen Street",
+					"locality": "Auckland",
+					"code": "1010",
+					"country": "NZ"
 				}
 			]
 		},
@@ -119,7 +117,7 @@
 						"cat": "GST",
 						"key": "standard",
 						"rate": "general",
-						"percent": "10.0%",
+						"percent": "15.0%",
 						"ext": {
 							"untdid-tax-category": "S"
 						}
@@ -134,7 +132,7 @@
 				"due_dates": [
 					{
 						"date": "2024-06-15",
-						"amount": "1100.00",
+						"amount": "1150.00",
 						"percent": "100%"
 					}
 				]
@@ -160,18 +158,18 @@
 									"untdid-tax-category": "S"
 								},
 								"base": "1000.00",
-								"percent": "10.0%",
-								"amount": "100.00"
+								"percent": "15.0%",
+								"amount": "150.00"
 							}
 						],
-						"amount": "100.00"
+						"amount": "150.00"
 					}
 				],
-				"sum": "100.00"
+				"sum": "150.00"
 			},
-			"tax": "100.00",
-			"total_with_tax": "1100.00",
-			"payable": "1100.00"
+			"tax": "150.00",
+			"total_with_tax": "1150.00",
+			"payable": "1150.00"
 		}
 	}
 }

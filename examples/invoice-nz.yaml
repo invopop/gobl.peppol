@@ -1,56 +1,54 @@
 $schema: "https://gobl.org/draft-0/bill/invoice"
-$regime: "AU"
+$regime: "NZ"
 $addons:
   - "peppol-pint-aunz-v1"
-uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2"
-currency: "AUD"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0b3"
+currency: "NZD"
 issue_date: "2024-05-15"
 series: "SAMPLE"
 code: "001"
 
 supplier:
-  name: "Provide One Pty Ltd"
+  name: "Provide One Limited"
   tax_id:
-    country: "AU"
-    code: "51824753556"
+    country: "NZ"
+    code: "49091850"
   identities:
     - scope: "legal"
-      code: "51824753556"
+      code: "9429000000000"
       ext:
-        iso-scheme-id: "0151"
+        iso-scheme-id: "0088"
   inboxes:
     - key: "peppol"
-      scheme: "0151"
-      code: "51824753556"
-  addresses:
-    - num: "100"
-      street: "Queen Street"
-      locality: "Melbourne"
-      region: "VIC"
-      code: "3000"
-      country: "AU"
-
-customer:
-  name: "Sample Customer Pty Ltd"
-  tax_id:
-    country: "AU"
-    code: "53004085616"
-  identities:
-    - scope: "legal"
-      code: "53004085616"
-      ext:
-        iso-scheme-id: "0151"
-  inboxes:
-    - key: "peppol"
-      scheme: "0151"
-      code: "53004085616"
+      scheme: "0088"
+      code: "9429000000000"
   addresses:
     - num: "1"
-      street: "Martin Place"
-      locality: "Sydney"
-      region: "NSW"
-      code: "2000"
-      country: "AU"
+      street: "Lambton Quay"
+      locality: "Wellington"
+      code: "6011"
+      country: "NZ"
+
+customer:
+  name: "Sample Customer Limited"
+  tax_id:
+    country: "NZ"
+    code: "136410132"
+  identities:
+    - scope: "legal"
+      code: "9429000000001"
+      ext:
+        iso-scheme-id: "0088"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "9429000000001"
+  addresses:
+    - num: "1010"
+      street: "Queen Street"
+      locality: "Auckland"
+      code: "1010"
+      country: "NZ"
 
 lines:
   - quantity: "10"
