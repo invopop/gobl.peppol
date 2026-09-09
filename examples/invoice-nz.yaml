@@ -1,0 +1,79 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "NZ"
+$addons:
+  - "peppol-pint-aunz-v1"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0b3"
+currency: "NZD"
+issue_date: "2024-05-15"
+series: "SAMPLE"
+code: "001"
+
+supplier:
+  name: "Provide One Limited"
+  tax_id:
+    country: "NZ"
+    code: "49091850"
+  identities:
+    - scope: "legal"
+      code: "9429000000000"
+      ext:
+        iso-scheme-id: "0088"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "9429000000000"
+  addresses:
+    - num: "1"
+      street: "Lambton Quay"
+      locality: "Wellington"
+      code: "6011"
+      country: "NZ"
+
+customer:
+  name: "Sample Customer Limited"
+  tax_id:
+    country: "NZ"
+    code: "136410132"
+  identities:
+    - scope: "legal"
+      code: "9429000000001"
+      ext:
+        iso-scheme-id: "0088"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "9429000000001"
+  addresses:
+    - num: "1010"
+      street: "Queen Street"
+      locality: "Auckland"
+      code: "1010"
+      country: "NZ"
+
+ordering:
+  code: "PO-2024-0031"
+
+lines:
+  - quantity: "10"
+    item:
+      name: "Consulting services"
+      price: "100.00"
+      unit: "h"
+    taxes:
+      - cat: GST
+        key: standard
+        rate: general
+
+payment:
+  terms:
+    key: "due-date"
+    due_dates:
+      - date: "2024-06-15"
+        percent: "100%"
+  instructions:
+    key: "credit-transfer"
+    ext:
+      untdid-payment-means: "30"
+    credit_transfer:
+      - number: "02-1234-0123456-000"
+        name: "Bank of New Zealand"
