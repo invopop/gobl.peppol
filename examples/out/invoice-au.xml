@@ -7,9 +7,7 @@
   <cbc:DueDate>2024-06-15</cbc:DueDate>
   <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
   <cbc:DocumentCurrencyCode>AUD</cbc:DocumentCurrencyCode>
-  <cac:OrderReference>
-    <cbc:ID>NA</cbc:ID>
-  </cac:OrderReference>
+  <cbc:BuyerReference>PO-2024-0017</cbc:BuyerReference>
   <cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="0151">51824753556</cbc:EndpointID>
@@ -66,6 +64,10 @@
   </cac:AccountingCustomerParty>
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>033547 1234567</cbc:ID>
+      <cbc:Name>ANZ Bank</cbc:Name>
+    </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="AUD">100.00</cbc:TaxAmount>

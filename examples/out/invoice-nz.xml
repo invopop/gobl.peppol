@@ -7,9 +7,7 @@
   <cbc:DueDate>2024-06-15</cbc:DueDate>
   <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
   <cbc:DocumentCurrencyCode>NZD</cbc:DocumentCurrencyCode>
-  <cac:OrderReference>
-    <cbc:ID>NA</cbc:ID>
-  </cac:OrderReference>
+  <cbc:BuyerReference>PO-2024-0031</cbc:BuyerReference>
   <cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="0088">9429000000000</cbc:EndpointID>
@@ -64,6 +62,10 @@
   </cac:AccountingCustomerParty>
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>02-1234-0123456-000</cbc:ID>
+      <cbc:Name>Bank of New Zealand</cbc:Name>
+    </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="NZD">150.00</cbc:TaxAmount>
