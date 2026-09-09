@@ -9,12 +9,54 @@ import (
 
 	"github.com/invopop/gobl"
 	peppol "github.com/invopop/gobl.peppol"
+	ubl "github.com/invopop/gobl.ubl"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// loadEnvelope reads a calculated GOBL envelope from a JSON file.
-func loadEnvelope(t *testing.T, path string) *gobl.Envelope {
+const jsonPattern = "*.json"
+
+func getConvertPath() string {
+	return filepath.Join("test", "data", "convert")
+}
+
+// convertCase is a GOBL envelope to convert, with the PINT A-NZ XML it should
+// produce.
+type convertCase struct {
+	name   string
+	src    string
+	golden string
+}
+
+// convertCases lists the fixtures under test/data/convert plus the shipped
+// examples. The examples are here because TestExamples only checks GOBL-to-GOBL
+// normalisation: without this nothing converts them, and an example could ship
+// as invalid PINT A-NZ UBL.
+func convertCases(t *testing.T) []convertCase {
+	t.Helper()
+	dirs := []struct{ label, src, golden string }{
+		{"convert", getConvertPath(), filepath.Join(getConvertPath(), "out")},
+		{"examples", filepath.Join("examples", "out"), filepath.Join("examples", "out")},
+	}
+	var cases []convertCase
+	for _, dir := range dirs {
+		found, err := filepath.Glob(filepath.Join(dir.src, jsonPattern))
+		require.NoError(t, err)
+		require.NotEmpty(t, found, "no envelopes found in %s", dir.src)
+		for _, src := range found {
+			name := strings.TrimSuffix(filepath.Base(src), ".json")
+			cases = append(cases, convertCase{
+				name:   dir.label + "/" + name,
+				src:    src,
+				golden: filepath.Join(dir.golden, name+".xml"),
+			})
+		}
+	}
+	return cases
+}
+
+// loadTestEnvelope loads a GOBL envelope from a JSON file path.
+func loadTestEnvelope(t *testing.T, path string) *gobl.Envelope {
 	t.Helper()
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
@@ -23,40 +65,28 @@ func loadEnvelope(t *testing.T, path string) *gobl.Envelope {
 	return env
 }
 
-// TestConvert converts each shipped example envelope to Peppol PINT A-NZ UBL and
-// compares it against its golden XML. Run with -update to regenerate the goldens.
+// TestConvert converts every fixture and shipped example to a Peppol PINT A-NZ
+// UBL document, using gobl.ubl's EN 16931 base with this module's billing
+// context, and compares it against its golden XML. Run with -update to
+// (re)generate the goldens.
 func TestConvert(t *testing.T) {
-	srcs, err := filepath.Glob(filepath.Join("examples", "out", "*.json"))
-	require.NoError(t, err)
-	require.NotEmpty(t, srcs)
-	for _, src := range srcs {
-		name := strings.TrimSuffix(filepath.Base(src), ".json")
-		t.Run(name, func(t *testing.T) {
-			env := loadEnvelope(t, src)
+	for _, example := range convertCases(t) {
+		t.Run(example.name, func(t *testing.T) {
+			env := loadTestEnvelope(t, example.src)
 
-			doc, err := peppol.ConvertInvoice(env)
+			doc, err := ubl.ConvertInvoice(env, ubl.WithContext(peppol.ContextPINT))
 			require.NoError(t, err)
 
-			out, err := peppol.Bytes(doc)
+			data, err := ubl.Bytes(doc)
 			require.NoError(t, err)
 
-			golden := filepath.Join("examples", "out", name+".xml")
 			if *update {
-				require.NoError(t, os.WriteFile(golden, out, 0o644))
+				require.NoError(t, os.WriteFile(example.golden, data, 0o644))
 			}
-			want, err := os.ReadFile(golden)
-			require.NoError(t, err)
-			assert.Equal(t, string(want), string(out), "converted XML should match the golden; regenerate with -update")
+
+			output, err := os.ReadFile(example.golden)
+			assert.NoError(t, err)
+			assert.Equal(t, string(output), string(data), "Output should match the expected XML. Update with --update flag.")
 		})
 	}
-}
-
-// TestConvertBillingContext confirms the billing context stamps the A-NZ
-// specification identifier onto the generated document.
-func TestConvertBillingContext(t *testing.T) {
-	env := loadEnvelope(t, filepath.Join("examples", "out", "invoice-au.json"))
-
-	inv, err := peppol.ConvertInvoice(env)
-	require.NoError(t, err)
-	assert.Equal(t, peppol.CustomizationBilling, inv.CustomizationID)
 }
