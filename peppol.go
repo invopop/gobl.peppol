@@ -60,22 +60,40 @@ var ContextPINTSelfBilledWildcard = ubl.Context{
 	VESIDs:                ubl.VESIDMapping{Invoice: VESIDInvoiceSelfBilling, CreditNote: VESIDCreditNoteSelfBilling},
 }
 
+// Context is a UBL conversion context, re-exported so callers can hold the
+// A-NZ contexts (ContextPINT and friends) without importing gobl.ubl directly.
+type Context = ubl.Context
+
+// Option is a UBL conversion option, re-exported alongside WithContext so
+// callers can pass a context to Convert / ConvertInvoice without importing
+// gobl.ubl directly.
+type Option = ubl.Option
+
+// UBLVersion is the UBL version generated documents declare.
+const UBLVersion = ubl.Version
+
+// WithContext returns an Option that converts using the given context,
+// overriding the default A-NZ billing context.
+func WithContext(ctx Context) Option {
+	return ubl.WithContext(ctx)
+}
+
 // Convert turns a GOBL envelope into a Peppol PINT A-NZ UBL document using the
 // billing context.
-func Convert(env *gobl.Envelope, opts ...ubl.Option) (any, error) {
+func Convert(env *gobl.Envelope, opts ...Option) (any, error) {
 	return ubl.Convert(env, withDefaultContext(opts)...)
 }
 
 // ConvertInvoice is Convert for callers that already know the document is an
 // invoice.
-func ConvertInvoice(env *gobl.Envelope, opts ...ubl.Option) (*ubl.Invoice, error) {
+func ConvertInvoice(env *gobl.Envelope, opts ...Option) (*ubl.Invoice, error) {
 	return ubl.ConvertInvoice(env, withDefaultContext(opts)...)
 }
 
 // withDefaultContext prepends the A-NZ billing context so it applies unless the
-// caller supplies their own ubl.WithContext option (later options win).
-func withDefaultContext(opts []ubl.Option) []ubl.Option {
-	return append([]ubl.Option{ubl.WithContext(ContextPINT)}, opts...)
+// caller supplies their own WithContext option (later options win).
+func withDefaultContext(opts []Option) []Option {
+	return append([]Option{ubl.WithContext(ContextPINT)}, opts...)
 }
 
 // Bytes renders a converted document as indented XML.
