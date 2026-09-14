@@ -15,13 +15,13 @@ supplier:
     code: "49091850"
   identities:
     - scope: "legal"
-      code: "9429000000000"
+      code: "9429044000004"
       ext:
         iso-scheme-id: "0088"
   inboxes:
     - key: "peppol"
       scheme: "0088"
-      code: "9429000000000"
+      code: "9429044000004"
   addresses:
     - num: "1"
       street: "Lambton Quay"
@@ -36,13 +36,13 @@ customer:
     code: "136410132"
   identities:
     - scope: "legal"
-      code: "9429000000001"
+      code: "9429044000011"
       ext:
         iso-scheme-id: "0088"
   inboxes:
     - key: "peppol"
       scheme: "0088"
-      code: "9429000000001"
+      code: "9429044000011"
   addresses:
     - num: "1010"
       street: "Queen Street"
