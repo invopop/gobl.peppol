@@ -10,7 +10,7 @@
   <cbc:BuyerReference>PO-2024-0031</cbc:BuyerReference>
   <cac:AccountingSupplierParty>
     <cac:Party>
-      <cbc:EndpointID schemeID="0088">9429000000000</cbc:EndpointID>
+      <cbc:EndpointID schemeID="0088">9429044000004</cbc:EndpointID>
       <cac:PartyName>
         <cbc:Name>Provide One Limited</cbc:Name>
       </cac:PartyName>
@@ -30,13 +30,13 @@
       </cac:PartyTaxScheme>
       <cac:PartyLegalEntity>
         <cbc:RegistrationName>Provide One Limited</cbc:RegistrationName>
-        <cbc:CompanyID schemeID="0088">9429000000000</cbc:CompanyID>
+        <cbc:CompanyID schemeID="0088">9429044000004</cbc:CompanyID>
       </cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingSupplierParty>
   <cac:AccountingCustomerParty>
     <cac:Party>
-      <cbc:EndpointID schemeID="0088">9429000000001</cbc:EndpointID>
+      <cbc:EndpointID schemeID="0088">9429044000011</cbc:EndpointID>
       <cac:PartyName>
         <cbc:Name>Sample Customer Limited</cbc:Name>
       </cac:PartyName>
@@ -56,7 +56,7 @@
       </cac:PartyTaxScheme>
       <cac:PartyLegalEntity>
         <cbc:RegistrationName>Sample Customer Limited</cbc:RegistrationName>
-        <cbc:CompanyID schemeID="0088">9429000000001</cbc:CompanyID>
+        <cbc:CompanyID schemeID="0088">9429044000011</cbc:CompanyID>
       </cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingCustomerParty>

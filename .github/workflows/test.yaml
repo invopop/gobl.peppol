@@ -12,6 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      PHORM_URL: http://localhost:8080
+
+    # phorm bundles the phive rule engine and serves the PINT A-NZ schematron
+    # over HTTP, so the -validate test run can validate the fixtures.
+    services:
+      phorm:
+        image: phelger/phorm:latest
+        ports:
+          - 8080:8080
 
     steps:
       - name: Check out code
@@ -27,8 +36,21 @@ jobs:
           GOPROXY: https://proxy.golang.org,direct
         run: go mod download
 
+      - name: Wait for phorm
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS -H "X-Token: phorm-dev-token" \
+              "${PHORM_URL}/api/get/vesids?include-deprecated=true" >/dev/null 2>&1; then
+              echo "phorm ready"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "phorm did not become ready in time" >&2
+          exit 1
+
       - name: Test
-        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -validate -race -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Coverage summary
         run: go tool cover -func=coverage.out | tail -1 >> "$GITHUB_STEP_SUMMARY"

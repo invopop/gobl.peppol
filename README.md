@@ -70,3 +70,33 @@ import ubl "github.com/invopop/gobl.ubl"
 
 doc, err := peppol.ConvertInvoice(env, ubl.WithContext(peppol.ContextPINTSelfBilled))
 ```
+
+## Validation
+
+A converted document can be checked against the Peppol PINT A-NZ schematron.
+The schematron is XSLT 2.0, so validation runs in a [phive](https://github.com/phax/phive)
+rule engine fronted by a [phorm](https://github.com/invopop/phorm) HTTP service
+rather than in-process:
+
+```go
+v := peppol.NewValidator("http://phorm:8080", "", nil)      // token "" => default
+vesID, _ := peppol.VESIDForDocument(data)                   // pick VESID from the XML
+findings, err := v.Validate(ctx, vesID, data)               // err only if it couldn't run
+for _, f := range findings {                                // each is a schematron failure
+	log.Printf("%s", f)
+}
+```
+
+`Validate` returns the failed schematron assertions; `err` is non-nil only when
+validation could not be run (service unreachable or an unexpected response).
+
+The `TestSchematron` test validates every document under `test/data/convert/out`
+and `test/data/parse` against the schematron. Like `-update`, it is gated behind
+a flag and off by default, so a plain `go test ./...` needs no phorm service:
+
+```sh
+go test -validate ./...            # posts to $PHORM_URL, default http://localhost:8080
+```
+
+CI runs it against a `phelger/phorm:latest` service container (see
+`.github/workflows/test.yaml`).
