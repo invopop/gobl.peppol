@@ -2,9 +2,7 @@ package peppol
 
 import (
 	"github.com/invopop/gobl"
-	"github.com/invopop/gobl.peppol/addon/aunz"
 	ubl "github.com/invopop/gobl.ubl"
-	"github.com/invopop/gobl/cbc"
 )
 
 // Peppol PINT A-NZ customization and business-process  identifiers.
@@ -28,16 +26,16 @@ const (
 var ContextPINT = ubl.Context{
 	CustomizationID: CustomizationBilling,
 	ProfileID:       ProfileBilling,
-	Addons:          []cbc.Key{aunz.V1},
-	VESIDs:          ubl.VESIDMapping{Invoice: VESIDInvoice, CreditNote: VESIDCreditNote},
+	// Addons:          []cbc.Key{aunz.V1},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDInvoice, CreditNote: VESIDCreditNote},
 }
 
 // ContextPINTSelfBilled is the Peppol PINT A-NZ self-billing context.
 var ContextPINTSelfBilled = ubl.Context{
 	CustomizationID: CustomizationSelfBilling,
 	ProfileID:       ProfileSelfBilling,
-	Addons:          []cbc.Key{aunz.V1},
-	VESIDs:          ubl.VESIDMapping{Invoice: VESIDInvoiceSelfBilling, CreditNote: VESIDCreditNoteSelfBilling},
+	// Addons:          []cbc.Key{aunz.V1},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDInvoiceSelfBilling, CreditNote: VESIDCreditNoteSelfBilling},
 }
 
 // ContextPINTWildcard identifies the A-NZ billing context by its wildcard
@@ -46,8 +44,8 @@ var ContextPINTWildcard = ubl.Context{
 	CustomizationID:       CustomizationBilling + "*",
 	OutputCustomizationID: CustomizationBilling,
 	ProfileID:             ProfileBilling,
-	Addons:                []cbc.Key{aunz.V1},
-	VESIDs:                ubl.VESIDMapping{Invoice: VESIDInvoice, CreditNote: VESIDCreditNote},
+	// Addons:                []cbc.Key{aunz.V1},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDInvoice, CreditNote: VESIDCreditNote},
 }
 
 // ContextPINTSelfBilledWildcard identifies the A-NZ self-billing context by its
@@ -56,8 +54,8 @@ var ContextPINTSelfBilledWildcard = ubl.Context{
 	CustomizationID:       CustomizationSelfBilling + "*",
 	OutputCustomizationID: CustomizationSelfBilling,
 	ProfileID:             ProfileSelfBilling,
-	Addons:                []cbc.Key{aunz.V1},
-	VESIDs:                ubl.VESIDMapping{Invoice: VESIDInvoiceSelfBilling, CreditNote: VESIDCreditNoteSelfBilling},
+	// Addons:                []cbc.Key{aunz.V1},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDInvoiceSelfBilling, CreditNote: VESIDCreditNoteSelfBilling},
 }
 
 // Context is a UBL conversion context, re-exported so callers can hold the
