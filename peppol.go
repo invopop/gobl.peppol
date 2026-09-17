@@ -27,15 +27,13 @@ const (
 )
 
 // ContextPINT is the jurisdiction-neutral Peppol PINT billing context that the
-// jurisdiction specializations extend, identified by its wildcard customization
-// ID. Documents carry the plain one, giving them the document type
-// urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1::2.1.
+// jurisdiction specializations extend.
 var ContextPINT = ubl.Context{
 	CustomizationID:       CustomizationPINTBilling + "*",
-	OutputCustomizationID: CustomizationPINTBilling,
+	OutputCustomizationID: CustomizationAUNZBilling,
 	ProfileID:             ProfileBilling,
 	// Addons:                []cbc.Key{pint.V1},
-	VESIDs: ubl.VESIDMapping{Invoice: VESIDPINTInvoice, CreditNote: VESIDPINTCreditNote},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDAUNZInvoice, CreditNote: VESIDAUNZCreditNote},
 }
 
 // ContextAUNZ is the Peppol PINT A-NZ billing context.
