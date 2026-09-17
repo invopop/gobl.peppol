@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	ubl "github.com/invopop/gobl.ubl"
 )
 
 // PhormDefaultToken is phorm's stock X-Token, used when NewValidator is given
@@ -116,10 +118,7 @@ type phiveResult struct {
 }
 
 // VESIDForDocument returns the validation exchange specification id (VESID) for
-// a Peppol PINT A-NZ UBL document, chosen from its root element (Invoice vs
-// CreditNote) and its CustomizationID (billing vs self-billing). It lets a
-// caller validate a serialized document without tracking which context
-// produced it.
+// a Peppol PINT UBL document.
 func VESIDForDocument(doc []byte) (string, error) {
 	var probe struct {
 		XMLName         xml.Name
@@ -128,16 +127,24 @@ func VESIDForDocument(doc []byte) (string, error) {
 	if err := xml.Unmarshal(doc, &probe); err != nil {
 		return "", fmt.Errorf("peppol: parsing document for VESID: %w", err)
 	}
-	selfBilled := strings.HasPrefix(probe.CustomizationID, CustomizationSelfBilling)
-	creditNote := probe.XMLName.Local == "CreditNote"
+	vesIDs := vesIDsForCustomization(probe.CustomizationID)
+	if probe.XMLName.Local == "CreditNote" {
+		return vesIDs.CreditNote, nil
+	}
+	return vesIDs.Invoice, nil
+}
+
+// vesIDsForCustomization maps a CustomizationID to the rule sets of the context
+// that produces it.
+func vesIDsForCustomization(customizationID string) ubl.VESIDMapping {
 	switch {
-	case selfBilled && creditNote:
-		return VESIDCreditNoteSelfBilling, nil
-	case selfBilled:
-		return VESIDInvoiceSelfBilling, nil
-	case creditNote:
-		return VESIDCreditNote, nil
+	case strings.HasPrefix(customizationID, CustomizationAUNZSelfBilling):
+		return ContextAUNZSelfBilled.VESIDs
+	case strings.HasPrefix(customizationID, CustomizationAUNZBilling):
+		return ContextAUNZ.VESIDs
+	case strings.HasPrefix(customizationID, CustomizationPINTBilling):
+		return ContextPINT.VESIDs
 	default:
-		return VESIDInvoice, nil
+		return ContextAUNZ.VESIDs
 	}
 }

@@ -5,61 +5,76 @@ import (
 	ubl "github.com/invopop/gobl.ubl"
 )
 
-// Peppol PINT A-NZ customization and business-process  identifiers.
+// Peppol PINT customization and business-process identifiers, both the
+// jurisdiction-neutral base ones and the A-NZ specializations built on them.
 const (
-	CustomizationBilling     = "urn:peppol:pint:billing-1@aunz-1"
-	CustomizationSelfBilling = "urn:peppol:pint:selfbilling-1@aunz-1"
-	ProfileBilling           = "urn:peppol:bis:billing"
-	ProfileSelfBilling       = "urn:peppol:bis:selfbilling"
+	CustomizationPINTBilling     = "urn:peppol:pint:billing-1"
+	CustomizationAUNZBilling     = "urn:peppol:pint:billing-1@aunz-1"
+	CustomizationAUNZSelfBilling = "urn:peppol:pint:selfbilling-1@aunz-1"
+	ProfileBilling               = "urn:peppol:bis:billing"
+	ProfileSelfBilling           = "urn:peppol:bis:selfbilling"
 )
 
-// Peppol PINT A-NZ validation exchange specification identifiers (VESIDs),
-// used to select the phive rule set the document is validated against.
+// Peppol PINT validation exchange specification identifiers (VESIDs), used to
+// select the phive rule set the document is validated against.
 const (
-	VESIDInvoice               = "org.peppol.pint.aunz:invoice:1.1.2"
-	VESIDCreditNote            = "org.peppol.pint.aunz:creditnote:1.1.2"
-	VESIDInvoiceSelfBilling    = "org.peppol.pint.aunz:invoice-self-billing:1.1.2"
-	VESIDCreditNoteSelfBilling = "org.peppol.pint.aunz:creditnote-self-billing:1.1.2"
+	VESIDPINTInvoice               = "org.peppol.pint:invoice:1.1.2"
+	VESIDPINTCreditNote            = "org.peppol.pint:credit-note:1.1.2"
+	VESIDAUNZInvoice               = "org.peppol.pint.aunz:invoice:1.1.2"
+	VESIDAUNZCreditNote            = "org.peppol.pint.aunz:creditnote:1.1.2"
+	VESIDAUNZInvoiceSelfBilling    = "org.peppol.pint.aunz:invoice-self-billing:1.1.2"
+	VESIDAUNZCreditNoteSelfBilling = "org.peppol.pint.aunz:creditnote-self-billing:1.1.2"
 )
 
-// ContextPINT is the Peppol PINT A-NZ billing context.
+// ContextPINT is the jurisdiction-neutral Peppol PINT billing context that the
+// jurisdiction specializations extend. Its Peppol document type identifier is
+// urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1::2.1.
 var ContextPINT = ubl.Context{
-	CustomizationID: CustomizationBilling,
+	CustomizationID: CustomizationPINTBilling,
+	ProfileID:       ProfileBilling,
+	// Addons:          []cbc.Key{pint.V1},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDPINTInvoice, CreditNote: VESIDPINTCreditNote},
+}
+
+// ContextAUNZ is the Peppol PINT A-NZ billing context.
+var ContextAUNZ = ubl.Context{
+	CustomizationID: CustomizationAUNZBilling,
 	ProfileID:       ProfileBilling,
 	// Addons:          []cbc.Key{aunz.V1},
-	VESIDs: ubl.VESIDMapping{Invoice: VESIDInvoice, CreditNote: VESIDCreditNote},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDAUNZInvoice, CreditNote: VESIDAUNZCreditNote},
 }
 
-// ContextPINTSelfBilled is the Peppol PINT A-NZ self-billing context.
-var ContextPINTSelfBilled = ubl.Context{
-	CustomizationID: CustomizationSelfBilling,
+// ContextAUNZSelfBilled is the Peppol PINT A-NZ self-billing context.
+var ContextAUNZSelfBilled = ubl.Context{
+	CustomizationID: CustomizationAUNZSelfBilling,
 	ProfileID:       ProfileSelfBilling,
 	// Addons:          []cbc.Key{aunz.V1},
-	VESIDs: ubl.VESIDMapping{Invoice: VESIDInvoiceSelfBilling, CreditNote: VESIDCreditNoteSelfBilling},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDAUNZInvoiceSelfBilling, CreditNote: VESIDAUNZCreditNoteSelfBilling},
 }
 
-// ContextPINTWildcard identifies the A-NZ billing context by its wildcard
+// ContextAUNZWildcard identifies the A-NZ billing context by its wildcard
 // customization ID.
-var ContextPINTWildcard = ubl.Context{
-	CustomizationID:       CustomizationBilling + "*",
-	OutputCustomizationID: CustomizationBilling,
+var ContextAUNZWildcard = ubl.Context{
+	CustomizationID:       CustomizationAUNZBilling + "*",
+	OutputCustomizationID: CustomizationAUNZBilling,
 	ProfileID:             ProfileBilling,
 	// Addons:                []cbc.Key{aunz.V1},
-	VESIDs: ubl.VESIDMapping{Invoice: VESIDInvoice, CreditNote: VESIDCreditNote},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDAUNZInvoice, CreditNote: VESIDAUNZCreditNote},
 }
 
-// ContextPINTSelfBilledWildcard identifies the A-NZ self-billing context by its
+// ContextAUNZSelfBilledWildcard identifies the A-NZ self-billing context by its
 // wildcard customization ID.
-var ContextPINTSelfBilledWildcard = ubl.Context{
-	CustomizationID:       CustomizationSelfBilling + "*",
-	OutputCustomizationID: CustomizationSelfBilling,
+var ContextAUNZSelfBilledWildcard = ubl.Context{
+	CustomizationID:       CustomizationAUNZSelfBilling + "*",
+	OutputCustomizationID: CustomizationAUNZSelfBilling,
 	ProfileID:             ProfileSelfBilling,
 	// Addons:                []cbc.Key{aunz.V1},
-	VESIDs: ubl.VESIDMapping{Invoice: VESIDInvoiceSelfBilling, CreditNote: VESIDCreditNoteSelfBilling},
+	VESIDs: ubl.VESIDMapping{Invoice: VESIDAUNZInvoiceSelfBilling, CreditNote: VESIDAUNZCreditNoteSelfBilling},
 }
 
-// Context is a UBL conversion context, re-exported so callers can hold the
-// A-NZ contexts (ContextPINT and friends) without importing gobl.ubl directly.
+// Context is a UBL conversion context, re-exported so callers can hold the PINT
+// contexts (ContextPINT, ContextAUNZ and friends) without importing gobl.ubl
+// directly.
 type Context = ubl.Context
 
 // Option is a UBL conversion option, re-exported alongside WithContext so
@@ -77,7 +92,7 @@ func WithContext(ctx Context) Option {
 }
 
 // Convert turns a GOBL envelope into a Peppol PINT A-NZ UBL document using the
-// billing context.
+// A-NZ billing context, the module default.
 func Convert(env *gobl.Envelope, opts ...Option) (any, error) {
 	return ubl.Convert(env, withDefaultContext(opts)...)
 }
@@ -91,7 +106,7 @@ func ConvertInvoice(env *gobl.Envelope, opts ...Option) (*ubl.Invoice, error) {
 // withDefaultContext prepends the A-NZ billing context so it applies unless the
 // caller supplies their own WithContext option (later options win).
 func withDefaultContext(opts []Option) []Option {
-	return append([]Option{ubl.WithContext(ContextPINT)}, opts...)
+	return append([]Option{ubl.WithContext(ContextAUNZ)}, opts...)
 }
 
 // Bytes renders a converted document as indented XML.

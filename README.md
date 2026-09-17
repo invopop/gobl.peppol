@@ -62,14 +62,27 @@ doc, err := peppol.ConvertInvoice(env)            // billing context
 data, err := peppol.Bytes(doc)                    // indented UBL XML
 ```
 
-Pass a context option for self-billing, or the wildcard contexts used for SMP
-registration:
+Pass a context option for another customization, or the wildcard contexts used
+for SMP registration:
 
 ```go
 import ubl "github.com/invopop/gobl.ubl"
 
-doc, err := peppol.ConvertInvoice(env, ubl.WithContext(peppol.ContextPINTSelfBilled))
+doc, err := peppol.ConvertInvoice(env, ubl.WithContext(peppol.ContextAUNZSelfBilled))
 ```
+
+| Context | CustomizationID (`ibt-024`) | ProfileID (`ibt-023`) |
+| --- | --- | --- |
+| `ContextPINT` | `urn:peppol:pint:billing-1` | `urn:peppol:bis:billing` |
+| `ContextAUNZ` | `urn:peppol:pint:billing-1@aunz-1` | `urn:peppol:bis:billing` |
+| `ContextAUNZSelfBilled` | `urn:peppol:pint:selfbilling-1@aunz-1` | `urn:peppol:bis:selfbilling` |
+
+Each one's Peppol document type identifier is
+`urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,
+with `CreditNote-2::CreditNote` replacing `Invoice-2::Invoice` for credit notes.
+`ContextPINT` is the jurisdiction-neutral base: it stamps the plain PINT
+customization and validates against the base PINT rule set rather than the A-NZ
+one, which stays the module default.
 
 ## Validation
 

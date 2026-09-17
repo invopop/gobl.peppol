@@ -20,18 +20,21 @@ func getConvertPath() string {
 	return filepath.Join("test", "data", "convert")
 }
 
-// convertCase is a GOBL envelope to convert, with the PINT A-NZ XML it should
-// produce.
+// convertCase is a GOBL envelope to convert with a given context, plus the PINT
+// XML that context should produce.
 type convertCase struct {
 	name   string
 	src    string
 	golden string
+	ctx    ubl.Context
 }
 
 // convertCases lists the fixtures under test/data/convert plus the shipped
-// examples. The examples are here because TestExamples only checks GOBL-to-GOBL
-// normalisation: without this nothing converts them, and an example could ship
-// as invalid PINT A-NZ UBL.
+// examples, each against the A-NZ billing context, and closes with one case that
+// converts an A-NZ fixture under the jurisdiction-neutral base PINT context. The
+// examples are here because TestExamples only checks GOBL-to-GOBL normalisation:
+// without this nothing converts them, and an example could ship as invalid PINT
+// A-NZ UBL.
 func convertCases(t *testing.T) []convertCase {
 	t.Helper()
 	dirs := []struct{ label, src, golden string }{
@@ -49,10 +52,16 @@ func convertCases(t *testing.T) []convertCase {
 				name:   dir.label + "/" + name,
 				src:    src,
 				golden: filepath.Join(dir.golden, name+".xml"),
+				ctx:    peppol.ContextAUNZ,
 			})
 		}
 	}
-	return cases
+	return append(cases, convertCase{
+		name:   "pint/invoice-au",
+		src:    filepath.Join(getConvertPath(), "invoice-au.json"),
+		golden: filepath.Join(getConvertPath(), "out", "invoice-au-pint.xml"),
+		ctx:    peppol.ContextPINT,
+	})
 }
 
 // loadTestEnvelope loads a GOBL envelope from a JSON file path.
@@ -65,16 +74,15 @@ func loadTestEnvelope(t *testing.T, path string) *gobl.Envelope {
 	return env
 }
 
-// TestConvert converts every fixture and shipped example to a Peppol PINT A-NZ
-// UBL document, using gobl.ubl's EN 16931 base with this module's billing
-// context, and compares it against its golden XML. Run with -update to
-// (re)generate the goldens.
+// TestConvert converts every fixture and shipped example to a Peppol PINT UBL
+// document, using gobl.ubl's EN 16931 base with the case's context, and compares
+// it against its golden XML. Run with -update to (re)generate the goldens.
 func TestConvert(t *testing.T) {
 	for _, example := range convertCases(t) {
 		t.Run(example.name, func(t *testing.T) {
 			env := loadTestEnvelope(t, example.src)
 
-			doc, err := ubl.ConvertInvoice(env, ubl.WithContext(peppol.ContextPINT))
+			doc, err := ubl.ConvertInvoice(env, ubl.WithContext(example.ctx))
 			require.NoError(t, err)
 
 			data, err := ubl.Bytes(doc)

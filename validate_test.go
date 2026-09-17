@@ -3,6 +3,7 @@ package peppol_test
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -87,4 +88,43 @@ func TestSchematron(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestVESIDForDocument checks that a serialized document is routed to the rule
+// set its CustomizationID belongs to, with the A-NZ customizations winning over
+// the base PINT one they extend.
+func TestVESIDForDocument(t *testing.T) {
+	document := func(root, customizationID string) []byte {
+		return fmt.Appendf(nil,
+			`<%s xmlns="urn:oasis:names:specification:ubl:schema:xsd:%s-2"><CustomizationID>%s</CustomizationID></%s>`,
+			root, root, customizationID, root)
+	}
+
+	tests := []struct {
+		name            string
+		root            string
+		customizationID string
+		want            string
+	}{
+		{"A-NZ invoice", "Invoice", peppol.CustomizationAUNZBilling, peppol.VESIDAUNZInvoice},
+		{"A-NZ credit note", "CreditNote", peppol.CustomizationAUNZBilling, peppol.VESIDAUNZCreditNote},
+		{"A-NZ self-billed invoice", "Invoice", peppol.CustomizationAUNZSelfBilling, peppol.VESIDAUNZInvoiceSelfBilling},
+		{"A-NZ self-billed credit note", "CreditNote", peppol.CustomizationAUNZSelfBilling, peppol.VESIDAUNZCreditNoteSelfBilling},
+		{"base PINT invoice", "Invoice", peppol.CustomizationPINTBilling, peppol.VESIDPINTInvoice},
+		{"base PINT credit note", "CreditNote", peppol.CustomizationPINTBilling, peppol.VESIDPINTCreditNote},
+		{"unknown customization", "Invoice", "urn:cen.eu:en16931:2017", peppol.VESIDAUNZInvoice},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			vesID, err := peppol.VESIDForDocument(document(test.root, test.customizationID))
+			require.NoError(t, err)
+			require.Equal(t, test.want, vesID)
+		})
+	}
+
+	t.Run("malformed document", func(t *testing.T) {
+		_, err := peppol.VESIDForDocument([]byte("not xml"))
+		require.Error(t, err)
+	})
 }
