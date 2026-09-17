@@ -4,101 +4,103 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "91018116818e5478adfc5dfcb74847713f9d29634f90e88c83139754892c823b"
+			"val": "194e284ed37ed32678488c78bd7ebd357b52c60ca0b40c15fd9073435a0bcf39"
 		},
-		"from": "iso6523-actorid-upis::0088:9429044000004",
-		"to": "iso6523-actorid-upis::0088:9429044000011"
+		"from": "iso6523-actorid-upis::0151:51824753556",
+		"to": "iso6523-actorid-upis::0151:53004085616"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
-		"$regime": "NZ",
+		"$regime": "AU",
 		"$addons": [
 			"eu-en16931-v2017",
 			"peppol-pint-v1",
 			"peppol-pint-aunz-v1"
 		],
-		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0b3",
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",
 		"series": "SAMPLE",
 		"code": "001",
 		"issue_date": "2024-05-15",
-		"currency": "NZD",
+		"currency": "AUD",
 		"tax": {
 			"ext": {
 				"untdid-document-type": "380"
 			}
 		},
 		"supplier": {
-			"name": "Provide One Limited",
+			"name": "Provide One Pty Ltd",
 			"tax_id": {
-				"country": "NZ",
-				"code": "49091850"
+				"country": "AU",
+				"code": "51824753556"
 			},
 			"identities": [
 				{
 					"scope": "legal",
-					"code": "9429044000004",
+					"code": "51824753556",
 					"ext": {
-						"iso-scheme-id": "0088"
+						"iso-scheme-id": "0151"
 					}
 				}
 			],
 			"endpoints": [
 				{
-					"uri": "iso6523-actorid-upis::0088:9429044000004"
+					"uri": "iso6523-actorid-upis::0151:51824753556"
 				}
 			],
 			"inboxes": [
 				{
 					"key": "peppol",
-					"scheme": "0088",
-					"code": "9429044000004"
+					"scheme": "0151",
+					"code": "51824753556"
+				}
+			],
+			"addresses": [
+				{
+					"num": "100",
+					"street": "Queen Street",
+					"locality": "Melbourne",
+					"region": "VIC",
+					"code": "3000",
+					"country": "AU"
+				}
+			]
+		},
+		"customer": {
+			"name": "Sample Customer Pty Ltd",
+			"tax_id": {
+				"country": "AU",
+				"code": "53004085616"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "53004085616",
+					"ext": {
+						"iso-scheme-id": "0151"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0151:53004085616"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0151",
+					"code": "53004085616"
 				}
 			],
 			"addresses": [
 				{
 					"num": "1",
-					"street": "Lambton Quay",
-					"locality": "Wellington",
-					"code": "6011",
-					"country": "NZ"
-				}
-			]
-		},
-		"customer": {
-			"name": "Sample Customer Limited",
-			"tax_id": {
-				"country": "NZ",
-				"code": "136410132"
-			},
-			"identities": [
-				{
-					"scope": "legal",
-					"code": "9429044000011",
-					"ext": {
-						"iso-scheme-id": "0088"
-					}
-				}
-			],
-			"endpoints": [
-				{
-					"uri": "iso6523-actorid-upis::0088:9429044000011"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0088",
-					"code": "9429044000011"
-				}
-			],
-			"addresses": [
-				{
-					"num": "1010",
-					"street": "Queen Street",
-					"locality": "Auckland",
-					"code": "1010",
-					"country": "NZ"
+					"street": "Martin Place",
+					"locality": "Sydney",
+					"region": "NSW",
+					"code": "2000",
+					"country": "AU"
 				}
 			]
 		},
@@ -117,7 +119,7 @@
 						"cat": "GST",
 						"key": "standard",
 						"rate": "general",
-						"percent": "15.0%",
+						"percent": "10.0%",
 						"ext": {
 							"untdid-tax-category": "S"
 						}
@@ -127,7 +129,7 @@
 			}
 		],
 		"ordering": {
-			"code": "PO-2024-0031"
+			"code": "PO-2024-0017"
 		},
 		"payment": {
 			"terms": {
@@ -135,7 +137,7 @@
 				"due_dates": [
 					{
 						"date": "2024-06-15",
-						"amount": "1150.00",
+						"amount": "1100.00",
 						"percent": "100%"
 					}
 				]
@@ -144,8 +146,8 @@
 				"key": "credit-transfer",
 				"credit_transfer": [
 					{
-						"number": "02-1234-0123456-000",
-						"name": "Bank of New Zealand"
+						"number": "033547 1234567",
+						"name": "ANZ Bank"
 					}
 				],
 				"ext": {
@@ -167,18 +169,18 @@
 									"untdid-tax-category": "S"
 								},
 								"base": "1000.00",
-								"percent": "15.0%",
-								"amount": "150.00"
+								"percent": "10.0%",
+								"amount": "100.00"
 							}
 						],
-						"amount": "150.00"
+						"amount": "100.00"
 					}
 				],
-				"sum": "150.00"
+				"sum": "100.00"
 			},
-			"tax": "150.00",
-			"total_with_tax": "1150.00",
-			"payable": "1150.00"
+			"tax": "100.00",
+			"total_with_tax": "1100.00",
+			"payable": "1100.00"
 		}
 	}
 }

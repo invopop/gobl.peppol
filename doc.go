@@ -1,5 +1,3 @@
-// Package peppol is the root of the Peppol module for GOBL. The GOBL addons
-// live in the addon subpackages (addon/pint for the base PINT billing model and
-// addon/aunz for the Australia/New Zealand jurisdiction); this root package is reserved for
-// converters and other Peppol tooling built on top of the addons.
+// Package peppol converts GOBL documents to Peppol PINT A-NZ UBL, building on
+// gobl.ubl's EN 16931 base.
 package peppol
