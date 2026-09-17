@@ -30,7 +30,7 @@ const (
 // jurisdiction specializations extend. Its Peppol document type identifier is
 // urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1::2.1.
 var ContextPINT = ubl.Context{
-	CustomizationID: CustomizationPINTBilling,
+	CustomizationID: CustomizationPINTBilling + "*",
 	ProfileID:       ProfileBilling,
 	// Addons:          []cbc.Key{pint.V1},
 	VESIDs: ubl.VESIDMapping{Invoice: VESIDPINTInvoice, CreditNote: VESIDPINTCreditNote},
