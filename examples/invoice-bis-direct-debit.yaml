@@ -1,0 +1,75 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "ES"
+$addons:
+  - "peppol-bis-v1"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0c6"
+currency: "EUR"
+issue_date: "2024-07-01"
+series: "SAMPLE"
+code: "003"
+
+ordering:
+  code: "BUYER-REF-002"
+
+supplier:
+  name: "Provide One SL"
+  tax_id:
+    country: "ES"
+    code: "A58818501"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "1234567890128"
+  addresses:
+    - num: "10"
+      street: "Carrer de Sample"
+      locality: "Barcelona"
+      region: "Barcelona"
+      code: "08001"
+      country: "ES"
+
+customer:
+  name: "Sample Customer SL"
+  tax_id:
+    country: "ES"
+    code: "B65410011"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "8765432109120"
+  addresses:
+    - num: "1"
+      street: "Calle de Ejemplo"
+      locality: "Madrid"
+      region: "Madrid"
+      code: "28001"
+      country: "ES"
+
+lines:
+  - quantity: "1"
+    item:
+      name: "Monthly subscription"
+      price: "49.00"
+    taxes:
+      - cat: VAT
+        rate: standard
+  - quantity: "3"
+    item:
+      name: "Printed manual"
+      price: "15.00"
+    taxes:
+      - cat: VAT
+        rate: super-reduced
+
+payment:
+  terms:
+    key: "due-date"
+    due_dates:
+      - date: "2024-07-15"
+        percent: "100%"
+  instructions:
+    key: "direct-debit"
+    direct_debit:
+      ref: "MANDATE-0001"
+      creditor: "ES12ZZZA58818501"
+      account: "ES7620770024003102575766"

@@ -12,12 +12,17 @@ Released under the Apache 2.0 [LICENSE](https://github.com/invopop/gobl.peppol/b
 [![GoDoc](https://godoc.org/github.com/invopop/gobl.peppol?status.svg)](https://godoc.org/github.com/invopop/gobl.peppol)
 ![Latest Tag](https://img.shields.io/github/v/tag/invopop/gobl.peppol)
 
-This module implements the [Peppol International (PINT)](https://docs.peppol.eu/poac/pint/)
-billing model as a set of GOBL tax addons:
+This module implements the Peppol billing models as a set of GOBL tax addons:
 
-- **PINT** (`peppol-pint-v1`) — the base Peppol International billing model, the
-  common layer shared by the country-specific PINT specifications. It builds on
-  EN 16931 but recognises indirect tax schemes beyond VAT (such as GST).
+- **BIS** (`peppol-bis-v1`) — the [Peppol BIS Billing 3.0](https://docs.peppol.eu/poacc/billing/3.0/)
+  profile, layering the Peppol business rules (`PEPPOL-EN16931-*`) on top of
+  EN 16931. Rules already guaranteed by EN 16931 or GOBL's calculation engine
+  are not duplicated; country-specific CIUS rules belong in dedicated
+  jurisdiction addons.
+- **PINT** (`peppol-pint-v1`) — the base [Peppol International (PINT)](https://docs.peppol.eu/poac/pint/)
+  billing model, the common layer shared by the country-specific PINT
+  specifications. It builds on EN 16931 but recognises indirect tax schemes
+  beyond VAT (such as GST).
 - **A-NZ** (`peppol-pint-aunz-v1`) — the Australia/New Zealand jurisdiction
   extension of PINT, adding the requirement that Australian parties carry their
   Australian Business Number (ABN) and New Zealand parties their New Zealand

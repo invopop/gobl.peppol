@@ -1,0 +1,78 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "ES"
+$addons:
+  - "peppol-bis-v1"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0c7"
+currency: "EUR"
+issue_date: "2024-07-10"
+series: "SAMPLE"
+code: "004"
+
+ordering:
+  code: "BUYER-REF-003"
+
+supplier:
+  name: "Provide One SL"
+  tax_id:
+    country: "ES"
+    code: "A58818501"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "1234567890128"
+  addresses:
+    - num: "10"
+      street: "Carrer de Sample"
+      locality: "Barcelona"
+      region: "Barcelona"
+      code: "08001"
+      country: "ES"
+
+customer:
+  name: "Sample Customer BV"
+  tax_id:
+    country: "NL"
+    code: "000099995B57"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "8765432109120"
+  addresses:
+    - num: "1"
+      street: "Voorbeeldstraat"
+      locality: "Amsterdam"
+      code: "1011 AB"
+      country: "NL"
+
+delivery:
+  date: "2024-07-08"
+  receiver:
+    addresses:
+      - num: "1"
+        street: "Voorbeeldstraat"
+        locality: "Amsterdam"
+        code: "1011 AB"
+        country: "NL"
+
+lines:
+  - quantity: "5"
+    item:
+      name: "Office chair"
+      price: "180.00"
+    taxes:
+      - cat: VAT
+        key: intra-community
+        ext:
+          cef-vatex: "VATEX-EU-IC"
+
+payment:
+  terms:
+    key: "due-date"
+    due_dates:
+      - date: "2024-08-10"
+        percent: "100%"
+  instructions:
+    key: "credit-transfer"
+    credit_transfer:
+      - iban: "ES9121000418450200051332"
+        name: "Provide One SL"
