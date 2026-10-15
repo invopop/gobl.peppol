@@ -1,6 +1,7 @@
 // Package addon is a convenience aggregator that registers all of the Peppol
 // addons:
 //
+//   - peppol-bis-v1        (Peppol BIS Billing 3.0 profile)
 //   - peppol-pint-v1       (base Peppol International billing model)
 //   - peppol-pint-aunz-v1  (Australia/New Zealand jurisdiction)
 //
@@ -11,5 +12,6 @@ package addon
 
 import (
 	_ "github.com/invopop/gobl.peppol/addon/aunz"
+	_ "github.com/invopop/gobl.peppol/addon/bis"
 	_ "github.com/invopop/gobl.peppol/addon/pint"
 )
