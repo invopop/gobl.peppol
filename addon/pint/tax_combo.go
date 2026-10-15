@@ -8,13 +8,25 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
+// taxCategoryMap maps GOBL tax keys to their UNTDID 5305 duty/tax/fee category
+// codes, mirroring the mapping EN 16931 keeps unexported.
+var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
+	tax.KeyStandard:       en16931.TaxCategoryStandard,
+	tax.KeyZero:           en16931.TaxCategoryZero,
+	tax.KeyExempt:         en16931.TaxCategoryExempt,
+	tax.KeyReverseCharge:  en16931.TaxCategoryReverseCharge,
+	tax.KeyIntraCommunity: en16931.TaxCategoryIntraCommunity,
+	tax.KeyExport:         en16931.TaxCategoryExport,
+	tax.KeyOutsideScope:   en16931.TaxCategoryOutsideScope,
+})
+
 // normalizeTaxCombo re-maps the UNTDID tax category code from the tax combo's
 // key, reusing EN 16931's key-to-code mapping.
 func normalizeTaxCombo(tc *tax.Combo) {
 	if tc == nil || tc.Key.IsEmpty() {
 		return
 	}
-	if code := en16931.TaxCategoryMap.Get(tc.Key); code != cbc.CodeEmpty {
+	if code := taxCategoryMap.Get(tc.Key); code != cbc.CodeEmpty {
 		tc.Ext = tc.Ext.Set(untdid.ExtKeyTaxCategory, code)
 	}
 }
@@ -28,7 +40,7 @@ func taxComboRules() *rules.Set {
 
 		rules.Field("ext",
 			rules.Assert("01", "invoice line tax category code must be a recognised PINT UNTDID 5305 code",
-				tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, en16931.TaxCategoryMap.Values()...),
+				tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryMap.Values()...),
 			),
 		),
 	)

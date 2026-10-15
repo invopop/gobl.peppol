@@ -3,8 +3,9 @@ module github.com/invopop/gobl.peppol
 go 1.25.0
 
 require (
-	github.com/invopop/gobl v0.501.1-0.20260718154801-1358939b249e
-	github.com/invopop/gobl.ubl v0.52.1-0.20260721111534-4f7d11d9fe74
+	github.com/invopop/gobl v0.508.1
+	github.com/invopop/gobl.ubl v0.90.0
+	github.com/invopop/phorm v0.1.5
 	github.com/stretchr/testify v1.11.1
 )
 
@@ -19,8 +20,6 @@ require (
 	github.com/expr-lang/expr v1.17.8 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/invopop/gobl.fr.ctc v0.0.4 // indirect
-	github.com/invopop/gobl.sa.zatca v0.0.2 // indirect
 	github.com/invopop/jsonschema v0.14.0 // indirect
 	github.com/invopop/validation v0.8.0 // indirect
 	github.com/invopop/xmlctx v0.13.0 // indirect

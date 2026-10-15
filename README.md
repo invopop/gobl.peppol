@@ -1,8 +1,8 @@
 # GOBL ➡️ Peppol
 
 Peppol PINT support for [GOBL](https://github.com/invopop/gobl): the tax addons
-plus a UBL converter built on [`gobl.ubl`](https://github.com/invopop/gobl.ubl)'s
-EN 16931 base.
+plus the UBL formats built on [`gobl.ubl`](https://github.com/invopop/gobl.ubl)'s
+base import and export.
 
 Released under the Apache 2.0 [LICENSE](https://github.com/invopop/gobl.peppol/blob/main/LICENSE), Copyright 2026 [Invopop S.L.](https://invopop.com).
 
@@ -49,66 +49,77 @@ $addons:
 
 See the [`examples`](./examples) directory for complete invoices.
 
+## Layout
+
+- `addon/` — the GOBL addons: normalizers, scenarios and validation rules that
+  register into GOBL on import. These packages are kept dependency-light so
+  importing them never pulls in conversion tooling.
+- `ubl/` — the Peppol PINT UBL formats, registered with `gobl.ubl` and GOBL's
+  `convert` register.
+
 ## Conversion
 
-The root package converts a GOBL envelope to a Peppol PINT A-NZ UBL document,
-reusing `gobl.ubl`'s EN 16931 conversion and stamping the A-NZ customization,
-profile and VESID identifiers:
+Blank-import the `ubl` package to register the PINT formats with both `gobl.ubl`
+and GOBL's central [`convert`](https://github.com/invopop/gobl/tree/main/convert)
+register, then convert through either:
 
 ```go
-import peppol "github.com/invopop/gobl.peppol"
+import (
+	"github.com/invopop/gobl/convert"
+	_ "github.com/invopop/gobl.peppol/ubl"
+)
 
-doc, err := peppol.ConvertInvoice(env)            // billing context
-data, err := peppol.Bytes(doc)                    // indented UBL XML
+out, err := convert.Export(env, "ubl+peppol+pint+aunz")   // GOBL -> UBL
+env, err := convert.Import(data)                          // UBL -> GOBL
 ```
 
-Pass a context option for another customization, or the wildcard contexts used
-for SMP registration:
+The format is picked from the document's `CustomizationID` and `ProfileID` on
+import, and the exported XML carries them back:
 
-```go
-import ubl "github.com/invopop/gobl.ubl"
+| Format | Key | CustomizationID (`ibt-024`) | ProfileID (`ibt-023`) |
+| --- | --- | --- | --- |
+| `FormatPINT` | `ubl+peppol+pint` | `urn:peppol:pint:billing-1` | `urn:peppol:bis:billing` |
+| `FormatAUNZ` | `ubl+peppol+pint+aunz` | `urn:peppol:pint:billing-1@aunz-1` | `urn:peppol:bis:billing` |
 
-doc, err := peppol.ConvertInvoice(env, ubl.WithContext(peppol.ContextAUNZSelfBilled))
-```
-
-| Context | CustomizationID (`ibt-024`) | ProfileID (`ibt-023`) |
-| --- | --- | --- |
-| `ContextPINT` | `urn:peppol:pint:billing-1` | `urn:peppol:bis:billing` |
-| `ContextAUNZ` | `urn:peppol:pint:billing-1@aunz-1` | `urn:peppol:bis:billing` |
-| `ContextAUNZSelfBilled` | `urn:peppol:pint:selfbilling-1@aunz-1` | `urn:peppol:bis:selfbilling` |
+`FormatAUNZ` writes self-billed invoices (those tagged `self-billed`) with its
+`SpecificationAUNZSelfBilling` instead: `urn:peppol:pint:selfbilling-1@aunz-1`
+and `urn:peppol:bis:selfbilling`. Documents carrying either are imported with
+`FormatAUNZ`.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,
 with `CreditNote-2::CreditNote` replacing `Invoice-2::Invoice` for credit notes.
-`ContextPINT` is the jurisdiction-neutral base: it stamps the plain PINT
-customization and validates against the base PINT rule set rather than the A-NZ
-one, which stays the module default.
+The A-NZ formats also claim the wildcard customizations the SMP registrations
+are made under, and `FormatPINT` is the jurisdiction-neutral base: it takes any
+other `urn:peppol:pint:billing-1@…` specialization and validates it against the
+base PINT rule set.
+
+To hold a format directly, use `gobl.ubl` itself:
+
+```go
+import (
+	peppolubl "github.com/invopop/gobl.peppol/ubl"
+	ubl "github.com/invopop/gobl.ubl"
+)
+
+doc, err := ubl.ExportInvoice(env, ubl.WithFormat(peppolubl.FormatAUNZ))
+data, err := ubl.Encode(doc)
+```
 
 ## Validation
 
-A converted document can be checked against the Peppol PINT A-NZ schematron.
-The schematron is XSLT 2.0, so validation runs in a [phive](https://github.com/phax/phive)
+Converted documents are checked against the Peppol PINT schematron. The
+schematron is XSLT 2.0, so validation runs in a [phive](https://github.com/phax/phive)
 rule engine fronted by a [phorm](https://github.com/invopop/phorm) HTTP service
-rather than in-process:
+rather than in-process. Each format and specification carries the VESIDs of its
+rule sets, which `Format.VESID` picks for the document.
 
-```go
-v := peppol.NewValidator("http://phorm:8080", "", nil)      // token "" => default
-vesID, _ := peppol.VESIDForDocument(data)                   // pick VESID from the XML
-findings, err := v.Validate(ctx, vesID, data)               // err only if it couldn't run
-for _, f := range findings {                                // each is a schematron failure
-	log.Printf("%s", f)
-}
-```
-
-`Validate` returns the failed schematron assertions; `err` is non-nil only when
-validation could not be run (service unreachable or an unexpected response).
-
-The `TestSchematron` test validates every document under `test/data/convert/out`
-and `test/data/parse` against the schematron. Like `-update`, it is gated behind
-a flag and off by default, so a plain `go test ./...` needs no phorm service:
+`TestConvertExamples` and `TestParseExamples` validate every document under
+`ubl/testdata` when `-validate` is passed. Like `-update` it is off by default,
+so a plain `go test ./...` needs no phorm service:
 
 ```sh
-go test -validate ./...            # posts to $PHORM_URL, default http://localhost:8080
+go test ./ubl/ -args -validate=true   # posts to $PHORM_URL, default http://localhost:8080
 ```
 
 CI runs it against a `phelger/phorm:latest` service container (see
