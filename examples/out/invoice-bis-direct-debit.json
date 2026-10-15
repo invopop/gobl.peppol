@@ -1,0 +1,197 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "1e521b83f68503db8654ba7c0c057bf8fc1159e4143fe03b7c76f297610ed014"
+		},
+		"from": "iso6523-actorid-upis::0088:1234567890128",
+		"to": "iso6523-actorid-upis::0088:8765432109120"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "ES",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-bis-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0c6",
+		"type": "standard",
+		"series": "SAMPLE",
+		"code": "003",
+		"issue_date": "2024-07-01",
+		"currency": "EUR",
+		"tax": {
+			"ext": {
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Provide One SL",
+			"tax_id": {
+				"country": "ES",
+				"code": "A58818501"
+			},
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0088:1234567890128"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0088",
+					"code": "1234567890128"
+				}
+			],
+			"addresses": [
+				{
+					"num": "10",
+					"street": "Carrer de Sample",
+					"locality": "Barcelona",
+					"region": "Barcelona",
+					"code": "08001",
+					"country": "ES"
+				}
+			]
+		},
+		"customer": {
+			"name": "Sample Customer SL",
+			"tax_id": {
+				"country": "ES",
+				"code": "B65410011"
+			},
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0088:8765432109120"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0088",
+					"code": "8765432109120"
+				}
+			],
+			"addresses": [
+				{
+					"num": "1",
+					"street": "Calle de Ejemplo",
+					"locality": "Madrid",
+					"region": "Madrid",
+					"code": "28001",
+					"country": "ES"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"name": "Monthly subscription",
+					"price": "49.00",
+					"unit": "one"
+				},
+				"sum": "49.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"rate": "general",
+						"percent": "21.0%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "49.00"
+			},
+			{
+				"i": 2,
+				"quantity": "3",
+				"item": {
+					"name": "Printed manual",
+					"price": "15.00",
+					"unit": "one"
+				},
+				"sum": "45.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"rate": "super-reduced",
+						"percent": "4.0%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "45.00"
+			}
+		],
+		"ordering": {
+			"code": "BUYER-REF-002"
+		},
+		"payment": {
+			"terms": {
+				"key": "due-date",
+				"due_dates": [
+					{
+						"date": "2024-07-15",
+						"amount": "106.09",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "direct-debit",
+				"direct_debit": {
+					"ref": "MANDATE-0001",
+					"creditor": "ES12ZZZA58818501",
+					"account": "ES7620770024003102575766"
+				},
+				"ext": {
+					"untdid-payment-means": "49"
+				}
+			}
+		},
+		"totals": {
+			"sum": "94.00",
+			"total": "94.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "49.00",
+								"percent": "21.0%",
+								"amount": "10.29"
+							},
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "45.00",
+								"percent": "4.0%",
+								"amount": "1.80"
+							}
+						],
+						"amount": "12.09"
+					}
+				],
+				"sum": "12.09"
+			},
+			"tax": "12.09",
+			"total_with_tax": "106.09",
+			"payable": "106.09"
+		}
+	}
+}
