@@ -1,8 +1,8 @@
 # GOBL ➡️ Peppol
 
 Peppol BIS and PINT support for [GOBL](https://github.com/invopop/gobl): the tax addons
-plus the UBL formats built on [`gobl.ubl`](https://github.com/invopop/gobl.ubl)'s
-base import and export.
+plus the UBL and CII formats built on [`gobl.ubl`](https://github.com/invopop/gobl.ubl)'s
+and [`gobl.cii`](https://github.com/invopop/gobl.cii)'s base import and export.
 
 Released under the Apache 2.0 [LICENSE](https://github.com/invopop/gobl.peppol/blob/main/LICENSE), Copyright 2026 [Invopop S.L.](https://invopop.com).
 
@@ -61,6 +61,8 @@ See the [`examples`](./examples) directory for complete invoices.
   importing them never pulls in conversion tooling.
 - `ubl/` — the Peppol BIS and PINT UBL formats, registered with `gobl.ubl` and
   GOBL's `convert` register.
+- `cii/` — the Peppol BIS CII format, registered with `gobl.cii` and GOBL's
+  `convert` register.
 
 ## Conversion
 
@@ -119,6 +121,28 @@ doc, err := ubl.ExportInvoice(env, ubl.WithFormat(peppolubl.FormatAUNZ))
 data, err := ubl.Encode(doc)
 ```
 
+### CII
+
+Peppol BIS Billing 3.0 also allows the UN/CEFACT CII syntax. Blank-import the
+`cii` package to register it:
+
+```go
+import (
+	"github.com/invopop/gobl/convert"
+	_ "github.com/invopop/gobl.peppol/cii"
+)
+
+out, err := convert.Export(env, "cii+peppol+bis-v3")   // GOBL -> CII
+```
+
+| Format | Key | GuidelineID (`BT-24`) | BusinessProcess (`BT-23`) |
+| --- | --- | --- | --- |
+| `FormatBIS` | `cii+peppol+bis-v3` | `urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0` | `urn:fdc:peppol.eu:2017:poacc:billing:01:1.0` |
+
+Like its UBL counterpart, it joins the notes into one. PINT, self-billing and
+the Invoice Response are UBL only. phive carries no Peppol CII rule set, so
+CII documents are validated against the EN 16931 CII one.
+
 ## Validation
 
 Converted documents are checked against the Peppol BIS and PINT schematrons. The
@@ -128,7 +152,7 @@ rather than in-process. Each format and specification carries the VESIDs of its
 rule sets, which `Format.VESID` picks for the document.
 
 `TestConvertExamples` and `TestParseExamples` validate every document under
-`ubl/testdata` when `-validate` is passed. Like `-update` it is off by default,
+`ubl/testdata` and `cii/testdata` when `-validate` is passed. Like `-update` it is off by default,
 so a plain `go test ./...` needs no phorm service:
 
 ```sh
