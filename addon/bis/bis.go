@@ -31,6 +31,8 @@ func init() {
 		billInvoiceRules(),
 		taxComboRules(),
 		payInstructionsRules(),
+		orgInboxRules(),
+		orgIdentityRules(),
 	)
 }
 

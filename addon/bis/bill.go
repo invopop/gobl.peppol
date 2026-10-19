@@ -16,17 +16,22 @@ func billInvoiceRules() *rules.Set {
 		rules.Assert("02", "invoice must not have more than one document-level note (PEPPOL-EN16931-R002)",
 			is.Func("at most one note", invoiceHasAtMostOneNote),
 		),
-		rules.Assert("05", "invoice line period must fall within the invoice period (PEPPOL-EN16931-R110, PEPPOL-EN16931-R111)",
+		rules.Assert("03", "invoice line period must fall within the invoice period (PEPPOL-EN16931-R110, PEPPOL-EN16931-R111)",
 			is.Func("line periods within invoice period", invoiceLinePeriodsWithin),
+		),
+		rules.Field("ordering",
+			rules.Field("projects",
+				rules.Assert("04", "invoice must not have more than one project reference (PEPPOL-EN16931-R080)", is.Length(0, 1)),
+			),
 		),
 		rules.Field("supplier",
 			rules.Field("inboxes",
-				rules.Assert("03", "invoice supplier electronic address is required (PEPPOL-EN16931-R020)", is.Present),
+				rules.Assert("05", "invoice supplier electronic address is required (PEPPOL-EN16931-R020)", is.Present),
 			),
 		),
 		rules.Field("customer",
 			rules.Field("inboxes",
-				rules.Assert("04", "invoice customer electronic address is required (PEPPOL-EN16931-R010)", is.Present),
+				rules.Assert("06", "invoice customer electronic address is required (PEPPOL-EN16931-R010)", is.Present),
 			),
 		),
 	)
@@ -46,8 +51,7 @@ func invoiceHasBuyerRefOrPO(val any) bool {
 }
 
 // invoiceHasAtMostOneNote reports whether the invoice has no more than one
-// document-level note. Peppol relaxes this when both parties are German, which
-// is left to a dedicated German jurisdiction addon.
+// document-level note.
 func invoiceHasAtMostOneNote(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {

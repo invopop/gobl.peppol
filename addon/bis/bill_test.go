@@ -77,4 +77,18 @@ func TestBillInvoiceRules(t *testing.T) {
 			assert.NotContains(t, err.Error(), "line period must fall within")
 		}
 	})
+
+	t.Run("more than one project reference is rejected (R080)", func(t *testing.T) {
+		inv := baseInvoice()
+		inv.Ordering.Projects = []*org.DocumentRef{{Code: "P1"}, {Code: "P2"}}
+		assert.ErrorContains(t, validate(inv), "more than one project reference")
+	})
+
+	t.Run("a single project reference is accepted (R080)", func(t *testing.T) {
+		inv := baseInvoice()
+		inv.Ordering.Projects = []*org.DocumentRef{{Code: "P1"}}
+		if err := validate(inv); err != nil {
+			assert.NotContains(t, err.Error(), "project reference")
+		}
+	})
 }

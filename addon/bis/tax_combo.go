@@ -33,7 +33,6 @@ func taxComboRules() *rules.Set {
 
 // comboVATEXMatchesCategory reports whether, when a Peppol-pinned VATEX code is
 // present, the tax category code matches the code that VATEX code requires.
-// VATEX codes outside the pinned set are not constrained here.
 func comboVATEXMatchesCategory(val any) bool {
 	tc, ok := val.(*tax.Combo)
 	if !ok || tc == nil {
