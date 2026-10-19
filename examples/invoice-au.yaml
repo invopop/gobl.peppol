@@ -52,6 +52,9 @@ customer:
       code: "2000"
       country: "AU"
 
+ordering:
+  code: "PO-2024-0017"
+
 lines:
   - quantity: "10"
     item:
@@ -73,3 +76,6 @@ payment:
     key: "credit-transfer"
     ext:
       untdid-payment-means: "30"
+    credit_transfer:
+      - number: "033547 1234567"
+        name: "ANZ Bank"

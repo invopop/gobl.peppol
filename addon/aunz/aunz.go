@@ -29,7 +29,10 @@ func init() {
 		Key.String(),
 		rules.GOBL.Add(Namespace),
 		is.InContext(tax.AddonIn(V1)),
-		billInvoiceRules(),
+		payInstructionsRules(),
+		creditTransferRules(),
+		taxComboRules(),
+		taxCategoryTotalRules(),
 	)
 }
 
@@ -44,13 +47,10 @@ func newV1Addon() *tax.AddonDef {
 		},
 		Description: i18n.String{
 			i18n.EN: here.Doc(`
-				Australia and New Zealand (A-NZ) jurisdiction extension of the Peppol
-				PINT billing model.
+				Support for Australia and New Zealand (AU-NZ) jurisdiction extension of
+				the Peppol PINT billing model.
 
-				It builds on the base PINT addon and adds the jurisdiction-aligned
-				requirement that Australian parties carry their Australian Business
-				Number (ABN) and New Zealand parties their New Zealand Business Number
-				(NZBN) as a legal registration identity.
+				This addon extends Peppol PINT with AU-NZ fields and validations.
 			`),
 		},
 		Sources: []*cbc.Source{

@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "35dd0fe5c03cb0efc3901aad147ae8e0b15d90d9545765dbf3f6adbadc0fcb86"
+			"val": "194e284ed37ed32678488c78bd7ebd357b52c60ca0b40c15fd9073435a0bcf39"
 		},
 		"from": "iso6523-actorid-upis::0151:51824753556",
 		"to": "iso6523-actorid-upis::0151:53004085616"
@@ -128,6 +128,9 @@
 				"total": "1000.00"
 			}
 		],
+		"ordering": {
+			"code": "PO-2024-0017"
+		},
 		"payment": {
 			"terms": {
 				"key": "due-date",
@@ -141,6 +144,12 @@
 			},
 			"instructions": {
 				"key": "credit-transfer",
+				"credit_transfer": [
+					{
+						"number": "033547 1234567",
+						"name": "ANZ Bank"
+					}
+				],
 				"ext": {
 					"untdid-payment-means": "30"
 				}
