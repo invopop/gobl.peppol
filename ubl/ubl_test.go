@@ -44,9 +44,10 @@ func TestDetectAndImport(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, peppolubl.KeyAUNZ, f.Key)
 
-	env, err := convert.Import(data)
+	res, err := convert.Import(data)
 	require.NoError(t, err)
-	inv, ok := env.Extract().(*bill.Invoice)
+	assert.Equal(t, peppolubl.KeyAUNZ, res.Format.Key)
+	inv, ok := res.Envelope.Extract().(*bill.Invoice)
 	require.True(t, ok)
 	assert.Contains(t, inv.GetAddons(), aunz.V1)
 }

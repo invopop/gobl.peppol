@@ -95,9 +95,10 @@ func TestFormatBISConvert(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, peppolubl.KeyBIS, f.Key)
 
-			env, err := convert.Import(out.Data)
+			res, err := convert.Import(out.Data)
 			require.NoError(t, err)
-			doc := env.Extract().(interface{ GetAddons() []cbc.Key })
+			assert.Equal(t, peppolubl.KeyBIS, res.Format.Key)
+			doc := res.Envelope.Extract().(interface{ GetAddons() []cbc.Key })
 			if tc.addons {
 				assert.Contains(t, doc.GetAddons(), en16931.V2017)
 			} else {
