@@ -40,7 +40,7 @@ customer:
   inboxes:
     - key: "peppol"
       scheme: "0088"
-      code: "8765432109120"
+      code: "8765432109128"
   addresses:
     - num: "1"
       street: "Calle de Ejemplo"

@@ -2,6 +2,7 @@ package bis
 
 import (
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/cal"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/rules/is"
 )
@@ -62,26 +63,29 @@ func invoiceHasAtMostOneNote(val any) bool {
 
 // invoiceLinePeriodsWithin reports whether every invoice-line period falls
 // within the invoice period. Lines without a period, or an invoice without a
-// period, are not constrained.
+// period, are not constrained, and each bound is only compared when both the
+// line and the invoice provide it.
 func invoiceLinePeriodsWithin(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil || inv.Ordering == nil || inv.Ordering.Period == nil {
 		return true
 	}
 	ip := inv.Ordering.Period
-	if ip.Start.IsZero() || ip.End.IsZero() {
-		return true
-	}
 	for _, l := range inv.Lines {
 		if l == nil || l.Period == nil {
 			continue
 		}
-		if !l.Period.Start.IsZero() && l.Period.Start.DaysSince(ip.Start.Date) < 0 {
+		if isSetDate(ip.Start) && isSetDate(l.Period.Start) && l.Period.Start.DaysSince(ip.Start.Date) < 0 {
 			return false
 		}
-		if !l.Period.End.IsZero() && ip.End.DaysSince(l.Period.End.Date) < 0 {
+		if isSetDate(ip.End) && isSetDate(l.Period.End) && ip.End.DaysSince(l.Period.End.Date) < 0 {
 			return false
 		}
 	}
 	return true
+}
+
+// isSetDate reports whether an optional date is present and not zero.
+func isSetDate(d *cal.Date) bool {
+	return d != nil && !d.IsZero()
 }

@@ -64,15 +64,26 @@ func TestBillInvoiceRules(t *testing.T) {
 
 	t.Run("line period outside invoice period is rejected (R110/R111)", func(t *testing.T) {
 		inv := baseInvoice()
-		inv.Ordering.Period = &cal.Period{Start: cal.MakeDate(2024, 1, 1), End: cal.MakeDate(2024, 1, 31)}
-		inv.Lines = []*bill.Line{{Period: &cal.Period{Start: cal.MakeDate(2024, 2, 1), End: cal.MakeDate(2024, 2, 5)}}}
+		inv.Ordering.Period = &cal.Period{Start: cal.NewDate(2024, 1, 1), End: cal.NewDate(2024, 1, 31)}
+		inv.Lines = []*bill.Line{{Period: &cal.Period{Start: cal.NewDate(2024, 2, 1), End: cal.NewDate(2024, 2, 5)}}}
+		assert.ErrorContains(t, validate(inv), "line period must fall within the invoice period")
+	})
+
+	t.Run("open-ended periods are compared on the bounds both provide (R110/R111)", func(t *testing.T) {
+		inv := baseInvoice()
+		inv.Ordering.Period = &cal.Period{Start: cal.NewDate(2024, 1, 1)}
+		inv.Lines = []*bill.Line{{Period: &cal.Period{End: cal.NewDate(2024, 2, 5)}}}
+		if err := validate(inv); err != nil {
+			assert.NotContains(t, err.Error(), "line period must fall within")
+		}
+		inv.Lines = []*bill.Line{{Period: &cal.Period{Start: cal.NewDate(2023, 12, 1)}}}
 		assert.ErrorContains(t, validate(inv), "line period must fall within the invoice period")
 	})
 
 	t.Run("line period within invoice period is accepted (R110/R111)", func(t *testing.T) {
 		inv := baseInvoice()
-		inv.Ordering.Period = &cal.Period{Start: cal.MakeDate(2024, 1, 1), End: cal.MakeDate(2024, 1, 31)}
-		inv.Lines = []*bill.Line{{Period: &cal.Period{Start: cal.MakeDate(2024, 1, 5), End: cal.MakeDate(2024, 1, 20)}}}
+		inv.Ordering.Period = &cal.Period{Start: cal.NewDate(2024, 1, 1), End: cal.NewDate(2024, 1, 31)}
+		inv.Lines = []*bill.Line{{Period: &cal.Period{Start: cal.NewDate(2024, 1, 5), End: cal.NewDate(2024, 1, 20)}}}
 		if err := validate(inv); err != nil {
 			assert.NotContains(t, err.Error(), "line period must fall within")
 		}
