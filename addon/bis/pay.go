@@ -15,8 +15,7 @@ func payInstructionsRules() *rules.Set {
 }
 
 // instructionsDirectDebitHasMandate reports whether direct-debit payment
-// instructions carry a mandate reference. Non-direct-debit instructions are not
-// subject to the rule.
+// instructions carry a mandate reference.
 func instructionsDirectDebitHasMandate(val any) bool {
 	inst, ok := val.(*pay.Instructions)
 	if !ok || inst == nil {

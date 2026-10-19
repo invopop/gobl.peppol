@@ -8,8 +8,8 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// taxCategoryMap maps GOBL tax keys to their UNTDID 5305 duty/tax/fee category
-// codes, mirroring the mapping EN 16931 keeps unexported.
+// taxCategoryMap maps GOBL tax keys to the UNTDID 5305 tax category codes that
+// PINT recognises, mirroring EN 16931's VAT key mapping.
 var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyStandard:       en16931.TaxCategoryStandard,
 	tax.KeyZero:           en16931.TaxCategoryZero,
@@ -21,7 +21,7 @@ var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 })
 
 // normalizeTaxCombo re-maps the UNTDID tax category code from the tax combo's
-// key, reusing EN 16931's key-to-code mapping.
+// key using the EN 16931 key-to-code mapping.
 func normalizeTaxCombo(tc *tax.Combo) {
 	if tc == nil || tc.Key.IsEmpty() {
 		return

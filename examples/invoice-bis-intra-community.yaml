@@ -36,7 +36,7 @@ customer:
   inboxes:
     - key: "peppol"
       scheme: "0088"
-      code: "8765432109120"
+      code: "8765432109128"
   addresses:
     - num: "1"
       street: "Voorbeeldstraat"
@@ -62,8 +62,12 @@ lines:
     taxes:
       - cat: VAT
         key: intra-community
-        ext:
-          cef-vatex: "VATEX-EU-IC"
+
+tax:
+  notes:
+    - cat: VAT
+      key: intra-community
+      text: "Intra-community supply of goods"
 
 payment:
   terms:

@@ -8,10 +8,25 @@ on:
   pull_request:
 jobs:
   test:
-    name: Test
+    name: Test (Go ${{ matrix.go-version }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # The three most recent Go releases, matching core GOBL. The oldest
+        # matches the go directive in go.mod, and 1.27 is the first release to
+        # enable the jsonv2 implementation of encoding/json by default.
+        go-version: ["1.25.x", "1.26.x", "1.27.x"]
+        include:
+          - go-version: "1.27.x"
+            coverage: true
+
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      # Run on the toolchain the matrix installed instead of downloading a
+      # newer one when a module in the graph asks for it.
+      GOTOOLCHAIN: local
       PHORM_URL: http://localhost:8080
 
     # phorm bundles the phive rule engine and serves the PINT A-NZ schematron
@@ -29,7 +44,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: "go.mod"
+          go-version: ${{ matrix.go-version }}
 
       - name: Install Dependencies
         env:
@@ -50,7 +65,7 @@ jobs:
           exit 1
 
       - name: Test
-        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -race -coverprofile=coverage.out -covermode=atomic -coverpkg=./... ./...
 
       # Only the ubl package defines -validate, so the schematron run is a
       # separate pass scoped to it.
@@ -58,12 +73,13 @@ jobs:
         run: go test -count=1 ./ubl/ -args -validate=true
 
       - name: Coverage summary
+        if: matrix.coverage
         run: go tool cover -func=coverage.out | tail -1 >> "$GITHUB_STEP_SUMMARY"
 
       # Runs once the repo is enabled on Codecov and a CODECOV_TOKEN secret is
       # added; skipped (keeping the build green) until then.
       - name: Upload coverage reports to Codecov
-        if: env.CODECOV_TOKEN != ''
+        if: matrix.coverage && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v5.1.2
         with:
           token: ${{ env.CODECOV_TOKEN }}
