@@ -22,18 +22,18 @@ func TestFormatBIS(t *testing.T) {
 		env := loadTestEnvelope(t, "bis/invoice-minimal.json")
 		doc, err := ubl.ExportInvoice(env, ubl.WithFormat(peppolubl.FormatBIS))
 		require.NoError(t, err)
-		assert.Equal(t, peppolubl.CustomizationBISBilling, doc.CustomizationID)
+		assert.Equal(t, peppolubl.FormatBIS.CustomizationID, doc.CustomizationID)
 		require.NotNil(t, doc.ProfileID)
-		assert.Equal(t, peppolubl.ProfileBISBilling, doc.ProfileID.Value)
+		assert.Equal(t, peppolubl.FormatBIS.ProfileID, doc.ProfileID.Value)
 	})
 
 	t.Run("self-billing", func(t *testing.T) {
 		env := loadTestEnvelope(t, "bis/self-billed-invoice.json")
 		doc, err := ubl.ExportInvoice(env, ubl.WithFormat(peppolubl.FormatBIS))
 		require.NoError(t, err)
-		assert.Equal(t, peppolubl.CustomizationBISSelfBilling, doc.CustomizationID)
+		assert.Equal(t, peppolubl.SpecificationBISSelfBilling.CustomizationID, doc.CustomizationID)
 		require.NotNil(t, doc.ProfileID)
-		assert.Equal(t, peppolubl.ProfileBISSelfBilling, doc.ProfileID.Value)
+		assert.Equal(t, peppolubl.SpecificationBISSelfBilling.ProfileID, doc.ProfileID.Value)
 	})
 
 	t.Run("notes are joined into one", func(t *testing.T) {
@@ -47,19 +47,19 @@ func TestFormatBIS(t *testing.T) {
 
 	t.Run("VESIDs", func(t *testing.T) {
 		f := peppolubl.FormatBIS
-		assert.Equal(t, peppolubl.VESIDBISInvoice, f.VESID(loadTestEnvelope(t, "bis/invoice-minimal.json").Extract()))
-		assert.Equal(t, peppolubl.VESIDBISCreditNote, f.VESID(loadTestEnvelope(t, "bis/credit-note.json").Extract()))
-		assert.Equal(t, peppolubl.VESIDBISInvoiceSelfBilling, f.VESID(loadTestEnvelope(t, "bis/self-billed-invoice.json").Extract()))
-		assert.Equal(t, peppolubl.VESIDBISCreditNoteSelfBilling, f.VESID(loadTestEnvelope(t, "bis/credit-note-self-billed.json").Extract()))
-		assert.Equal(t, peppolubl.VESIDBISInvoiceMessageResponse, f.VESID(baseStatus()))
+		assert.Equal(t, peppolubl.FormatBIS.VESIDs.Invoice, f.VESID(loadTestEnvelope(t, "bis/invoice-minimal.json").Extract()))
+		assert.Equal(t, peppolubl.FormatBIS.VESIDs.CreditNote, f.VESID(loadTestEnvelope(t, "bis/credit-note.json").Extract()))
+		assert.Equal(t, peppolubl.SpecificationBISSelfBilling.VESIDs.Invoice, f.VESID(loadTestEnvelope(t, "bis/self-billed-invoice.json").Extract()))
+		assert.Equal(t, peppolubl.SpecificationBISSelfBilling.VESIDs.CreditNote, f.VESID(loadTestEnvelope(t, "bis/credit-note-self-billed.json").Extract()))
+		assert.Equal(t, peppolubl.SpecificationBISInvoiceResponse.VESIDs.Status, f.VESID(baseStatus()))
 		assert.Empty(t, f.VESID(&bill.Payment{}))
 	})
 
 	t.Run("find format", func(t *testing.T) {
 		for name, ids := range map[string][2]string{
-			"billing":          {peppolubl.CustomizationBISBilling, peppolubl.ProfileBISBilling},
-			"self-billing":     {peppolubl.CustomizationBISSelfBilling, peppolubl.ProfileBISSelfBilling},
-			"invoice response": {peppolubl.CustomizationBISInvoiceResponse, peppolubl.ProfileBISInvoiceResponse},
+			"billing":          {peppolubl.FormatBIS.CustomizationID, peppolubl.FormatBIS.ProfileID},
+			"self-billing":     {peppolubl.SpecificationBISSelfBilling.CustomizationID, peppolubl.SpecificationBISSelfBilling.ProfileID},
+			"invoice response": {peppolubl.SpecificationBISInvoiceResponse.CustomizationID, peppolubl.SpecificationBISInvoiceResponse.ProfileID},
 		} {
 			t.Run(name, func(t *testing.T) {
 				f := ubl.FindFormat(ids[0], ids[1])
@@ -82,9 +82,9 @@ func TestFormatBISConvert(t *testing.T) {
 		spec   string
 		addons bool
 	}{
-		"invoice":             {loadTestEnvelope(t, "bis/invoice-minimal.json"), peppolubl.CustomizationBISBilling, true},
-		"self-billed invoice": {loadTestEnvelope(t, "bis/self-billed-invoice.json"), peppolubl.CustomizationBISSelfBilling, true},
-		"status":              {statusEnv(t), peppolubl.CustomizationBISInvoiceResponse, false},
+		"invoice":             {loadTestEnvelope(t, "bis/invoice-minimal.json"), peppolubl.FormatBIS.CustomizationID, true},
+		"self-billed invoice": {loadTestEnvelope(t, "bis/self-billed-invoice.json"), peppolubl.SpecificationBISSelfBilling.CustomizationID, true},
+		"status":              {statusEnv(t), peppolubl.SpecificationBISInvoiceResponse.CustomizationID, false},
 	} {
 		t.Run(name, func(t *testing.T) {
 			out, err := convert.Export(tc.env, peppolubl.KeyBIS)
@@ -162,9 +162,9 @@ func TestExportInvoiceResponse(t *testing.T) {
 		st.Lines[0].Actions = []*bill.Action{{Key: bill.ActionKeyReissue, Description: "please reissue"}}
 		ar := exportInvoiceResponse(t, st)
 
-		assert.Equal(t, peppolubl.CustomizationBISInvoiceResponse, ar.CustomizationID)
+		assert.Equal(t, peppolubl.SpecificationBISInvoiceResponse.CustomizationID, ar.CustomizationID)
 		require.NotNil(t, ar.ProfileID)
-		assert.Equal(t, peppolubl.ProfileBISInvoiceResponse, ar.ProfileID.Value)
+		assert.Equal(t, peppolubl.SpecificationBISInvoiceResponse.ProfileID, ar.ProfileID.Value)
 		assert.Empty(t, ar.UBLVersionID)
 
 		require.Len(t, ar.DocumentResponse, 1)
@@ -219,7 +219,7 @@ func TestExportInvoiceResponse(t *testing.T) {
 		st.Lines[0].Reasons = []*bill.Reason{{Key: bill.ReasonKeyReferences, Description: "missing PO"}}
 		data, err := ubl.Encode(exportInvoiceResponse(t, st))
 		require.NoError(t, err)
-		validateXML(t, pc, peppolubl.VESIDBISInvoiceMessageResponse, data)
+		validateXML(t, pc, peppolubl.SpecificationBISInvoiceResponse.VESIDs.Status, data)
 	})
 }
 
@@ -387,7 +387,7 @@ func TestInvoiceResponseRoundTrip(t *testing.T) {
 func TestFormatBISSelfBilledTag(t *testing.T) {
 	env := loadTestEnvelope(t, "bis/invoice-minimal.json")
 	inv := env.Extract().(*bill.Invoice)
-	assert.Equal(t, peppolubl.CustomizationBISBilling, peppolubl.FormatBIS.SpecificationFor(inv).CustomizationID)
+	assert.Equal(t, peppolubl.FormatBIS.CustomizationID, peppolubl.FormatBIS.SpecificationFor(inv).CustomizationID)
 	inv.SetTags(tax.TagSelfBilled)
-	assert.Equal(t, peppolubl.CustomizationBISSelfBilling, peppolubl.FormatBIS.SpecificationFor(inv).CustomizationID)
+	assert.Equal(t, peppolubl.SpecificationBISSelfBilling.CustomizationID, peppolubl.FormatBIS.SpecificationFor(inv).CustomizationID)
 }

@@ -75,8 +75,7 @@ func importPINT(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) err
 }
 
 // importPartyTaxID promotes the party's tax registration to its tax ID. PINT
-// replaces the EN 16931 VAT scheme with the jurisdiction's own, GST in A-NZ,
-// which the base import reads as a plain tax registration instead of BT-31.
+// replaces the EN 16931 VAT scheme with the jurisdiction's own.
 func importPartyTaxID(in *goblubl.Party, out *org.Party) {
 	if out.TaxID != nil {
 		return

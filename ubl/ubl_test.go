@@ -56,7 +56,7 @@ func TestExport(t *testing.T) {
 	out, err := convert.Export(env, peppolubl.KeyAUNZ)
 	require.NoError(t, err)
 	assert.Equal(t, peppolubl.KeyAUNZ, out.Format.Key)
-	assert.Contains(t, string(out.Data), "<cbc:CustomizationID>"+peppolubl.CustomizationAUNZBilling)
+	assert.Contains(t, string(out.Data), "<cbc:CustomizationID>"+peppolubl.FormatAUNZ.CustomizationID)
 
 	f, err := convert.Detect(out.Data)
 	require.NoError(t, err)
@@ -66,15 +66,15 @@ func TestExport(t *testing.T) {
 // TestDetectPINTFallback checks that a PINT jurisdiction with no dedicated
 // format falls back to the base billing one, while A-NZ keeps its own.
 func TestDetectPINTFallback(t *testing.T) {
-	f := ubl.FindFormat(peppolubl.CustomizationPINTBilling+"@jp-1", peppolubl.ProfileBilling)
+	f := ubl.FindFormat(peppolubl.FormatPINT.CustomizationID+"@jp-1", peppolubl.FormatPINT.ProfileID)
 	require.NotNil(t, f)
 	assert.Equal(t, peppolubl.KeyPINT, f.Key)
 
-	f = ubl.FindFormat(peppolubl.CustomizationAUNZBilling, peppolubl.ProfileBilling)
+	f = ubl.FindFormat(peppolubl.FormatAUNZ.CustomizationID, peppolubl.FormatAUNZ.ProfileID)
 	require.NotNil(t, f)
 	assert.Equal(t, peppolubl.KeyAUNZ, f.Key)
 
-	f = ubl.FindFormat(peppolubl.CustomizationAUNZSelfBilling, peppolubl.ProfileSelfBilling)
+	f = ubl.FindFormat(peppolubl.SpecificationAUNZSelfBilling.CustomizationID, peppolubl.SpecificationAUNZSelfBilling.ProfileID)
 	require.NotNil(t, f)
 	assert.Equal(t, peppolubl.KeyAUNZ, f.Key)
 }
@@ -88,12 +88,12 @@ func TestSpecificationAUNZSelfBilling(t *testing.T) {
 	require.True(t, ok)
 
 	f := peppolubl.FormatAUNZ
-	assert.Equal(t, peppolubl.VESIDAUNZInvoice, f.VESID(inv))
+	assert.Equal(t, peppolubl.FormatAUNZ.VESIDs.Invoice, f.VESID(inv))
 
 	inv.SetTags(tax.TagSelfBilled)
-	assert.Equal(t, peppolubl.VESIDAUNZInvoiceSelfBilling, f.VESID(inv))
+	assert.Equal(t, peppolubl.SpecificationAUNZSelfBilling.VESIDs.Invoice, f.VESID(inv))
 	s := f.SpecificationFor(inv)
 	require.NotNil(t, s)
-	assert.Equal(t, peppolubl.CustomizationAUNZSelfBilling, s.CustomizationID)
-	assert.Equal(t, peppolubl.ProfileSelfBilling, s.ProfileID)
+	assert.Equal(t, peppolubl.SpecificationAUNZSelfBilling.CustomizationID, s.CustomizationID)
+	assert.Equal(t, peppolubl.SpecificationAUNZSelfBilling.ProfileID, s.ProfileID)
 }
