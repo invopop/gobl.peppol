@@ -8,21 +8,20 @@ import (
 
 func payInstructionsRules() *rules.Set {
 	return rules.For(new(pay.Instructions),
-		rules.Assert("01", "direct debit mandate reference is required (PEPPOL-EN16931-R061)",
-			is.Func("direct debit has mandate reference", instructionsDirectDebitHasMandate),
+		rules.When(is.Func("direct debit", instructionsAreDirectDebit),
+			rules.Field("direct_debit",
+				rules.Assert("01", "direct debit details are required (PEPPOL-EN16931-R061)", is.Present),
+				rules.Field("ref",
+					rules.Assert("02", "direct debit mandate reference is required (PEPPOL-EN16931-R061)", is.Present),
+				),
+			),
 		),
 	)
 }
 
-// instructionsDirectDebitHasMandate reports whether direct-debit payment
-// instructions carry a mandate reference.
-func instructionsDirectDebitHasMandate(val any) bool {
+// instructionsAreDirectDebit reports whether the payment instructions use a
+// direct-debit means of payment.
+func instructionsAreDirectDebit(val any) bool {
 	inst, ok := val.(*pay.Instructions)
-	if !ok || inst == nil {
-		return true
-	}
-	if !inst.Key.HasPrefix(pay.MeansKeyDirectDebit) {
-		return true
-	}
-	return inst.DirectDebit != nil && inst.DirectDebit.Ref != ""
+	return ok && inst != nil && inst.Key.HasPrefix(pay.MeansKeyDirectDebit)
 }

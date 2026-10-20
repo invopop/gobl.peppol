@@ -18,27 +18,27 @@ const (
 	// Key identifies the Peppol BIS Billing addon family.
 	Key cbc.Key = "peppol-bis"
 
-	// V1 is the first version of the Peppol BIS Billing 3.0 addon.
-	V1 cbc.Key = Key + "-v1"
+	// V3 is the Peppol BIS Billing 3.0 addon, versioned after the specification.
+	V3 cbc.Key = Key + "-v3"
 )
 
 func init() {
-	tax.RegisterAddonDef(newV1Addon())
+	tax.RegisterAddonDef(newV3Addon())
 	rules.RegisterWithGuard(
 		Key.String(),
 		rules.GOBL.Add(Namespace),
-		is.InContext(tax.AddonIn(V1)),
+		is.InContext(tax.AddonIn(V3)),
 		billInvoiceRules(),
 		taxComboRules(),
 		payInstructionsRules(),
-		orgInboxRules(),
+		orgEndpointRules(),
 		orgIdentityRules(),
 	)
 }
 
-func newV1Addon() *tax.AddonDef {
+func newV3Addon() *tax.AddonDef {
 	return &tax.AddonDef{
-		Key: V1,
+		Key: V3,
 		Name: i18n.String{
 			i18n.EN: "Peppol BIS Billing 3.0",
 		},

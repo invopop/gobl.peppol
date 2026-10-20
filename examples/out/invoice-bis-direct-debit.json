@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "8302d7365fcbe172415e3f33a2b65c28c4bdd1b218714a826ea30aa895863780"
+			"val": "9428196200d1f595da9d554aa5c076e17dd02c1cdd22092e2a66d8303d8962af"
 		},
 		"from": "iso6523-actorid-upis::0088:1234567890128",
 		"to": "iso6523-actorid-upis::0088:8765432109128"
@@ -14,7 +14,7 @@
 		"$regime": "ES",
 		"$addons": [
 			"eu-en16931-v2017",
-			"peppol-bis-v1"
+			"peppol-bis-v3"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0c6",
 		"type": "standard",

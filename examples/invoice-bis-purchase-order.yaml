@@ -1,7 +1,7 @@
 $schema: "https://gobl.org/draft-0/bill/invoice"
 $regime: "ES"
 $addons:
-  - "peppol-bis-v1"
+  - "peppol-bis-v3"
 uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0c5"
 currency: "EUR"
 issue_date: "2024-06-30"

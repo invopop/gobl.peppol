@@ -24,7 +24,7 @@ func comboWith(vatex, category string) *tax.Combo {
 
 func TestTaxComboVATEX(t *testing.T) {
 	validate := func(c *tax.Combo) error {
-		return rules.Validate(c, tax.AddonContext(bis.V1))
+		return rules.Validate(c, tax.AddonContext(bis.V3))
 	}
 
 	t.Run("matching VATEX and category pass (P0104..P0111)", func(t *testing.T) {
@@ -41,6 +41,17 @@ func TestTaxComboVATEX(t *testing.T) {
 	t.Run("mismatched VATEX and category rejected", func(t *testing.T) {
 		assert.ErrorContains(t, validate(comboWith("VATEX-EU-AE", "S")), "VATEX")
 		assert.ErrorContains(t, validate(comboWith("VATEX-EU-IC", "E")), "VATEX")
+	})
+
+	t.Run("grouped exempt VATEX code with wrong category is rejected (P0109)", func(t *testing.T) {
+		assert.ErrorContains(t, validate(comboWith("VATEX-EU-F", "G")), "VATEX")
+	})
+
+	t.Run("combo without VATEX code is not constrained", func(t *testing.T) {
+		c := &tax.Combo{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: "S"})}
+		if err := validate(c); err != nil {
+			assert.NotContains(t, err.Error(), "VATEX")
+		}
 	})
 
 	t.Run("unpinned VATEX code is not constrained", func(t *testing.T) {

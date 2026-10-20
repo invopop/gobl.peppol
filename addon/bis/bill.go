@@ -3,6 +3,8 @@ package bis
 import (
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
+	"github.com/invopop/gobl/catalogues/iso"
+	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/rules/is"
 )
@@ -14,8 +16,8 @@ func billInvoiceRules() *rules.Set {
 		rules.Assert("01", "invoice must have a buyer reference or a purchase order reference (PEPPOL-EN16931-R003)",
 			is.Func("has buyer reference or purchase order", invoiceHasBuyerRefOrPO),
 		),
-		rules.Assert("02", "invoice must not have more than one document-level note (PEPPOL-EN16931-R002)",
-			is.Func("at most one note", invoiceHasAtMostOneNote),
+		rules.Field("notes",
+			rules.Assert("02", "invoice must not have more than one document-level note (PEPPOL-EN16931-R002)", is.Length(0, 1)),
 		),
 		rules.Assert("03", "invoice line period must fall within the invoice period (PEPPOL-EN16931-R110, PEPPOL-EN16931-R111)",
 			is.Func("line periods within invoice period", invoiceLinePeriodsWithin),
@@ -26,13 +28,13 @@ func billInvoiceRules() *rules.Set {
 			),
 		),
 		rules.Field("supplier",
-			rules.Field("inboxes",
-				rules.Assert("05", "invoice supplier electronic address is required (PEPPOL-EN16931-R020)", is.Present),
+			rules.Assert("05", "invoice supplier electronic address is required (PEPPOL-EN16931-R020)",
+				is.Func("has Peppol endpoint", partyHasPeppolEndpoint),
 			),
 		),
 		rules.Field("customer",
-			rules.Field("inboxes",
-				rules.Assert("06", "invoice customer electronic address is required (PEPPOL-EN16931-R010)", is.Present),
+			rules.Assert("06", "invoice customer electronic address is required (PEPPOL-EN16931-R010)",
+				is.Func("has Peppol endpoint", partyHasPeppolEndpoint),
 			),
 		),
 	)
@@ -42,32 +44,30 @@ func billInvoiceRules() *rules.Set {
 // (ordering code, ibt-010) or at least one purchase order reference (ibt-013).
 func invoiceHasBuyerRefOrPO(val any) bool {
 	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil {
-		return true
-	}
-	if inv.Ordering == nil {
+	if !ok || inv == nil || inv.Ordering == nil {
 		return false
 	}
 	return inv.Ordering.Code != "" || len(inv.Ordering.Purchases) > 0
 }
 
-// invoiceHasAtMostOneNote reports whether the invoice has no more than one
-// document-level note.
-func invoiceHasAtMostOneNote(val any) bool {
-	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil {
-		return true
+// partyHasPeppolEndpoint reports whether the party carries an ISO 6523 endpoint,
+// which EN 16931 derives from a Peppol inbox during normalization.
+func partyHasPeppolEndpoint(val any) bool {
+	p, ok := val.(*org.Party)
+	if !ok || p == nil {
+		return false
 	}
-	return len(inv.Notes) <= 1
+	return p.Endpoint(iso.ActorIDScheme) != nil
 }
 
 // invoiceLinePeriodsWithin reports whether every invoice-line period falls
-// within the invoice period. Lines without a period, or an invoice without a
-// period, are not constrained, and each bound is only compared when both the
-// line and the invoice provide it.
+// within the invoice period. Invoices without a period are not constrained.
 func invoiceLinePeriodsWithin(val any) bool {
 	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil || inv.Ordering == nil || inv.Ordering.Period == nil {
+	if !ok || inv == nil {
+		return false
+	}
+	if inv.Ordering == nil || inv.Ordering.Period == nil {
 		return true
 	}
 	ip := inv.Ordering.Period

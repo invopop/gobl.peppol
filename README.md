@@ -12,7 +12,7 @@ Released under the Apache 2.0 [LICENSE](https://github.com/invopop/gobl.peppol/b
 
 This module implements the Peppol billing models as a set of GOBL tax addons:
 
-- **BIS** (`peppol-bis-v1`) — the [Peppol BIS Billing 3.0](https://docs.peppol.eu/poacc/billing/3.0/)
+- **BIS** (`peppol-bis-v3`) — the [Peppol BIS Billing 3.0](https://docs.peppol.eu/poacc/billing/3.0/)
   profile, layering the Peppol business rules (`PEPPOL-EN16931-*`) on top of
   EN 16931. Rules already guaranteed by EN 16931 or GOBL's calculation engine
   are not duplicated; country-specific CIUS rules belong in dedicated
