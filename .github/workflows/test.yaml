@@ -29,8 +29,9 @@ jobs:
       GOTOOLCHAIN: local
       PHORM_URL: http://localhost:8080
 
-    # phorm bundles the phive rule engine and serves the PINT A-NZ schematron
-    # over HTTP, so the -validate test run can validate the fixtures.
+    # phorm bundles the phive rule engine and serves the Peppol and EN 16931
+    # schematrons over HTTP, so the -validate test run can validate the
+    # fixtures.
     services:
       phorm:
         image: phelger/phorm:latest
@@ -67,10 +68,10 @@ jobs:
       - name: Test
         run: go test -race -coverprofile=coverage.out -covermode=atomic -coverpkg=./... ./...
 
-      # Only the ubl package defines -validate, so the schematron run is a
-      # separate pass scoped to it.
+      # Only the ubl and cii packages define -validate, so the schematron run
+      # is a separate pass scoped to them.
       - name: Schematron
-        run: go test -count=1 ./ubl/ -args -validate=true
+        run: go test -count=1 ./ubl/ ./cii/ -args -validate=true
 
       - name: Coverage summary
         if: matrix.coverage

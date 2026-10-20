@@ -156,7 +156,7 @@ rule sets, which `Format.VESID` picks for the document.
 so a plain `go test ./...` needs no phorm service:
 
 ```sh
-go test ./ubl/ -args -validate=true   # posts to $PHORM_URL, default http://localhost:8080
+go test ./ubl/ ./cii/ -args -validate=true   # posts to $PHORM_URL, default http://localhost:8080
 ```
 
 CI runs it against a `phelger/phorm:latest` service container (see
