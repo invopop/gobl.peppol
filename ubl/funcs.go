@@ -74,8 +74,9 @@ func importPINT(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) err
 	return nil
 }
 
-// importPartyTaxID promotes the party's tax registration to its tax ID. PINT
-// replaces the EN 16931 VAT scheme with the jurisdiction's own.
+// importPartyTaxID promotes the party's tax registration to its tax ID, without
+// the country prefix PINT A-NZ writes. PINT replaces the EN 16931 VAT scheme
+// with the jurisdiction's own.
 func importPartyTaxID(in *goblubl.Party, out *org.Party) {
 	if out.TaxID != nil {
 		return
@@ -84,16 +85,17 @@ func importPartyTaxID(in *goblubl.Party, out *org.Party) {
 		if pts.CompanyID == nil || pts.CompanyID.Value == "" || pts.TaxScheme == nil {
 			continue
 		}
-		code := cbc.Code(pts.CompanyID.Value)
+		raw := cbc.Code(pts.CompanyID.Value)
+		country := l10n.TaxCountryCode(in.CountryCode())
 		out.TaxID = &tax.Identity{
-			Country: l10n.TaxCountryCode(in.CountryCode()),
-			Code:    code,
+			Country: country,
+			Code:    cbc.Code(strings.TrimPrefix(raw.String(), string(country))),
 		}
 		if scheme := cbc.Code(pts.TaxScheme.ID.Value); out.TaxID.GetScheme() != scheme {
 			out.TaxID.Scheme = scheme
 		}
 		out.Identities = slices.DeleteFunc(out.Identities, func(id *org.Identity) bool {
-			return id.Scope == org.IdentityScopeTax && id.Code == code
+			return id.Scope == org.IdentityScopeTax && id.Code == raw
 		})
 		return
 	}
