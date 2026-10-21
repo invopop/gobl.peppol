@@ -36,8 +36,8 @@ func exportInvoiceResponse(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Do
 	}
 	out.UBLVersionID = ""
 	out.UUID = ""
-	trimToResponseParty(out.SenderParty)
-	trimToResponseParty(out.ReceiverParty)
+	trimToInvoiceResponseParty(out.SenderParty)
+	trimToInvoiceResponseParty(out.ReceiverParty)
 	for i, dr := range out.DocumentResponse {
 		dr.Response.Description = nil
 		exportDocumentResponse(dr, st.Lines[i])

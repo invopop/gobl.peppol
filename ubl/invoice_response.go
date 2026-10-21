@@ -20,11 +20,11 @@ const (
 	documentTypeCodeCreditNote = "381"
 )
 
-// responseCodes maps GOBL status events to the Peppol Invoice Response status
-// codes (UNCL4343 subset, transaction T111). A technical error belongs in the
-// Message Level Response, but the Invoice Response has no code for it, so it
-// falls back to RE with the detail in the status clarification.
-var responseCodes = map[cbc.Key]string{
+// invoiceResponseCodes maps GOBL status events to the Peppol Invoice Response
+// status codes (UNCL4343 subset, transaction T111). A technical error belongs in
+// the Message Level Response, but the Invoice Response has no code for it, so
+// it falls back to RE with the detail in the status clarification.
+var invoiceResponseCodes = map[cbc.Key]string{
 	bill.StatusLineAcknowledged: "AB",
 	bill.StatusLineProcessing:   "IP",
 	bill.StatusLineQuerying:     "UQ",
@@ -34,10 +34,10 @@ var responseCodes = map[cbc.Key]string{
 	bill.StatusLineError:        "RE",
 }
 
-// responseEvents reverses responseCodes for imports, mapping RE back to the
-// business rejection and the conditional acceptance CA to accepted, with its
-// conditions carried in the status line's reasons and actions.
-var responseEvents = map[string]cbc.Key{
+// invoiceResponseEvents reverses invoiceResponseCodes for imports, mapping RE
+// back to the business rejection and the conditional acceptance CA to accepted,
+// with its conditions carried in the status line's reasons and actions.
+var invoiceResponseEvents = map[string]cbc.Key{
 	"AB": bill.StatusLineAcknowledged,
 	"IP": bill.StatusLineProcessing,
 	"UQ": bill.StatusLineQuerying,
@@ -76,13 +76,13 @@ var statusActionCodes = map[cbc.Key]string{
 	bill.ActionKeyOther:         "OTH",
 }
 
-// exportDocumentResponse stamps the UNCL4343 response code onto a document
-// response, along with one status per reason and action carrying its
+// exportDocumentResponse stamps the Peppol Invoice Response code (UNCL4343) onto
+// a document response, along with one status per reason and action carrying its
 // OPStatusReason or OPStatusAction clarification, and the referenced
 // document's type.
 func exportDocumentResponse(dr *goblubl.DocumentResponse, line *bill.StatusLine) {
 	resp := dr.Response
-	if code := responseCodes[line.Key]; code != "" {
+	if code := invoiceResponseCodes[line.Key]; code != "" {
 		resp.ResponseCode = &goblubl.IDType{Value: code}
 	}
 	for _, r := range line.Reasons {
@@ -120,7 +120,7 @@ func importStatusLine(line *bill.StatusLine, dr *goblubl.DocumentResponse) {
 		return
 	}
 	if r.ResponseCode != nil {
-		line.Key = responseEvents[r.ResponseCode.Value]
+		line.Key = invoiceResponseEvents[r.ResponseCode.Value]
 	}
 	for _, s := range r.Status {
 		if s == nil || s.StatusReasonCode == nil {
@@ -151,10 +151,10 @@ func importStatusLine(line *bill.StatusLine, dr *goblubl.DocumentResponse) {
 	}
 }
 
-// trimToResponseParty reduces a party to the elements the Peppol Invoice
+// trimToInvoiceResponseParty reduces a party to the elements the Peppol Invoice
 // Response (T111) permits on the sender and receiver: EndpointID,
 // PartyIdentification, PartyLegalEntity and Contact.
-func trimToResponseParty(p *goblubl.Party) {
+func trimToInvoiceResponseParty(p *goblubl.Party) {
 	if p == nil {
 		return
 	}
