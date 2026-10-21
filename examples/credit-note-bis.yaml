@@ -1,0 +1,71 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "ES"
+$addons:
+  - "peppol-bis-v3"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0c8"
+type: "credit-note"
+currency: "EUR"
+issue_date: "2024-05-20"
+series: "SAMPLE-R"
+code: "001"
+
+preceding:
+  - type: "standard"
+    issue_date: "2024-05-15"
+    series: "SAMPLE"
+    code: "001"
+    reason: "Hours billed in excess"
+
+ordering:
+  code: "BUYER-REF-001"
+
+supplier:
+  name: "Provide One SL"
+  tax_id:
+    country: "ES"
+    code: "A58818501"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "1234567890128"
+  addresses:
+    - num: "10"
+      street: "Carrer de Sample"
+      locality: "Barcelona"
+      region: "Barcelona"
+      code: "08001"
+      country: "ES"
+
+customer:
+  name: "Sample Customer SL"
+  tax_id:
+    country: "ES"
+    code: "B65410011"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "8765432109128"
+  addresses:
+    - num: "1"
+      street: "Calle de Ejemplo"
+      locality: "Madrid"
+      region: "Madrid"
+      code: "28001"
+      country: "ES"
+
+lines:
+  - quantity: "2"
+    item:
+      name: "Consulting services"
+      price: "100.00"
+      unit: "h"
+    taxes:
+      - cat: VAT
+        rate: standard
+
+payment:
+  instructions:
+    key: "credit-transfer"
+    credit_transfer:
+      - iban: "ES9121000418450200051332"
+        name: "Provide One SL"

@@ -1,0 +1,105 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "ES"
+$addons:
+  - "peppol-bis-v3"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0c5"
+currency: "EUR"
+issue_date: "2024-06-30"
+series: "SAMPLE"
+code: "002"
+
+ordering:
+  period:
+    start: "2024-06-01"
+    end: "2024-06-30"
+  purchases:
+    - code: "PO-2024-0042"
+
+supplier:
+  name: "Provide One SL"
+  tax_id:
+    country: "ES"
+    code: "A58818501"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "1234567890128"
+  addresses:
+    - num: "10"
+      street: "Carrer de Sample"
+      locality: "Barcelona"
+      region: "Barcelona"
+      code: "08001"
+      country: "ES"
+
+customer:
+  name: "Sample Customer SL"
+  tax_id:
+    country: "ES"
+    code: "B65410011"
+  inboxes:
+    - key: "peppol"
+      scheme: "0088"
+      code: "8765432109128"
+  addresses:
+    - num: "1"
+      street: "Calle de Ejemplo"
+      locality: "Madrid"
+      region: "Madrid"
+      code: "28001"
+      country: "ES"
+
+lines:
+  - quantity: "20"
+    item:
+      name: "Consulting services"
+      price: "90.00"
+      unit: "h"
+    period:
+      start: "2024-06-01"
+      end: "2024-06-15"
+    taxes:
+      - cat: VAT
+        rate: standard
+  - quantity: "1"
+    item:
+      name: "Software licence"
+      price: "250.00"
+    period:
+      start: "2024-06-01"
+      end: "2024-06-30"
+    discounts:
+      - percent: "10%"
+        reason: "Annual plan discount"
+    taxes:
+      - cat: VAT
+        rate: standard
+
+discounts:
+  - percent: "5%"
+    reason: "Volume discount"
+    taxes:
+      - cat: VAT
+        rate: standard
+
+charges:
+  - amount: "25.00"
+    reason: "Shipping"
+    taxes:
+      - cat: VAT
+        rate: standard
+
+notes:
+  - text: "Services delivered during June 2024."
+
+payment:
+  terms:
+    key: "due-date"
+    due_dates:
+      - date: "2024-07-30"
+        percent: "100%"
+  instructions:
+    key: "credit-transfer"
+    credit_transfer:
+      - iban: "ES9121000418450200051332"
+        name: "Provide One SL"

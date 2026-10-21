@@ -1,0 +1,187 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "5083199553800608d961c14d21dc310162dd4830ab93f1b61e9080411bedca3d"
+		},
+		"from": "iso6523-actorid-upis::0088:1234567890128",
+		"to": "iso6523-actorid-upis::0088:8765432109128"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "ES",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0c7",
+		"type": "standard",
+		"series": "SAMPLE",
+		"code": "004",
+		"issue_date": "2024-07-10",
+		"currency": "EUR",
+		"tax": {
+			"ext": {
+				"untdid-document-type": "380"
+			},
+			"notes": [
+				{
+					"cat": "VAT",
+					"key": "intra-community",
+					"text": "Intra-community supply of goods",
+					"ext": {
+						"untdid-tax-category": "K"
+					}
+				}
+			]
+		},
+		"supplier": {
+			"name": "Provide One SL",
+			"tax_id": {
+				"country": "ES",
+				"code": "A58818501"
+			},
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0088:1234567890128"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0088",
+					"code": "1234567890128"
+				}
+			],
+			"addresses": [
+				{
+					"num": "10",
+					"street": "Carrer de Sample",
+					"locality": "Barcelona",
+					"region": "Barcelona",
+					"code": "08001",
+					"country": "ES"
+				}
+			]
+		},
+		"customer": {
+			"name": "Sample Customer BV",
+			"tax_id": {
+				"country": "NL",
+				"code": "000099995B57"
+			},
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0088:8765432109128"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0088",
+					"code": "8765432109128"
+				}
+			],
+			"addresses": [
+				{
+					"num": "1",
+					"street": "Voorbeeldstraat",
+					"locality": "Amsterdam",
+					"code": "1011 AB",
+					"country": "NL"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "5",
+				"item": {
+					"name": "Office chair",
+					"price": "180.00",
+					"unit": "one"
+				},
+				"sum": "900.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "intra-community",
+						"ext": {
+							"untdid-tax-category": "K"
+						}
+					}
+				],
+				"total": "900.00"
+			}
+		],
+		"ordering": {
+			"code": "BUYER-REF-003"
+		},
+		"payment": {
+			"terms": {
+				"key": "due-date",
+				"due_dates": [
+					{
+						"date": "2024-08-10",
+						"amount": "900.00",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"credit_transfer": [
+					{
+						"iban": "ES9121000418450200051332",
+						"name": "Provide One SL"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"delivery": {
+			"receiver": {
+				"addresses": [
+					{
+						"num": "1",
+						"street": "Voorbeeldstraat",
+						"locality": "Amsterdam",
+						"code": "1011 AB",
+						"country": "NL"
+					}
+				]
+			},
+			"date": "2024-07-08"
+		},
+		"totals": {
+			"sum": "900.00",
+			"total": "900.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "intra-community",
+								"ext": {
+									"untdid-tax-category": "K"
+								},
+								"base": "900.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "900.00",
+			"payable": "900.00"
+		}
+	}
+}
