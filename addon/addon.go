@@ -10,6 +10,6 @@
 package addon
 
 import (
-	_ "github.com/invopop/gobl.peppol/addon/aunz"
 	_ "github.com/invopop/gobl.peppol/addon/pint"
+	_ "github.com/invopop/gobl.peppol/addon/pint/aunz"
 )
