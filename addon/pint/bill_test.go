@@ -5,27 +5,28 @@ import (
 
 	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
 )
 
-func validInbox() []*org.Inbox {
-	return []*org.Inbox{{Key: "peppol", Scheme: "0151", Code: "51824753556"}}
+func validEndpoints(code string) []*org.Endpoint {
+	return []*org.Endpoint{{URI: cbc.URI("iso6523-actorid-upis::0151:" + code)}}
 }
 
 func baseInvoice() *bill.Invoice {
 	return &bill.Invoice{
 		Supplier: &org.Party{
-			Name:    "Seller Pty Ltd",
-			TaxID:   &tax.Identity{Country: "AU", Code: "51824753556"},
-			Inboxes: validInbox(),
+			Name:      "Seller Pty Ltd",
+			TaxID:     &tax.Identity{Country: "AU", Code: "51824753556"},
+			Endpoints: validEndpoints("51824753556"),
 		},
 		Customer: &org.Party{
-			Name:    "Buyer Pty Ltd",
-			TaxID:   &tax.Identity{Country: "AU", Code: "53004085616"},
-			Inboxes: []*org.Inbox{{Key: "peppol", Scheme: "0151", Code: "53004085616"}},
+			Name:      "Buyer Pty Ltd",
+			TaxID:     &tax.Identity{Country: "AU", Code: "53004085616"},
+			Endpoints: validEndpoints("53004085616"),
 		},
 	}
 }
@@ -56,14 +57,14 @@ func TestBillInvoiceRules(t *testing.T) {
 
 	t.Run("supplier electronic address is required (ibr-081)", func(t *testing.T) {
 		inv := baseInvoice()
-		inv.Supplier.Inboxes = nil
+		inv.Supplier.Endpoints = nil
 		err := validate(inv)
 		assert.ErrorContains(t, err, "supplier electronic address is required")
 	})
 
 	t.Run("customer electronic address is required (ibr-080)", func(t *testing.T) {
 		inv := baseInvoice()
-		inv.Customer.Inboxes = nil
+		inv.Customer.Endpoints = nil
 		err := validate(inv)
 		assert.ErrorContains(t, err, "customer electronic address is required")
 	})
@@ -74,5 +75,15 @@ func TestBillInvoiceRules(t *testing.T) {
 		inv.Supplier.Identities = nil
 		err := validate(inv)
 		assert.ErrorContains(t, err, "supplier must have a tax ID or identity")
+	})
+
+	t.Run("supplier identity alone is enough (ibr-co-26)", func(t *testing.T) {
+		inv := baseInvoice()
+		inv.Supplier.TaxID = nil
+		inv.Supplier.Identities = []*org.Identity{{Scope: org.IdentityScopeLegal, Code: "51824753556"}}
+		err := validate(inv)
+		if err != nil {
+			assert.NotContains(t, err.Error(), "tax ID or identity")
+		}
 	})
 }
