@@ -42,7 +42,7 @@ import _ "github.com/invopop/gobl.peppol/addon"
 Or import an individual addon directly:
 
 ```go
-import _ "github.com/invopop/gobl.peppol/addon/aunz"
+import _ "github.com/invopop/gobl.peppol/addon/pint/aunz"
 ```
 
 Then declare the addon on the document:

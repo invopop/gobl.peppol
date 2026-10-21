@@ -3,7 +3,7 @@ package aunz_test
 import (
 	"testing"
 
-	"github.com/invopop/gobl.peppol/addon/aunz"
+	"github.com/invopop/gobl.peppol/addon/pint/aunz"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/rules"

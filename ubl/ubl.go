@@ -8,8 +8,8 @@ package ubl
 import (
 	"strings"
 
-	"github.com/invopop/gobl.peppol/addon/aunz"
 	"github.com/invopop/gobl.peppol/addon/pint"
+	"github.com/invopop/gobl.peppol/addon/pint/aunz"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
@@ -24,9 +24,9 @@ const (
 	// KeyBIS identifies the Peppol BIS 3 format.
 	KeyBIS cbc.Key = "ubl+peppol+bis-v3"
 	// KeyPINT identifies the jurisdiction-neutral Peppol PINT billing format.
-	KeyPINT cbc.Key = "ubl+peppol+pint"
+	KeyPINT cbc.Key = "ubl+peppol+pint-v1"
 	// KeyAUNZ identifies the Peppol PINT A-NZ format.
-	KeyAUNZ cbc.Key = "ubl+peppol+pint+aunz"
+	KeyAUNZ cbc.Key = "ubl+peppol+pint+aunz-v1"
 )
 
 var (
@@ -86,7 +86,7 @@ var SpecificationBISInvoiceResponse = goblubl.Specification{
 // the jurisdiction specializations extend.
 var FormatPINT = goblubl.Format{
 	Key:             KeyPINT,
-	Name:            i18n.NewString("UBL Peppol PINT Billing"),
+	Name:            i18n.NewString("UBL Peppol PINT Billing 1"),
 	Import:          []schema.ID{invoiceSchema},
 	Export:          []schema.ID{invoiceSchema},
 	CustomizationID: "urn:peppol:pint:billing-1",
@@ -106,7 +106,7 @@ var FormatPINT = goblubl.Format{
 // PINT A-NZ Billing, and self-billed invoices with PINT A-NZ Self-Billing.
 var FormatAUNZ = goblubl.Format{
 	Key:             KeyAUNZ,
-	Name:            i18n.NewString("UBL Peppol PINT A-NZ"),
+	Name:            i18n.NewString("UBL Peppol PINT A-NZ 1"),
 	Countries:       []l10n.Code{l10n.AU, l10n.NZ},
 	Import:          []schema.ID{invoiceSchema},
 	Export:          []schema.ID{invoiceSchema},

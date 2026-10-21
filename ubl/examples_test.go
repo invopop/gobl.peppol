@@ -32,7 +32,7 @@ var exampleFormats = []struct {
 	format ubl.Format
 }{
 	{"bis", peppolubl.FormatBIS},
-	{"aunz", peppolubl.FormatAUNZ},
+	{"pint/aunz", peppolubl.FormatAUNZ},
 	{"pint", peppolubl.FormatPINT},
 }
 

@@ -3,8 +3,8 @@ package ubl_test
 import (
 	"testing"
 
-	"github.com/invopop/gobl.peppol/addon/aunz"
 	"github.com/invopop/gobl.peppol/addon/pint"
+	"github.com/invopop/gobl.peppol/addon/pint/aunz"
 	peppolubl "github.com/invopop/gobl.peppol/ubl"
 	ubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
@@ -37,7 +37,7 @@ func TestFormat(t *testing.T) {
 }
 
 func TestDetectAndImport(t *testing.T) {
-	data, err := testLoadXML("aunz/invoice-au.xml")
+	data, err := testLoadXML("pint/aunz/invoice-au.xml")
 	require.NoError(t, err)
 
 	f, err := convert.Detect(data)
@@ -53,7 +53,7 @@ func TestDetectAndImport(t *testing.T) {
 }
 
 func TestExport(t *testing.T) {
-	env := loadTestEnvelope(t, "aunz/invoice-au.json")
+	env := loadTestEnvelope(t, "pint/aunz/invoice-au.json")
 	out, err := convert.Export(env, peppolubl.KeyAUNZ)
 	require.NoError(t, err)
 	assert.Equal(t, peppolubl.KeyAUNZ, out.Format.Key)
@@ -84,7 +84,7 @@ func TestDetectPINTFallback(t *testing.T) {
 // written with the A-NZ self-billing identifiers and validated against its
 // rule set.
 func TestSpecificationAUNZSelfBilling(t *testing.T) {
-	env := loadTestEnvelope(t, "aunz/invoice-au.json")
+	env := loadTestEnvelope(t, "pint/aunz/invoice-au.json")
 	inv, ok := env.Extract().(*bill.Invoice)
 	require.True(t, ok)
 
