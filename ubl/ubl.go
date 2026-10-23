@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl.peppol/addon/pint/aunz"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
@@ -112,7 +111,7 @@ var FormatAUNZ = goblubl.Format{
 	Export:          []schema.ID{invoiceSchema},
 	CustomizationID: "urn:peppol:pint:billing-1@aunz-1",
 	ProfileID:       "urn:peppol:bis:billing",
-	Addons:          []cbc.Key{aunz.V1},
+	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
 		Invoice:    "org.peppol.pint.aunz:invoice:1.1.2",
 		CreditNote: "org.peppol.pint.aunz:creditnote:1.1.2",
@@ -129,7 +128,7 @@ var FormatAUNZ = goblubl.Format{
 var SpecificationAUNZSelfBilling = goblubl.Specification{
 	CustomizationID: "urn:peppol:pint:selfbilling-1@aunz-1",
 	ProfileID:       "urn:peppol:bis:selfbilling",
-	Addons:          []cbc.Key{aunz.V1},
+	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
 		Invoice:    "org.peppol.pint.aunz:invoice-self-billing:1.1.2",
 		CreditNote: "org.peppol.pint.aunz:creditnote-self-billing:1.1.2",

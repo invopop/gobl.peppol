@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
+	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/norm"
 	"github.com/invopop/gobl/pkg/here"
 	"github.com/invopop/gobl/rules"
@@ -24,6 +25,9 @@ const (
 	V1 cbc.Key = Key + "-v1"
 )
 
+// regimesAUNZ lists the tax regimes the PINT A-NZ jurisdiction rules apply to.
+var regimesAUNZ = []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax()}
+
 func init() {
 	tax.RegisterAddonDef(newV1Addon())
 	rules.RegisterWithGuard(
@@ -32,6 +36,9 @@ func init() {
 		is.InContext(tax.AddonIn(V1)),
 		billInvoiceRules(),
 		taxComboRules(),
+		taxCategoryTotalRules(),
+		payInstructionsRules(),
+		creditTransferRules(),
 	)
 	norm.RegisterWithGuard(
 		is.InContext(tax.AddonIn(V1)),
@@ -59,14 +66,23 @@ func newV1Addon() *tax.AddonDef {
 				example, standard-rated GST is reported as "S" (standard rated) instead
 				of the EN 16931 default of "O" (outside scope).
 
-				Country-specific requirements are layered on top by dedicated sub-addons
-				that require this one.
+				Jurisdiction-specific requirements are applied according to the
+				document's tax regime: Australian and New Zealand documents are also
+				validated against the PINT A-NZ rules.
 			`),
 		},
 		Sources: []*cbc.Source{
 			{
 				Title: i18n.NewString("Peppol PINT specifications"),
 				URL:   "https://docs.peppol.eu/poac/pint/",
+			},
+			{
+				Title: i18n.NewString("Peppol PINT A-NZ Billing specification"),
+				URL:   "https://docs.peppol.eu/poac/aunz/pint-aunz/bis/",
+			},
+			{
+				Title: i18n.NewString("PINT A-NZ jurisdiction-aligned rules"),
+				URL:   "https://docs.peppol.eu/poac/aunz/pint-aunz/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
 			},
 		},
 	}

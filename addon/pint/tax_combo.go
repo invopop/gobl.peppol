@@ -5,6 +5,7 @@ import (
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/rules"
+	"github.com/invopop/gobl/rules/is"
 	"github.com/invopop/gobl/tax"
 )
 
@@ -19,6 +20,16 @@ var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyExport:         en16931.TaxCategoryExport,
 	tax.KeyOutsideScope:   en16931.TaxCategoryOutsideScope,
 })
+
+// taxCategoryCodesAUNZ lists the subset of UNTDID 5305 tax category codes
+// accepted by the A-NZ PINT specification.
+var taxCategoryCodesAUNZ = []cbc.Code{
+	en16931.TaxCategoryExempt,
+	en16931.TaxCategoryStandard,
+	en16931.TaxCategoryZero,
+	en16931.TaxCategoryExport,
+	en16931.TaxCategoryOutsideScope,
+}
 
 // normalizeTaxCombo re-maps the UNTDID tax category code from the tax combo's
 // key using the EN 16931 key-to-code mapping.
@@ -41,6 +52,14 @@ func taxComboRules() *rules.Set {
 		rules.Field("ext",
 			rules.Assert("01", "invoice line tax category code must be a recognised PINT UNTDID 5305 code",
 				tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryMap.Values()...),
+			),
+		),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAUNZ...)),
+			rules.Field("ext",
+				rules.Assert("02", "tax category code must be an A-NZ UNCL5305 code: E, S, Z, G or O (ALIGNED-IBRP-CL-01-AUNZ)",
+					tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryCodesAUNZ...),
+				),
 			),
 		),
 	)
