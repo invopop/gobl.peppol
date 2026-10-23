@@ -14,8 +14,7 @@
 		"$regime": "NZ",
 		"$addons": [
 			"eu-en16931-v2017",
-			"peppol-pint-v1",
-			"peppol-pint-aunz-v1"
+			"peppol-pint-v1"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",

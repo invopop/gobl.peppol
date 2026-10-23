@@ -19,17 +19,14 @@ This module implements the Peppol billing models as a set of GOBL tax addons:
   EN 16931. Rules already guaranteed by EN 16931 or GOBL's calculation engine
   are not duplicated; country-specific CIUS rules belong in dedicated
   jurisdiction addons.
-- **PINT** (`peppol-pint-v1`) — the base [Peppol International (PINT)](https://docs.peppol.eu/poac/pint/)
-  billing model, the common layer shared by the country-specific PINT
-  specifications. It builds on EN 16931 but recognises indirect tax schemes
-  beyond VAT (such as GST).
-- **A-NZ** (`peppol-pint-aunz-v1`) — the Australia/New Zealand jurisdiction
-  extension of PINT, adding the requirement that Australian parties carry their
-  Australian Business Number (ABN) and New Zealand parties their New Zealand
-  Business Number (NZBN) as a legal registration identity.
+- **PINT** (`peppol-pint-v1`) — the [Peppol International (PINT)](https://docs.peppol.eu/poac/pint/)
+  billing model. It builds on EN 16931 but recognises indirect tax schemes
+  beyond VAT (such as GST). Jurisdiction-specific rules are applied according
+  to the document's tax regime: Australian (`AU`) and New Zealand (`NZ`)
+  documents are also validated against the
+  [PINT A-NZ](https://docs.peppol.eu/poac/aunz/pint-aunz/bis/) rules.
 
-The country-specific addons require the base PINT addon; a document must declare
-the specific addon that applies to it.
+A document must declare the addon that applies to it.
 
 ## Usage
 
@@ -42,14 +39,15 @@ import _ "github.com/invopop/gobl.peppol/addon"
 Or import an individual addon directly:
 
 ```go
-import _ "github.com/invopop/gobl.peppol/addon/pint/aunz"
+import _ "github.com/invopop/gobl.peppol/addon/pint"
 ```
 
 Then declare the addon on the document:
 
 ```yaml
+$regime: "AU"
 $addons:
-  - "peppol-pint-aunz-v1"
+  - "peppol-pint-v1"
 ```
 
 See the [`examples`](./examples) directory for complete invoices.
