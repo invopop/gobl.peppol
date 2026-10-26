@@ -1,11 +1,12 @@
-package aunz_test
+package pint_test
 
 import (
 	"testing"
 
-	"github.com/invopop/gobl.peppol/addon/pint/aunz"
+	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
+	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/pay"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
@@ -21,7 +22,7 @@ func instructionsWithMeansCode(code string) *pay.Instructions {
 
 func TestPayInstructionsRules(t *testing.T) {
 	validate := func(instr *pay.Instructions) error {
-		return rules.Validate(instr, tax.AddonContext(aunz.V1))
+		return rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
 	}
 
 	t.Run("credit transfer with account number is accepted", func(t *testing.T) {
@@ -71,5 +72,18 @@ func TestPayInstructionsRules(t *testing.T) {
 			Ext: tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyPaymentMeans: "10"}),
 		}
 		assert.NoError(t, validate(instr))
+	})
+
+	t.Run("NZ documents are also checked", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		err := rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.NZ.Tax()))
+		assert.ErrorContains(t, err, "credit transfer instructions must include a payment account identifier")
+	})
+
+	t.Run("documents outside AU and NZ are exempt", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{{Name: "Bank"}}
+		err := rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
+		assert.NoError(t, err)
 	})
 }

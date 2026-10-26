@@ -1,7 +1,7 @@
 $schema: "https://gobl.org/draft-0/bill/invoice"
 $regime: "NZ"
 $addons:
-  - "peppol-pint-aunz-v1"
+  - "peppol-pint-v1"
 uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0b3"
 currency: "NZD"
 issue_date: "2024-05-15"

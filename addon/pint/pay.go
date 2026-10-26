@@ -1,4 +1,4 @@
-package aunz
+package pint
 
 import (
 	"github.com/invopop/gobl/catalogues/untdid"
@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/gobl/pay"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/rules/is"
+	"github.com/invopop/gobl/tax"
 )
 
 const (
@@ -15,23 +16,30 @@ const (
 	meansCodeSEPACreditTransfer cbc.Code = "58"
 )
 
-// payInstructionsRules enforces the A-NZ payment instruction rules.
+// payInstructionsRules enforces the A-NZ payment instruction rules on
+// Australian and New Zealand documents.
 func payInstructionsRules() *rules.Set {
 	return rules.For(new(pay.Instructions),
-		rules.When(is.Func("payment means is credit transfer", instructionsMeanCreditTransfer),
-			rules.Field("credit_transfer",
-				rules.Assert("01", "invoice credit transfer instructions must include a payment account identifier (ALIGNED-IBRP-018)", is.Present),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAUNZ...)),
+			rules.When(is.Func("payment means is credit transfer", instructionsMeanCreditTransfer),
+				rules.Field("credit_transfer",
+					rules.Assert("01", "invoice credit transfer instructions must include a payment account identifier (ALIGNED-IBRP-018)", is.Present),
+				),
 			),
 		),
 	)
 }
 
 // creditTransferRules enforces that any credit transfer information provided
-// carries a payment account identifier.
+// on Australian and New Zealand documents carries a payment account identifier.
 func creditTransferRules() *rules.Set {
 	return rules.For(new(pay.CreditTransfer),
-		rules.Assert("01", "credit transfer information must include a payment account identifier (ALIGNED-IBRP-016)",
-			is.Func("has IBAN or account number", creditTransferHasAccountID),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAUNZ...)),
+			rules.Assert("01", "credit transfer information must include a payment account identifier (ALIGNED-IBRP-016)",
+				is.Func("has IBAN or account number", creditTransferHasAccountID),
+			),
 		),
 	)
 }

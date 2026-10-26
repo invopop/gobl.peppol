@@ -1,6 +1,7 @@
-package aunz
+package pint
 
 import (
+	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/rules/is"
@@ -8,11 +9,14 @@ import (
 )
 
 // taxCategoryTotalRules enforces the A-NZ rules over the calculated tax
-// breakdown of the invoice totals.
+// breakdown of Australian and New Zealand invoice totals.
 func taxCategoryTotalRules() *rules.Set {
 	return rules.For(new(tax.CategoryTotal),
-		rules.Assert("01", "GST breakdown not subject to tax cannot be combined with other tax categories (ALIGNED-IBRP-O-11-AUNZ)",
-			is.Func("outside scope tax is exclusive", categoryTotalOutsideScopeIsExclusive),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAUNZ...)),
+			rules.Assert("01", "GST breakdown not subject to tax cannot be combined with other tax categories (ALIGNED-IBRP-O-11-AUNZ)",
+				is.Func("outside scope tax is exclusive", categoryTotalOutsideScopeIsExclusive),
+			),
 		),
 	)
 }
@@ -30,7 +34,7 @@ func categoryTotalOutsideScopeIsExclusive(val any) bool {
 		if rate == nil {
 			continue
 		}
-		if rate.Ext.Get(untdid.ExtKeyTaxCategory) == taxCategoryOutsideScope {
+		if rate.Ext.Get(untdid.ExtKeyTaxCategory) == en16931.TaxCategoryOutsideScope {
 			outside = true
 		} else {
 			other = true

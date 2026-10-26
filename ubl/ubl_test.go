@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl.peppol/addon/pint/aunz"
 	peppolubl "github.com/invopop/gobl.peppol/ubl"
 	ubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
@@ -49,7 +48,7 @@ func TestDetectAndImport(t *testing.T) {
 	assert.Equal(t, peppolubl.KeyAUNZ, res.Format.Key)
 	inv, ok := res.Envelope.Extract().(*bill.Invoice)
 	require.True(t, ok)
-	assert.Contains(t, inv.GetAddons(), aunz.V1)
+	assert.Contains(t, inv.GetAddons(), pint.V1)
 }
 
 func TestExport(t *testing.T) {

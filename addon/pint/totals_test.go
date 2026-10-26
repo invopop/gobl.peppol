@@ -1,11 +1,12 @@
-package aunz_test
+package pint_test
 
 import (
 	"testing"
 
-	"github.com/invopop/gobl.peppol/addon/pint/aunz"
+	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
+	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ func gstCategoryTotal(categories ...string) *tax.CategoryTotal {
 
 func TestTaxCategoryTotalRules(t *testing.T) {
 	validate := func(ct *tax.CategoryTotal) error {
-		return rules.Validate(ct, tax.AddonContext(aunz.V1))
+		return rules.Validate(ct, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
 	}
 
 	t.Run("GST breakdown with only outside scope is accepted", func(t *testing.T) {
@@ -43,5 +44,10 @@ func TestTaxCategoryTotalRules(t *testing.T) {
 		ct := gstCategoryTotal("O", "S")
 		ct.Code = "VAT"
 		assert.NoError(t, validate(ct))
+	})
+
+	t.Run("documents outside AU and NZ are exempt", func(t *testing.T) {
+		err := rules.Validate(gstCategoryTotal("O", "S"), tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
+		assert.NoError(t, err)
 	})
 }

@@ -6,8 +6,11 @@ import (
 	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/catalogues/untdid"
+	"github.com/invopop/gobl/cbc"
+	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/norm"
 	"github.com/invopop/gobl/num"
+	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
 )
@@ -57,5 +60,37 @@ func TestTaxComboNormalization(t *testing.T) {
 		}
 		norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1))
 		assert.Equal(t, "S", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
+	})
+}
+
+func gstCombo(category string) *tax.Combo {
+	return &tax.Combo{
+		Category: tax.CategoryGST,
+		Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: cbc.Code(category)}),
+	}
+}
+
+func TestTaxComboRules(t *testing.T) {
+	validate := func(tc *tax.Combo) error {
+		return rules.Validate(tc, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
+	}
+
+	t.Run("A-NZ subset categories are accepted", func(t *testing.T) {
+		for _, cat := range []string{"E", "S", "Z", "G", "O"} {
+			err := validate(gstCombo(cat))
+			assert.NoError(t, err, "category %s", cat)
+		}
+	})
+
+	t.Run("categories outside the A-NZ subset are rejected (ALIGNED-IBRP-CL-01)", func(t *testing.T) {
+		for _, cat := range []string{"AE", "K", "L", "M"} {
+			err := validate(gstCombo(cat))
+			assert.ErrorContains(t, err, "tax category code must be an A-NZ UNCL5305 code", "category %s", cat)
+		}
+	})
+
+	t.Run("documents outside AU and NZ accept the full PINT set", func(t *testing.T) {
+		err := rules.Validate(gstCombo("K"), tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
+		assert.NoError(t, err)
 	})
 }
