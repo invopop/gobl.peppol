@@ -75,6 +75,9 @@ func newV1Addon() *tax.AddonDef {
 				Jurisdiction-specific requirements are applied according to the
 				document's tax regime: Australian and New Zealand documents are also
 				validated against the PINT A-NZ rules; and UAE documents are validated against the PINT AE rules.
+
+				UAE documents out of scope of VAT use the "outside-scope" tag, which
+				sets the document type to 480 on invoices and 81 on credit notes.
 			`),
 		},
 		Sources: []*cbc.Source{
@@ -94,6 +97,12 @@ func newV1Addon() *tax.AddonDef {
 				Title: i18n.NewString("PINT AE jurisdiction-aligned rules"),
 				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
 			},
+		},
+		Tags: []*tax.TagSet{
+			invoiceTags,
+		},
+		Scenarios: []*tax.ScenarioSet{
+			invoiceScenarios,
 		},
 	}
 }
