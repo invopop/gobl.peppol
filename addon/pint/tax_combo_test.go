@@ -94,3 +94,70 @@ func TestTaxComboRules(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func vatCombo(key cbc.Key, category string, percent *num.Percentage) *tax.Combo {
+	return &tax.Combo{
+		Category: tax.CategoryVAT,
+		Key:      key,
+		Percent:  percent,
+		Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: cbc.Code(category)}),
+	}
+}
+
+func validateIn(tc *tax.Combo, regime l10n.TaxCountryCode) error {
+	return rules.Validate(tc, tax.AddonContext(pint.V1), tax.RegimeContext(regime))
+}
+
+func TestTaxComboRulesAE(t *testing.T) {
+	ae := l10n.AE.Tax()
+
+	t.Run("AE subset categories are accepted (IBR-139-AE)", func(t *testing.T) {
+		for _, cat := range []string{"E", "O", "AE"} {
+			err := validateIn(vatCombo(cbc.KeyEmpty, cat, nil), ae)
+			assert.NoError(t, err, "category %s", cat)
+		}
+		assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(5, 2)), ae))
+		assert.NoError(t, validateIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(0, 2)), ae))
+	})
+
+	t.Run("categories outside the AE subset are rejected (IBR-139-AE)", func(t *testing.T) {
+		for _, cat := range []string{"G", "K", "L", "M"} {
+			err := validateIn(vatCombo(cbc.KeyEmpty, cat, nil), ae)
+			assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-03", "category %s", cat)
+		}
+	})
+
+	t.Run("AE subset does not apply outside AE", func(t *testing.T) {
+		assert.NoError(t, validateIn(vatCombo(cbc.KeyEmpty, "K", nil), l10n.SG.Tax()))
+	})
+
+	t.Run("standard rate must be greater than zero (ALIGNED-IBRP-S-05/06/07)", func(t *testing.T) {
+		err := validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(0, 2)), ae)
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-04")
+		// The Schematron reports both S-05 and IBR-190 for a 0% standard rate.
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-05")
+	})
+
+	t.Run("standard rate must be 5% (IBR-190-AE)", func(t *testing.T) {
+		err := validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(10, 2)), ae)
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-05")
+		assert.NotContains(t, err.Error(), "GOBL-PEPPOL-PINT-TAX-COMBO-04")
+	})
+
+	t.Run("5% check compares numbers, not strings", func(t *testing.T) {
+		assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(50, 3)), ae))
+	})
+
+	t.Run("zero rate must be 0% (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)", func(t *testing.T) {
+		err := validateIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(5, 2)), ae)
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-06")
+	})
+
+	t.Run("rate rules do not apply outside AE", func(t *testing.T) {
+		for _, regime := range []l10n.TaxCountryCode{l10n.SG.Tax(), l10n.AU.Tax()} {
+			assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(0, 2)), regime), regime)
+			assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(10, 2)), regime), regime)
+			assert.NoError(t, validateIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(5, 2)), regime), regime)
+		}
+	})
+}

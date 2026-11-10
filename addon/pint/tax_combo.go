@@ -4,6 +4,7 @@ import (
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
+	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/rules/is"
 	"github.com/invopop/gobl/tax"
@@ -29,6 +30,16 @@ var taxCategoryCodesAUNZ = []cbc.Code{
 	en16931.TaxCategoryZero,
 	en16931.TaxCategoryExport,
 	en16931.TaxCategoryOutsideScope,
+}
+
+// taxCategoryCodesAE lists the subset of UNTDID 5305 tax category codes
+// accepted by the AE PINT specification.
+var taxCategoryCodesAE = []cbc.Code{
+	en16931.TaxCategoryExempt,
+	en16931.TaxCategoryStandard,
+	en16931.TaxCategoryZero,
+	en16931.TaxCategoryOutsideScope,
+	en16931.TaxCategoryReverseCharge,
 }
 
 // normalizeTaxCombo re-maps the UNTDID tax category code from the tax combo's
@@ -62,5 +73,46 @@ func taxComboRules() *rules.Set {
 				),
 			),
 		),
+
+		// TODO: rules 04 and 06 should also apply to AUNZ.
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			rules.Field("ext",
+				rules.Assert("03", "tax category code must be an AE UNCL5305 code: E, S, Z, O or AE (IBR-139-AE)",
+					tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryCodesAE...),
+				),
+			),
+
+			rules.When(
+				is.Func("tax combo is standard rated", taxComboIsStandard),
+				rules.Field("percent",
+					rules.Assert("04", "tax percentage must be a positive number (ALIGNED-IBRP-S-05/06/07)",
+						num.Positive,
+					),
+					rules.Assert("05", "tax percentage must be 5.00 (IBR-190-AE)",
+						num.Equals(num.MakePercentage(5, 2)),
+					),
+				),
+			),
+
+			rules.When(
+				is.Func("tax combo is zero rated", taxComboIsZero),
+				rules.Field("percent",
+					rules.Assert("06", "tax percentage must be 0.00 (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)",
+						num.Equals(num.MakePercentage(0, 2)),
+					),
+				),
+			),
+		),
 	)
+}
+
+func taxComboIsStandard(val any) bool {
+	tc, ok := val.(*tax.Combo)
+	return ok && tc != nil && tc.Key == tax.KeyStandard
+}
+
+func taxComboIsZero(val any) bool {
+	tc, ok := val.(*tax.Combo)
+	return ok && tc != nil && tc.Key == tax.KeyZero
 }

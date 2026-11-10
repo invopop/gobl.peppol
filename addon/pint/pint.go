@@ -28,6 +28,12 @@ const (
 // regimesAUNZ lists the tax regimes the PINT A-NZ jurisdiction rules apply to.
 var regimesAUNZ = []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax()}
 
+// regimesAE lists the tax regimes the PINT AE jurisdiction rules apply to.
+var regimesAE = []l10n.TaxCountryCode{l10n.AE.Tax()}
+
+// regimesAUNZAE lists the tax regimes the PINT A-NZ and PINT AE jurisdictions rules apply to.
+var regimesAUNZAE = []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax(), l10n.AE.Tax()}
+
 func init() {
 	tax.RegisterAddonDef(newV1Addon())
 	rules.RegisterWithGuard(
@@ -68,7 +74,7 @@ func newV1Addon() *tax.AddonDef {
 
 				Jurisdiction-specific requirements are applied according to the
 				document's tax regime: Australian and New Zealand documents are also
-				validated against the PINT A-NZ rules.
+				validated against the PINT A-NZ rules; and UAE documents are validated against the PINT AE rules.
 			`),
 		},
 		Sources: []*cbc.Source{
@@ -83,6 +89,10 @@ func newV1Addon() *tax.AddonDef {
 			{
 				Title: i18n.NewString("PINT A-NZ jurisdiction-aligned rules"),
 				URL:   "https://docs.peppol.eu/poac/aunz/pint-aunz/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
+			},
+			{
+				Title: i18n.NewString("PINT AE jurisdiction-aligned rules"),
+				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
 			},
 		},
 	}
