@@ -87,3 +87,58 @@ func TestPayInstructionsRules(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestPayInstructionsRulesAE(t *testing.T) {
+	validate := func(instr *pay.Instructions) error {
+		return rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AE.Tax()))
+	}
+
+	t.Run("credit transfer with IBAN is accepted", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{{IBAN: "AE070331234567890123456"}}
+		assert.NoError(t, validate(instr))
+	})
+
+	t.Run("credit transfer with account number is accepted", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{{Number: "1234567890"}}
+		assert.NoError(t, validate(instr))
+	})
+
+	t.Run("credit transfer without credit transfer details is rejected (IBR-192-AE)", func(t *testing.T) {
+		err := validate(instructionsWithMeansCode("30"))
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
+	})
+
+	t.Run("credit transfer without IBAN or account number is rejected (IBR-192-AE)", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD", Name: "Emirates NBD"}}
+		err := validate(instr)
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
+	})
+
+	t.Run("other payment means are not checked", func(t *testing.T) {
+		for _, code := range []string{"58", "31"} {
+			instr := instructionsWithMeansCode(code)
+			assert.NoError(t, validate(instr), "means %s", code)
+			instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD"}}
+			assert.NoError(t, validate(instr), "means %s with BIC only", code)
+		}
+	})
+
+	t.Run("the A-NZ account rules do not apply", func(t *testing.T) {
+		instr := &pay.Instructions{
+			Key:            pay.MeansKeyOnline,
+			Ext:            tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyPaymentMeans: "68"}),
+			CreditTransfer: []*pay.CreditTransfer{{Name: "Emirates NBD"}},
+		}
+		assert.NoError(t, validate(instr))
+	})
+
+	t.Run("the AE rule does not apply outside AE", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD"}}
+		err := rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
+		assert.NoError(t, err)
+	})
+}

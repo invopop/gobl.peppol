@@ -16,8 +16,9 @@ const (
 	meansCodeSEPACreditTransfer cbc.Code = "58"
 )
 
-// payInstructionsRules enforces the A-NZ payment instruction rules on
-// Australian and New Zealand documents.
+// payInstructionsRules enforces the payment instruction rules of the
+// jurisdictions: A-NZ on Australian and New Zealand documents, and AE on UAE
+// documents.
 func payInstructionsRules() *rules.Set {
 	return rules.For(new(pay.Instructions),
 		rules.When(
@@ -28,11 +29,21 @@ func payInstructionsRules() *rules.Set {
 				),
 			),
 		),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			rules.When(is.Func("payment means is credit transfer", instructionsMeanCreditTransferAE),
+				rules.Assert("02", "credit transfer must include an IBAN or account number (IBR-192-AE)",
+					is.Func("has a payment account identifier", instructionsHaveAccountID),
+				),
+			),
+		),
 	)
 }
 
 // creditTransferRules enforces that any credit transfer information provided
 // on Australian and New Zealand documents carries a payment account identifier.
+// AE has no such rule: IBR-192-AE only applies to credit transfer means (30),
+// so it is checked from the payment instructions instead.
 func creditTransferRules() *rules.Set {
 	return rules.For(new(pay.CreditTransfer),
 		rules.When(
@@ -56,6 +67,18 @@ func instructionsMeanCreditTransfer(val any) bool {
 	return code == meansCodeCreditTransfer || code == meansCodeSEPACreditTransfer
 }
 
+// instructionsMeanCreditTransferAE reports whether the payment means code
+// (ibt-081) of the instructions is 30, a credit transfer. Unlike the A-NZ
+// predicate, SEPA (58) is not included, as IBR-192-AE only checks 30.
+func instructionsMeanCreditTransferAE(val any) bool {
+	instr, ok := val.(*pay.Instructions)
+	if !ok || instr == nil {
+		return false
+	}
+	code := instr.Ext.Get(untdid.ExtKeyPaymentMeans)
+	return code == meansCodeCreditTransfer
+}
+
 // creditTransferHasAccountID reports whether the credit transfer carries an
 // account identifier (ibt-084), either an IBAN or an account number.
 func creditTransferHasAccountID(val any) bool {
@@ -64,4 +87,21 @@ func creditTransferHasAccountID(val any) bool {
 		return true
 	}
 	return ct.IBAN != "" || ct.Number != ""
+}
+
+// instructionsHaveAccountID reports whether at least one of the instructions'
+// credit transfers carries an account identifier (ibt-084), either an IBAN or
+// an account number. A missing credit transfer list fails, so one check covers
+// both cases of IBR-192-AE.
+func instructionsHaveAccountID(val any) bool {
+	instr, ok := val.(*pay.Instructions)
+	if !ok || instr == nil {
+		return true
+	}
+	for _, ct := range instr.CreditTransfer {
+		if ct != nil && (ct.IBAN != "" || ct.Number != "") {
+			return true
+		}
+	}
+	return false
 }
