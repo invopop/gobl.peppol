@@ -64,7 +64,7 @@ func TestExport(t *testing.T) {
 }
 
 // TestDetectPINTFallback checks that a PINT jurisdiction with no dedicated
-// format falls back to the base billing one, while A-NZ keeps its own.
+// format falls back to the base billing one, while A-NZ and AE keep their own.
 func TestDetectPINTFallback(t *testing.T) {
 	f := ubl.FindFormat(peppolubl.FormatPINT.CustomizationID+"@jp-1", peppolubl.FormatPINT.ProfileID)
 	require.NotNil(t, f)
@@ -77,6 +77,10 @@ func TestDetectPINTFallback(t *testing.T) {
 	f = ubl.FindFormat(peppolubl.SpecificationAUNZSelfBilling.CustomizationID, peppolubl.SpecificationAUNZSelfBilling.ProfileID)
 	require.NotNil(t, f)
 	assert.Equal(t, peppolubl.KeyAUNZ, f.Key)
+	// AE has its own format now, so the fallback no longer claims it.
+	f = ubl.FindFormat(peppolubl.FormatPINT.CustomizationID+"@ae-1", peppolubl.FormatPINT.ProfileID)
+	require.NotNil(t, f)
+	assert.Equal(t, peppolubl.KeyAE, f.Key)
 }
 
 // TestSpecificationAUNZSelfBilling checks that self-billed invoices are
@@ -96,4 +100,77 @@ func TestSpecificationAUNZSelfBilling(t *testing.T) {
 	require.NotNil(t, s)
 	assert.Equal(t, peppolubl.SpecificationAUNZSelfBilling.CustomizationID, s.CustomizationID)
 	assert.Equal(t, peppolubl.SpecificationAUNZSelfBilling.ProfileID, s.ProfileID)
+}
+
+// TestFormatAE checks that the PINT AE format is registered for the UAE and
+// claims its own documents, both billing and self-billing.
+func TestFormatAE(t *testing.T) {
+	f := convert.FormatFor(peppolubl.KeyAE)
+	require.NotNil(t, f)
+	assert.Equal(t, []l10n.Code{l10n.AE}, f.Countries)
+
+	keys := make([]cbc.Key, 0)
+	for _, c := range convert.FormatsFor(l10n.AE) {
+		keys = append(keys, c.Key)
+	}
+	assert.Contains(t, keys, peppolubl.KeyAE)
+
+	for _, id := range []string{peppolubl.FormatAE.CustomizationID, peppolubl.SpecificationAESelfBilling.CustomizationID} {
+		found := ubl.FindFormat(id, "")
+		require.NotNil(t, found, id)
+		assert.Equal(t, peppolubl.KeyAE, found.Key, id)
+	}
+}
+
+// TestDetectAndImportAE checks that an official PINT AE example is detected
+// as PINT AE and imported with the PINT addon.
+func TestDetectAndImportAE(t *testing.T) {
+	data, err := testLoadXML("pint/ae/standard-invoice.xml")
+	require.NoError(t, err)
+
+	f, err := convert.Detect(data)
+	require.NoError(t, err)
+	assert.Equal(t, peppolubl.KeyAE, f.Key)
+
+	res, err := convert.Import(data)
+	require.NoError(t, err)
+	inv, ok := res.Envelope.Extract().(*bill.Invoice)
+	require.True(t, ok)
+	assert.Contains(t, inv.GetAddons(), pint.V1)
+	assert.Equal(t, l10n.TaxCountryCode("AE"), inv.GetRegime())
+}
+
+// TestExportAE checks that a UAE invoice is exported with the PINT AE
+// identifiers and detected as PINT AE again.
+func TestExportAE(t *testing.T) {
+	env := loadTestEnvelope(t, "pint/ae/invoice-ae.json")
+	out, err := convert.Export(env, peppolubl.KeyAE)
+	require.NoError(t, err)
+	assert.Equal(t, peppolubl.KeyAE, out.Format.Key)
+	assert.Contains(t, string(out.Data), "<cbc:CustomizationID>"+peppolubl.FormatAE.CustomizationID)
+
+	f, err := convert.Detect(out.Data)
+	require.NoError(t, err)
+	assert.Equal(t, peppolubl.KeyAE, f.Key, "detected again")
+}
+
+// TestSpecificationAESelfBilling checks that self-billed invoices are written
+// with the AE self-billing identifiers and validated against its rule set.
+func TestSpecificationAESelfBilling(t *testing.T) {
+	env := loadTestEnvelope(t, "pint/ae/invoice-ae.json")
+	inv, ok := env.Extract().(*bill.Invoice)
+	require.True(t, ok)
+
+	f := peppolubl.FormatAE
+	assert.Equal(t, peppolubl.FormatAE.VESIDs.Invoice, f.VESID(inv))
+
+	inv.SetTags(tax.TagSelfBilled)
+	assert.Equal(t, peppolubl.SpecificationAESelfBilling.VESIDs.Invoice, f.VESID(inv))
+	s := f.SpecificationFor(inv)
+	require.NotNil(t, s)
+	assert.Equal(t, peppolubl.SpecificationAESelfBilling.CustomizationID, s.CustomizationID)
+	assert.Equal(t, peppolubl.SpecificationAESelfBilling.ProfileID, s.ProfileID)
+
+	inv.Type = bill.InvoiceTypeCreditNote
+	assert.Equal(t, peppolubl.SpecificationAESelfBilling.VESIDs.CreditNote, f.VESID(inv))
 }

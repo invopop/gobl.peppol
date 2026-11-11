@@ -1,0 +1,270 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "3d3a04621f2e455641b507c8336c65706d3d24518c819c97814eb3590eb387e2"
+		},
+		"from": "iso6523-actorid-upis::0235:1357902468",
+		"to": "iso6523-actorid-upis::0235:1345678901"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"series": "AE",
+		"code": "003",
+		"issue_date": "2025-01-30",
+		"currency": "AED",
+		"tax": {
+			"ext": {
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "135790246801003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "112345678900003"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1357902468"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0235",
+					"code": "1357902468"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Sheikh Zayed Road",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			]
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890123003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "112345679000001"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1345678901"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0235",
+					"code": "1345678901"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Corniche Road",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "100",
+				"item": {
+					"name": "Item Name",
+					"description": "Item Description",
+					"price": "10.00",
+					"unit": "one"
+				},
+				"sum": "1000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "1000.00"
+			},
+			{
+				"i": 2,
+				"quantity": "1",
+				"item": {
+					"name": "Financial service",
+					"description": "Margin-free financial service",
+					"price": "200.00",
+					"unit": "one"
+				},
+				"sum": "200.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"cef-vatex": "VATEX-EU-132-1I",
+							"untdid-tax-category": "E"
+						}
+					}
+				],
+				"total": "200.00"
+			},
+			{
+				"i": 3,
+				"quantity": "1",
+				"item": {
+					"name": "Residential rent",
+					"description": "Residential building lease",
+					"price": "300.00",
+					"unit": "one"
+				},
+				"sum": "300.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"cef-vatex": "VATEX-EU-135-1L",
+							"untdid-tax-category": "E"
+						}
+					}
+				],
+				"total": "300.00"
+			}
+		],
+		"discounts": [
+			{
+				"i": 1,
+				"reason": "Loyalty discount",
+				"amount": "20.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"cef-vatex": "VATEX-EU-132-1I",
+							"untdid-tax-category": "E"
+						}
+					}
+				]
+			}
+		],
+		"charges": [
+			{
+				"i": 1,
+				"reason": "Delivery",
+				"amount": "30.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				]
+			}
+		],
+		"payment": {
+			"terms": {
+				"key": "due-date",
+				"due_dates": [
+					{
+						"date": "2025-02-06",
+						"amount": "1561.50",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"name": "Emirates NBD"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "1500.00",
+			"discount": "20.00",
+			"charge": "30.00",
+			"total": "1510.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "1030.00",
+								"percent": "5%",
+								"amount": "51.50"
+							},
+							{
+								"key": "exempt",
+								"ext": {
+									"cef-vatex": "VATEX-EU-132-1I",
+									"untdid-tax-category": "E"
+								},
+								"base": "180.00",
+								"amount": "0.00"
+							},
+							{
+								"key": "exempt",
+								"ext": {
+									"cef-vatex": "VATEX-EU-135-1L",
+									"untdid-tax-category": "E"
+								},
+								"base": "300.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "51.50"
+					}
+				],
+				"sum": "51.50"
+			},
+			"tax": "51.50",
+			"total_with_tax": "1561.50",
+			"payable": "1561.50"
+		}
+	}
+}

@@ -26,6 +26,8 @@ const (
 	KeyPINT cbc.Key = "ubl+peppol+pint-v1"
 	// KeyAUNZ identifies the Peppol PINT A-NZ format.
 	KeyAUNZ cbc.Key = "ubl+peppol+pint+aunz-v1"
+	// KeyAE identifies the Peppol PINT AE format.
+	KeyAE cbc.Key = "ubl+peppol+pint+ae-v1"
 )
 
 var (
@@ -136,6 +138,43 @@ var SpecificationAUNZSelfBilling = goblubl.Specification{
 	Applies: isSelfBilled,
 }
 
+// FormatAE defines the Peppol PINT AE format, for UAE e-invoicing. Invoices
+// are written with PINT AE Billing, and self-billed invoices with PINT AE
+// Self-Billing. The exported document is adjusted to the AE rules by exportAE.
+var FormatAE = goblubl.Format{
+	Key:             KeyAE,
+	Name:            i18n.NewString("UBL Peppol PINT AE 1"),
+	Countries:       []l10n.Code{l10n.AE},
+	Import:          []schema.ID{invoiceSchema},
+	Export:          []schema.ID{invoiceSchema},
+	CustomizationID: "urn:peppol:pint:billing-1@ae-1",
+	ProfileID:       "urn:peppol:bis:billing",
+	Addons:          []cbc.Key{pint.V1},
+	VESIDs: goblubl.VESIDMapping{
+		Invoice:    "org.peppol.pint.ae:invoice:2026.5",
+		CreditNote: "org.peppol.pint.ae:creditnote:2026.5",
+	},
+	Specifications: []goblubl.Specification{
+		SpecificationAESelfBilling,
+	},
+	ExportFuncs: []goblubl.ExportFunc{exportAE},
+	ImportFuncs: []goblubl.ImportFunc{importPINT, importAE},
+	Match:       matchCustomization("urn:peppol:pint:billing-1@ae-1", "urn:peppol:pint:selfbilling-1@ae-1"),
+}
+
+// SpecificationAESelfBilling is Peppol PINT AE Self-Billing, used for
+// self-billed invoices.
+var SpecificationAESelfBilling = goblubl.Specification{
+	CustomizationID: "urn:peppol:pint:selfbilling-1@ae-1",
+	ProfileID:       "urn:peppol:bis:selfbilling",
+	Addons:          []cbc.Key{pint.V1},
+	VESIDs: goblubl.VESIDMapping{
+		Invoice:    "org.peppol.pint.ae:invoice-self-billing:2026.5",
+		CreditNote: "org.peppol.pint.ae:creditnote-self-billing:2026.5",
+	},
+	Applies: isSelfBilled,
+}
+
 // matchCustomization claims every document whose CustomizationID starts with
 // one of the given ones, the wildcard the Peppol SMP registrations are made
 // under.
@@ -159,5 +198,5 @@ func isSelfBilled(doc any) bool {
 func init() {
 	// gobl.ubl still registers its own ubl+peppol+bis-v3 format, so FormatBIS
 	// is only registered once gobl.ubl drops it.
-	goblubl.RegisterFormats(FormatPINT, FormatAUNZ)
+	goblubl.RegisterFormats(FormatPINT, FormatAUNZ, FormatAE)
 }

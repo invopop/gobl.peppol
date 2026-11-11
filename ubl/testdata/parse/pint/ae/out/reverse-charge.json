@@ -1,0 +1,221 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "90331caa41959e413927081cbad2cdcae40fc83a2d785c4cfba1d599cea7f6c8"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "AE-01RCTEST",
+		"issue_date": "2025-02-07",
+		"currency": "AED",
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"alias": "Supplier Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "127890654301003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "112345678900003"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1278906543"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "emailAddress"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact number"
+				}
+			]
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134780954301003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "112345679000001"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1347809543"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"locality": "Sharjah",
+					"region": "SHJ",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Emailaddress"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact Number"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "30",
+				"item": {
+					"name": "Item Name",
+					"identities": [
+						{
+							"code": "324243424",
+							"ext": {
+								"iso-scheme-id": "0160"
+							}
+						},
+						{
+							"label": "HS",
+							"code": "88098432324"
+						}
+					],
+					"description": "Item Description",
+					"list": "100",
+					"discount": "1",
+					"price": "99.00",
+					"unit": "kl",
+					"ext": {
+						"untdid-unit": "K6"
+					}
+				},
+				"sum": "2970.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "reverse-charge",
+						"ext": {
+							"untdid-tax-category": "AE"
+						}
+					}
+				],
+				"total": "2970.00"
+			}
+		],
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-02-21",
+						"amount": "2970.00",
+						"percent": "100%"
+					}
+				],
+				"notes": "Within 15 days"
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"detail": "Credit transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE0000000001",
+						"bic": "236000",
+						"name": "current account"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "2970.00",
+			"total": "2970.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "reverse-charge",
+								"ext": {
+									"untdid-tax-category": "AE"
+								},
+								"base": "2970.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "2970.00",
+			"payable": "2970.00"
+		},
+		"notes": [
+			{
+				"text": "Tax invoice"
+			}
+		],
+		"attachments": [
+			{
+				"code": "DC",
+				"url": "https://www.site.ae/deliverychallans.pdf"
+			}
+		]
+	}
+}

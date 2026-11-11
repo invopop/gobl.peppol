@@ -24,7 +24,9 @@ This module implements the Peppol billing models as a set of GOBL tax addons:
   beyond VAT (such as GST). Jurisdiction-specific rules are applied according
   to the document's tax regime: Australian (`AU`) and New Zealand (`NZ`)
   documents are also validated against the
-  [PINT A-NZ](https://docs.peppol.eu/poac/aunz/pint-aunz/bis/) rules.
+  [PINT A-NZ](https://docs.peppol.eu/poac/aunz/pint-aunz/bis/) rules, and UAE
+  (`AE`) documents against the
+  [PINT AE](https://docs.peppol.eu/poac/ae/pint-ae/) rules.
 
 A document must declare the addon that applies to it.
 
@@ -86,6 +88,7 @@ import, and the exported XML carries them back:
 | `FormatBIS` | `ubl+peppol+bis-v3` | `urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0` | `urn:fdc:peppol.eu:2017:poacc:billing:01:1.0` |
 | `FormatPINT` | `ubl+peppol+pint` | `urn:peppol:pint:billing-1` | `urn:peppol:bis:billing` |
 | `FormatAUNZ` | `ubl+peppol+pint+aunz` | `urn:peppol:pint:billing-1@aunz-1` | `urn:peppol:bis:billing` |
+| `FormatAE` | `ubl+peppol+pint+ae` | `urn:peppol:pint:billing-1@ae-1` | `urn:peppol:bis:billing` |
 
 `FormatBIS` writes self-billed invoices with `SpecificationBISSelfBilling`
 (Peppol BIS Self-Billing 3.0) and statuses (`bill.Status`) as Peppol Invoice
@@ -97,12 +100,19 @@ as Peppol BIS allows a single note.
 `FormatAUNZ` writes self-billed invoices (those tagged `self-billed`) with its
 `SpecificationAUNZSelfBilling` instead: `urn:peppol:pint:selfbilling-1@aunz-1`
 and `urn:peppol:bis:selfbilling`. Documents carrying either are imported with
-`FormatAUNZ`.
+`FormatAUNZ`. `FormatAE` does the same with `SpecificationAESelfBilling`
+(`urn:peppol:pint:selfbilling-1@ae-1`).
+
+`FormatAE` also adjusts the output to the PINT AE rules: it writes the
+invoice UUID, the price base quantity and gross price, the UAE TRN without
+its country prefix, the 5% rate on reverse charge lines and breakdowns, no
+rate on exempt ones, and one VAT breakdown per category. On import, it reads
+the out-of-scope type codes 480 and 81 back as the `outside-scope` tag.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,
 with `CreditNote-2::CreditNote` replacing `Invoice-2::Invoice` for credit notes.
-The A-NZ formats also claim the wildcard customizations the SMP registrations
+The A-NZ and AE formats also claim the wildcard customizations the SMP registrations
 are made under, and `FormatPINT` is the jurisdiction-neutral base: it takes any
 other `urn:peppol:pint:billing-1@…` specialization and validates it against the
 base PINT rule set.

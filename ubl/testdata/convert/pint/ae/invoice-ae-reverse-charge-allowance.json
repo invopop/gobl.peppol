@@ -1,0 +1,208 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "0a5fd01e4b6b1c604bb478bd2427cdd8ecfd3cc51be85d0deb439a6b11a9f070"
+		},
+		"from": "iso6523-actorid-upis::0235:1357902468",
+		"to": "iso6523-actorid-upis::0235:1345678901"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"series": "AE",
+		"code": "004",
+		"issue_date": "2025-01-30",
+		"currency": "AED",
+		"tax": {
+			"ext": {
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "135790246801003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "112345678900003"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1357902468"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0235",
+					"code": "1357902468"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Sheikh Zayed Road",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			]
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890123003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "112345679000001"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1345678901"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0235",
+					"code": "1345678901"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Corniche Road",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "100",
+				"item": {
+					"name": "Item Name",
+					"description": "Item Description",
+					"price": "10.00",
+					"unit": "one"
+				},
+				"sum": "1000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "reverse-charge",
+						"ext": {
+							"cef-vatex": "VATEX-EU-AE",
+							"untdid-tax-category": "AE"
+						}
+					}
+				],
+				"total": "1000.00"
+			}
+		],
+		"discounts": [
+			{
+				"i": 1,
+				"reason": "Volume discount",
+				"amount": "50.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "reverse-charge",
+						"ext": {
+							"cef-vatex": "VATEX-EU-AE",
+							"untdid-tax-category": "AE"
+						}
+					}
+				]
+			}
+		],
+		"charges": [
+			{
+				"i": 1,
+				"reason": "Handling",
+				"amount": "25.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "reverse-charge",
+						"ext": {
+							"cef-vatex": "VATEX-EU-AE",
+							"untdid-tax-category": "AE"
+						}
+					}
+				]
+			}
+		],
+		"payment": {
+			"terms": {
+				"key": "due-date",
+				"due_dates": [
+					{
+						"date": "2025-02-06",
+						"amount": "975.00",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"name": "Emirates NBD"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "1000.00",
+			"discount": "50.00",
+			"charge": "25.00",
+			"total": "975.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "reverse-charge",
+								"ext": {
+									"cef-vatex": "VATEX-EU-AE",
+									"untdid-tax-category": "AE"
+								},
+								"base": "975.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "975.00",
+			"payable": "975.00"
+		}
+	}
+}

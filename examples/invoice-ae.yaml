@@ -1,0 +1,70 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "AE"
+$addons:
+  - "peppol-pint-v1"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2"
+currency: "AED"
+issue_date: "2025-01-30"
+series: "AE"
+code: "001"
+
+supplier:
+  name: "Supplier Legal Name"
+  tax_id:
+    country: "AE"
+    code: "135790246801003"
+  identities:
+    - scope: "legal"
+      code: "112345678900003"
+  inboxes:
+    - key: "peppol"
+      scheme: "0235"
+      code: "1357902468"
+  addresses:
+    - street: "Sheikh Zayed Road"
+      locality: "Dubai"
+      region: "DXB"
+      country: "AE"
+
+customer:
+  name: "Buyer Legal Name"
+  tax_id:
+    country: "AE"
+    code: "134567890123003"
+  identities:
+    - scope: "legal"
+      code: "112345679000001"
+  inboxes:
+    - key: "peppol"
+      scheme: "0235"
+      code: "1345678901"
+  addresses:
+    - street: "Corniche Road"
+      locality: "Abu Dhabi"
+      region: "AUH"
+      country: "AE"
+
+lines:
+  - quantity: "100"
+    item:
+      name: "Item Name"
+      description: "Item Description"
+      price: "10.00"
+    taxes:
+      - cat: VAT
+        key: standard
+        percent: "5%"
+
+payment:
+  terms:
+    key: "due-date"
+    due_dates:
+      - date: "2025-02-06"
+        percent: "100%"
+  instructions:
+    key: "credit-transfer"
+    ext:
+      untdid-payment-means: "30"
+    credit_transfer:
+      - iban: "AE070331234567890123456"
+        name: "Emirates NBD"
