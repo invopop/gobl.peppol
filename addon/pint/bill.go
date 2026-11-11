@@ -88,8 +88,6 @@ func billInvoiceRules() *rules.Set {
 				is.Func("document type is invoice outside scope or credit note related to goods and services",
 					documentTypeIn(docTypeInvoiceOutsideScope, docTypeCreditNoteGoodsServices)),
 				rules.Field("customer",
-					// TODO: also check the identity type code (TL, EID, PAS or CD)
-					// once decision 6 is settled (task I).
 					rules.Assert("10", "customer legal identity is required on outside scope documents or credit notes related to goods and services (IBR-136-AE)",
 						is.Func("has legal identity", partyHasLegalIdentity),
 					),
