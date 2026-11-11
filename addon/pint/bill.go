@@ -300,6 +300,39 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
+			// IBR-158-AE only names 381, but IBR-055-AE's test fails 81 credit
+			// notes without a reason too, whether or not they have a preceding
+			// invoice, so both need one.
+			rules.When(
+				is.Func("document type is credit note or credit note related to goods and services",
+					documentTypeIn(docTypeCreditNote, docTypeCreditNoteGoodsServices)),
+				rules.Assert("45", "credit note reason is required (IBR-158-AE, IBR-055-AE)",
+					is.Func("has credit note reason", invoiceHasExt(ExtKeyCreditNoteReason)),
+				),
+				rules.When(
+					is.Func("credit note reason is not volume discount", creditNoteReasonIsNotVolumeDiscount),
+					rules.Field("preceding",
+						rules.Assert("46", "preceding invoice is required on credit notes, except for volume discounts (IBR-055-AE)",
+							is.Present,
+						),
+					),
+				),
+				rules.When(
+					is.Func("credit note reason is volume discount", creditNoteReasonIs(CreditNoteReasonVolumeDiscount)),
+					rules.Field("preceding",
+						rules.Assert("47", "preceding invoice must not be there on volume discount credit notes (IBR-055-AE)",
+							is.Not(is.Present),
+						),
+					),
+				),
+			),
+			rules.Field("tax",
+				rules.Field("ext",
+					rules.Assert("48", "credit note reason must be from the Reasons for credit note code list (IBR-001-AE)",
+						tax.ExtensionHasValidCode(ExtKeyCreditNoteReason),
+					),
+				),
+			),
 		),
 	)
 }
@@ -811,6 +844,28 @@ func partyHasIdentificationOrTaxRegistration(val any) bool {
 		}
 	}
 	return false
+}
+
+// creditNoteReasonIsNotVolumeDiscount reports whether the invoice has a
+// credit note reason other than volume discount, the reasons that need a
+// preceding invoice (IBR-055-AE). Invoices without a reason fail, as rule 45
+// reports them.
+func creditNoteReasonIsNotVolumeDiscount(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	if !ok || inv == nil {
+		return false
+	}
+	reason := inv.Tax.GetExt(ExtKeyCreditNoteReason)
+	return reason != "" && reason != CreditNoteReasonVolumeDiscount
+}
+
+// creditNoteReasonIs returns a predicate that reports whether the invoice's
+// credit note reason is the given code.
+func creditNoteReasonIs(code cbc.Code) func(any) bool {
+	return func(val any) bool {
+		inv, ok := val.(*bill.Invoice)
+		return ok && inv != nil && inv.Tax.GetExt(ExtKeyCreditNoteReason) == code
+	}
 }
 
 // taxesHaveVAT reports whether a line's taxes include a VAT combo (IBR-145-AE).

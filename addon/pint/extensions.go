@@ -16,7 +16,13 @@ const (
 	// ExtKeyPrincipalID is the ID of the principal a disclosed agent bills for
 	// (BTAE-14).
 	ExtKeyPrincipalID cbc.Key = "peppol-pint-ae-principal-id"
+	// ExtKeyCreditNoteReason is the reason for a PINT AE credit note (BTAE-03).
+	ExtKeyCreditNoteReason cbc.Key = "peppol-pint-ae-credit-note-reason"
 )
+
+// CreditNoteReasonVolumeDiscount is the credit note reason for a volume
+// discount, the only one that needs no preceding invoice (IBR-055-AE).
+const CreditNoteReasonVolumeDiscount cbc.Code = "VD"
 
 // extensions are the extensions the PINT addon defines. They are only used
 // on UAE documents.
@@ -70,6 +76,46 @@ var extensions = []*cbc.Definition{
 				(BTAE-14), required with the "disclosed-agent" transaction type
 				(IBR-137-AE). It must differ from the supplier's tax ID (IBR-176-AE).
 			`),
+		},
+	},
+	{
+		Key: ExtKeyCreditNoteReason,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Credit Note Reason",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Reason for a PINT AE credit note (BTAE-03), from the Reasons for credit
+				note code list. Required on credit notes (IBR-158-AE). Volume discounts
+				("VD") have no preceding invoice; every other reason needs one
+				(IBR-055-AE).
+			`),
+		},
+		Values: []*cbc.Definition{
+			{
+				Code: "DL8.61.1.A",
+				Name: i18n.String{i18n.EN: "If the supply was cancelled."},
+			},
+			{
+				Code: "DL8.61.1.B",
+				Name: i18n.String{i18n.EN: "If the tax treatment of the supply has changed due to a change in the nature of the supply."},
+			},
+			{
+				Code: "DL8.61.1.C",
+				Name: i18n.String{i18n.EN: "If the previously agreed consideration for the supply was altered for any reason (i.e. bad debt relief)."},
+			},
+			{
+				Code: "DL8.61.1.D",
+				Name: i18n.String{i18n.EN: "If the recipient of goods or recipient of services returned them to the registrant in full or in part and the Consideration was returned in full or in part."},
+			},
+			{
+				Code: "DL8.61.1.E",
+				Name: i18n.String{i18n.EN: "If the tax was charged or tax treatment was applied in error."},
+			},
+			{
+				Code: CreditNoteReasonVolumeDiscount,
+				Name: i18n.String{i18n.EN: "Volume Discount."},
+			},
 		},
 	},
 }

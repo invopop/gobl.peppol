@@ -114,11 +114,12 @@ regime's identity keys and `passport`), with the trade licence authority
 (the identity's description) or the passport's issuing country, and the
 seller's TIN goes under the `TIN` tax scheme. It also writes the transaction
 type as `cbc:ProfileExecutionID`, with the free trade zone beneficiary and
-the disclosed agent's principal as the buyer and seller parties. On import, it reads
+the disclosed agent's principal as the buyer and seller parties, and the
+credit note reason as `cac:DiscrepancyResponse`. On import, it reads
 the out-of-scope type codes 480 and 81 back as the `outside-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as
-identity keys and fields, and the transaction type back as its extension and
-tags.
+identity keys and fields, the transaction type back as its extension and
+tags, and the credit note reason back as its extension.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,

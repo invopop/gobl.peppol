@@ -239,6 +239,7 @@ func aeDocument(typ cbc.Key, tags ...cbc.Key) *bill.Invoice {
 	}
 	if typ == bill.InvoiceTypeCreditNote {
 		inv.Preceding = []*org.DocumentRef{{Code: "INV-001"}}
+		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyCreditNoteReason: "DL8.61.1.E"})}
 	}
 	due := cal.MakeDate(2026, 12, 10)
 	inv.Payment = &bill.PaymentDetails{
@@ -880,6 +881,70 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 		inv.Customer.TaxID = nil
 		inv.Customer.Endpoints = uaeEndpoints("1345678901")
 		assert.NotContains(t, aeFaults(t, inv), faultCustomerIdentifier)
+	})
+}
+
+func TestBillCreditNoteReasonRulesAE(t *testing.T) {
+	const (
+		faultReasonRequired   = "GOBL-PEPPOL-PINT-BILL-INVOICE-45"
+		faultPrecedingMissing = "GOBL-PEPPOL-PINT-BILL-INVOICE-46"
+		faultPrecedingVD      = "GOBL-PEPPOL-PINT-BILL-INVOICE-47"
+		faultReasonCode       = "GOBL-PEPPOL-PINT-BILL-INVOICE-48"
+	)
+	withReason := func(inv *bill.Invoice, code cbc.Code) *bill.Invoice {
+		if inv.Tax == nil {
+			inv.Tax = new(bill.Tax)
+		}
+		inv.Tax.Ext = inv.Tax.Ext.Set(pint.ExtKeyCreditNoteReason, code)
+		return inv
+	}
+
+	t.Run("credit note needs a reason (IBR-158-AE)", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeCreditNote)
+		inv.Tax.Ext = inv.Tax.Ext.Delete(pint.ExtKeyCreditNoteReason)
+		out := aeFaults(t, inv)
+		assert.Contains(t, out, faultReasonRequired)
+		assert.NotContains(t, out, faultPrecedingMissing)
+		assert.NotContains(t, out, faultPrecedingVD)
+	})
+
+	t.Run("credit note related to goods and services needs a reason (IBR-055-AE)", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeCreditNote, pint.TagOutsideScope)
+		inv.Tax.Ext = inv.Tax.Ext.Delete(pint.ExtKeyCreditNoteReason)
+		assert.Contains(t, aeFaults(t, inv), faultReasonRequired)
+	})
+
+	t.Run("invoices and self-billed credit notes need no reason", func(t *testing.T) {
+		assert.NotContains(t, aeFaults(t, aeDocument(bill.InvoiceTypeStandard)), faultReasonRequired)
+		inv := aeDocument(bill.InvoiceTypeCreditNote, tax.TagSelfBilled)
+		inv.Tax.Ext = inv.Tax.Ext.Delete(pint.ExtKeyCreditNoteReason)
+		assert.NotContains(t, aeFaults(t, inv), faultReasonRequired)
+	})
+
+	t.Run("credit note needs a preceding invoice, except for volume discounts (IBR-055-AE)", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeCreditNote)
+		inv.Preceding = nil
+		assert.Contains(t, aeFaults(t, inv), faultPrecedingMissing)
+
+		inv = withReason(aeDocument(bill.InvoiceTypeCreditNote), pint.CreditNoteReasonVolumeDiscount)
+		inv.Preceding = nil
+		assert.Empty(t, aeFaults(t, inv))
+	})
+
+	t.Run("volume discount credit note has no preceding invoice (IBR-055-AE)", func(t *testing.T) {
+		inv := withReason(aeDocument(bill.InvoiceTypeCreditNote), pint.CreditNoteReasonVolumeDiscount)
+		out := aeFaults(t, inv)
+		assert.Contains(t, out, faultPrecedingVD)
+		assert.NotContains(t, out, faultPrecedingMissing)
+	})
+
+	t.Run("reason must be from the code list (IBR-001-AE)", func(t *testing.T) {
+		for _, code := range []cbc.Code{"DL8.61.1.A", "DL8.61.1.B", "DL8.61.1.C", "DL8.61.1.D", "DL8.61.1.E"} {
+			inv := withReason(aeDocument(bill.InvoiceTypeCreditNote), code)
+			assert.Empty(t, aeFaults(t, inv), code)
+		}
+		inv := withReason(aeDocument(bill.InvoiceTypeCreditNote), "DL8.61.1.F")
+		assert.Contains(t, aeFaults(t, inv), faultReasonCode)
 	})
 }
 

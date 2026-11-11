@@ -445,6 +445,46 @@ func TestImportAETransactionType(t *testing.T) {
 	})
 }
 
+func TestAECreditNoteReason(t *testing.T) {
+	invoice := func(reason cbc.Code) *bill.Invoice {
+		return &bill.Invoice{Tax: &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyCreditNoteReason: reason})}}
+	}
+	creditNote := func() *goblubl.Invoice {
+		return &goblubl.Invoice{CreditNoteTypeCode: &goblubl.IDType{Value: "381"}}
+	}
+
+	t.Run("writes the reason on credit notes", func(t *testing.T) {
+		out := creditNote()
+		exportAECreditNoteReason(out, invoice("VD"))
+		require.Len(t, out.DiscrepancyResponse, 1)
+		assert.Equal(t, "VD", out.DiscrepancyResponse[0].ResponseCode.Value)
+	})
+
+	t.Run("never on invoices, which UBL doesn't allow it on", func(t *testing.T) {
+		out := &goblubl.Invoice{InvoiceTypeCode: &goblubl.IDType{Value: "380"}}
+		exportAECreditNoteReason(out, invoice("VD"))
+		assert.Empty(t, out.DiscrepancyResponse)
+	})
+
+	t.Run("nothing without a reason", func(t *testing.T) {
+		out := creditNote()
+		exportAECreditNoteReason(out, new(bill.Invoice))
+		assert.Empty(t, out.DiscrepancyResponse)
+	})
+
+	t.Run("reads the first reason back", func(t *testing.T) {
+		in := creditNote()
+		in.DiscrepancyResponse = []goblubl.Response{
+			{},
+			{ResponseCode: &goblubl.IDType{Value: " VD "}},
+			{ResponseCode: &goblubl.IDType{Value: "DL8.61.1.E"}},
+		}
+		inv := new(bill.Invoice)
+		importAECreditNoteReason(in, inv)
+		assert.Equal(t, cbc.Code("VD"), inv.Tax.GetExt(pint.ExtKeyCreditNoteReason))
+	})
+}
+
 func TestExportAELineAmounts(t *testing.T) {
 	line := func(category string) *goblubl.InvoiceLine {
 		return &goblubl.InvoiceLine{Item: &goblubl.Item{

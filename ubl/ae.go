@@ -47,6 +47,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	}
 	exportAEUUID(out, inv)
 	exportAETransactionType(out, inv)
+	exportAECreditNoteReason(out, inv)
 	exportAELines(out.InvoiceLines, inv)
 	exportAELines(out.CreditNoteLines, inv)
 	for _, p := range goblubl.InvoiceParties(inv, out) {
@@ -70,6 +71,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	}
 	importAEOutsideScope(in, inv)
 	importAETransactionType(in, inv)
+	importAECreditNoteReason(in, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
 	return nil
@@ -172,6 +174,31 @@ func setAEExt(inv *bill.Invoice, key cbc.Key, code cbc.Code) {
 		inv.Tax = new(bill.Tax)
 	}
 	inv.Tax.Ext = inv.Tax.Ext.Set(key, code)
+}
+
+// exportAECreditNoteReason writes the credit note reason as
+// cac:DiscrepancyResponse/cbc:ResponseCode (BTAE-03). UBL 2.1 only allows it
+// on credit notes.
+func exportAECreditNoteReason(out *goblubl.Invoice, inv *bill.Invoice) {
+	reason := inv.Tax.GetExt(pint.ExtKeyCreditNoteReason)
+	if reason == "" || out.CreditNoteTypeCode == nil {
+		return
+	}
+	out.DiscrepancyResponse = []goblubl.Response{
+		{ResponseCode: &goblubl.IDType{Value: reason.String()}},
+	}
+}
+
+// importAECreditNoteReason reads the first credit note reason back. PINT AE
+// examples can repeat the element, as the volume discount one does with VD
+// then DL8.61.1.E; GOBL keeps one reason, the first.
+func importAECreditNoteReason(in *goblubl.Invoice, inv *bill.Invoice) {
+	for _, r := range in.DiscrepancyResponse {
+		if r.ResponseCode != nil && strings.TrimSpace(r.ResponseCode.Value) != "" {
+			setAEExt(inv, pint.ExtKeyCreditNoteReason, cbc.Code(strings.TrimSpace(r.ResponseCode.Value)))
+			return
+		}
+	}
 }
 
 // exportAELines completes the UBL lines, which gobl.ubl writes in the same
