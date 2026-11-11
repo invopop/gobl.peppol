@@ -46,6 +46,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 		return nil
 	}
 	exportAEUUID(out, inv)
+	exportAETransactionType(out, inv)
 	exportAELines(out.InvoiceLines, inv)
 	exportAELines(out.CreditNoteLines, inv)
 	for _, p := range goblubl.InvoiceParties(inv, out) {
@@ -68,6 +69,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 		return nil
 	}
 	importAEOutsideScope(in, inv)
+	importAETransactionType(in, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
 	return nil
@@ -104,6 +106,72 @@ func exportAEUUID(out *goblubl.Invoice, inv *bill.Invoice) {
 	if !inv.UUID.IsZero() {
 		out.UUID = inv.UUID.String()
 	}
+}
+
+// exportAETransactionType writes the transaction type as
+// cbc:ProfileExecutionID (BTAE-02), and the beneficiary (BTAE-01) and
+// principal (BTAE-14) IDs as the only identification of the buyer and seller
+// parties, as the PINT AE examples do.
+func exportAETransactionType(out *goblubl.Invoice, inv *bill.Invoice) {
+	out.ProfileExecutionID = inv.Tax.GetExt(pint.ExtKeyTransactionType).String()
+	if id := inv.Tax.GetExt(pint.ExtKeyBeneficiaryID); id != "" {
+		out.BuyerCustomerParty = &goblubl.CustomerParty{Party: identifiedParty(id)}
+	}
+	if id := inv.Tax.GetExt(pint.ExtKeyPrincipalID); id != "" {
+		out.SellerSupplierParty = &goblubl.SupplierParty{Party: identifiedParty(id)}
+	}
+}
+
+// identifiedParty returns a party with only a cac:PartyIdentification.
+func identifiedParty(id cbc.Code) *goblubl.Party {
+	return &goblubl.Party{PartyIdentification: []goblubl.Identification{
+		{ID: &goblubl.IDType{Value: id.String()}},
+	}}
+}
+
+// importAETransactionType reads back what exportAETransactionType writes. The
+// transaction type also sets its flags' tags, so the invoice reads the same
+// way a user would write it.
+func importAETransactionType(in *goblubl.Invoice, inv *bill.Invoice) {
+	code := cbc.Code(strings.TrimSpace(in.ProfileExecutionID))
+	if code != "" {
+		setAEExt(inv, pint.ExtKeyTransactionType, code)
+		for _, tag := range pint.ParseTransactionType(code).Tags() {
+			if !inv.HasTags(tag) {
+				inv.Tags.List = append(inv.Tags.List, tag)
+			}
+		}
+	}
+	if in.BuyerCustomerParty != nil {
+		setAEExt(inv, pint.ExtKeyBeneficiaryID, partyIdentificationID(in.BuyerCustomerParty.Party))
+	}
+	if in.SellerSupplierParty != nil {
+		setAEExt(inv, pint.ExtKeyPrincipalID, partyIdentificationID(in.SellerSupplierParty.Party))
+	}
+}
+
+// partyIdentificationID returns the party's first cac:PartyIdentification ID.
+func partyIdentificationID(p *goblubl.Party) cbc.Code {
+	if p == nil {
+		return ""
+	}
+	for _, pi := range p.PartyIdentification {
+		if pi.ID != nil && strings.TrimSpace(pi.ID.Value) != "" {
+			return cbc.Code(strings.TrimSpace(pi.ID.Value))
+		}
+	}
+	return ""
+}
+
+// setAEExt sets a tax extension on the invoice, when the value isn't empty.
+func setAEExt(inv *bill.Invoice, key cbc.Key, code cbc.Code) {
+	if code == "" {
+		return
+	}
+	if inv.Tax == nil {
+		inv.Tax = new(bill.Tax)
+	}
+	inv.Tax.Ext = inv.Tax.Ext.Set(key, code)
 }
 
 // exportAELines completes the UBL lines, which gobl.ubl writes in the same

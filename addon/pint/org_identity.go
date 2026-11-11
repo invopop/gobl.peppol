@@ -1,10 +1,18 @@
 package pint
 
 import (
+	"regexp"
+
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/ae"
 )
+
+// tinRegexp matches a UAE TIN as PINT AE expects it: 10 digits starting with
+// 1 (IBR-148-AE). The AE regime only checks the 10 digits; the leading 1 is
+// PINT AE's. UAE Peppol endpoints (0235) are TINs too, so it also tells
+// whether an endpoint is one (IBR-135-AE).
+var tinRegexp = regexp.MustCompile(`^1\d{9}$`)
 
 // PINT AE legal registration identifier types, written as @schemeAgencyID on
 // the seller and buyer cbc:CompanyID (BTAE-15, BTAE-16). The Ministry of

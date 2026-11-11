@@ -384,6 +384,67 @@ func TestImportAEOutsideScope(t *testing.T) {
 	})
 }
 
+func TestExportAETransactionType(t *testing.T) {
+	invoice := func(ext cbc.CodeMap) *bill.Invoice {
+		return &bill.Invoice{Tax: &bill.Tax{Ext: tax.ExtensionsOf(ext)}}
+	}
+
+	t.Run("writes the code and the beneficiary and principal IDs", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAETransactionType(out, invoice(cbc.CodeMap{
+			pint.ExtKeyTransactionType: "10000100",
+			pint.ExtKeyBeneficiaryID:   "189098765401003",
+			pint.ExtKeyPrincipalID:     "155667745601003",
+		}))
+		assert.Equal(t, "10000100", out.ProfileExecutionID)
+		assert.Equal(t, "189098765401003", out.BuyerCustomerParty.Party.PartyIdentification[0].ID.Value)
+		assert.Equal(t, "155667745601003", out.SellerSupplierParty.Party.PartyIdentification[0].ID.Value)
+	})
+
+	t.Run("writes no parties without IDs", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAETransactionType(out, invoice(cbc.CodeMap{pint.ExtKeyTransactionType: "00000000"}))
+		assert.Equal(t, "00000000", out.ProfileExecutionID)
+		assert.Nil(t, out.BuyerCustomerParty)
+		assert.Nil(t, out.SellerSupplierParty)
+	})
+
+	t.Run("invoices without tax details are skipped", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAETransactionType(out, new(bill.Invoice))
+		assert.Empty(t, out.ProfileExecutionID)
+	})
+}
+
+func TestImportAETransactionType(t *testing.T) {
+	t.Run("reads the code as extension and tags, with the IDs", func(t *testing.T) {
+		in := &goblubl.Invoice{
+			ProfileExecutionID:  " 10000101 ",
+			BuyerCustomerParty:  &goblubl.CustomerParty{Party: identifiedParty("189098765401003")},
+			SellerSupplierParty: &goblubl.SupplierParty{Party: identifiedParty("155667745601003")},
+		}
+		inv := new(bill.Invoice)
+		importAETransactionType(in, inv)
+		assert.Equal(t, cbc.Code("10000101"), inv.Tax.GetExt(pint.ExtKeyTransactionType))
+		assert.Equal(t, cbc.Code("189098765401003"), inv.Tax.GetExt(pint.ExtKeyBeneficiaryID))
+		assert.Equal(t, cbc.Code("155667745601003"), inv.Tax.GetExt(pint.ExtKeyPrincipalID))
+		assert.Equal(t, []cbc.Key{pint.TagFreeTradeZone, pint.TagDisclosedAgent, tax.TagExport}, inv.Tags.List)
+	})
+
+	t.Run("existing tags are not repeated", func(t *testing.T) {
+		inv := &bill.Invoice{Tags: tax.WithTags(tax.TagExport)}
+		importAETransactionType(&goblubl.Invoice{ProfileExecutionID: "00000001"}, inv)
+		assert.Equal(t, []cbc.Key{tax.TagExport}, inv.Tags.List)
+	})
+
+	t.Run("nothing to read leaves the invoice alone", func(t *testing.T) {
+		inv := new(bill.Invoice)
+		importAETransactionType(&goblubl.Invoice{BuyerCustomerParty: &goblubl.CustomerParty{}}, inv)
+		assert.Nil(t, inv.Tax)
+		assert.Empty(t, inv.Tags.List)
+	})
+}
+
 func TestExportAELineAmounts(t *testing.T) {
 	line := func(category string) *goblubl.InvoiceLine {
 		return &goblubl.InvoiceLine{Item: &goblubl.Item{

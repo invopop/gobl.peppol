@@ -67,11 +67,12 @@ func billInvoiceRules() *rules.Set {
 					),
 				)),
 			),
-			// TODO: IBR-191-AE also exempts deemed supplies (transaction type
-			// BTAE-02 X1XXXXXX). Add the exception with the BTAE extensions (task J).
 			rules.When(
-				is.Not(is.Func("credit note", invoiceIsCreditNote)),
-				rules.Assert("07", "payment instructions required, except on credit notes (IBR-191-AE)",
+				is.Not(is.Or(
+					is.Func("credit note", invoiceIsCreditNote),
+					is.Func("deemed supply", invoiceIsDeemedSupply),
+				)),
+				rules.Assert("07", "payment instructions required, except on credit notes and deemed supplies (IBR-191-AE)",
 					is.Func("has payment instructions", invoiceHasPaymentInstructions),
 				),
 			),
@@ -141,19 +142,18 @@ func billInvoiceRules() *rules.Set {
 			rules.Assert("16", "VAT point date must be before the invoice issue date (IBR-141-AE)",
 				is.Func("VAT point date before issue date", pointDateBeforeIssueDate),
 			),
-			// TODO: IBR-127-AE also exempts deemed supplies: invoices whose
-			// transaction type (BTAE-02, written as cbc:ProfileExecutionID) matches
-			// X1XXXXXX, a 1 in the second of its 8 flags. GOBL has no field for
-			// BTAE-02 yet, so add the exception with the BTAE extensions (task J).
 			// Self-billed credit notes (261) are exempt too. The rule text only
 			// names 381 and 81, but the Schematron test also exempts 261, and we
 			// follow the test.
 			rules.When(
-				is.Not(is.Func("document type is 381, 81 or 261",
-					documentTypeIn(docTypeCreditNote, docTypeCreditNoteGoodsServices, docTypeSelfBilledCreditNote))),
+				is.Not(is.Or(
+					is.Func("document type is 381, 81 or 261",
+						documentTypeIn(docTypeCreditNote, docTypeCreditNoteGoodsServices, docTypeSelfBilledCreditNote)),
+					is.Func("deemed supply", invoiceIsDeemedSupply),
+				)),
 				rules.When(
 					is.Func("amount is due", invoiceIsDue),
-					rules.Assert("17", "payment due date is required when an amount is due (IBR-127-AE)",
+					rules.Assert("17", "payment due date is required when an amount is due, except on credit notes and deemed supplies (IBR-127-AE)",
 						is.Func("has due date", invoiceHasDueDate),
 					),
 				),
@@ -205,7 +205,7 @@ func billInvoiceRules() *rules.Set {
 						is.Func("tax scope", identityHasTaxScope),
 						rules.Field("code",
 							rules.Assert("28", "supplier tax scope identity must be a TIN of 10 digits starting with 1 (IBR-148-AE)",
-								is.Matches(`^1\d{9}$`),
+								is.MatchesRegexp(tinRegexp),
 							),
 						),
 					),
@@ -240,6 +240,65 @@ func billInvoiceRules() *rules.Set {
 			),
 			rules.Assert("34", "customer tax scope identities require a supplier TIN (IBR-133-AE)",
 				is.Func("customer tax scope identities with supplier TIN", customerTaxIdentitiesHaveSupplierTIN),
+			),
+			rules.Assert("35", "transaction type is required, as 8 flags of 0 or 1 (IBR-154-AE)",
+				is.Func("has a valid transaction type", invoiceHasTransactionType),
+			),
+			rules.When(
+				is.Func("free trade zone", invoiceIsFreeTradeZone),
+				rules.Assert("36", "beneficiary ID is required on free trade zone supplies (IBR-007-AE)",
+					is.Func("has beneficiary ID", invoiceHasExt(ExtKeyBeneficiaryID)),
+				),
+			),
+			rules.When(
+				is.Func("summary invoice", invoiceIsSummary),
+				rules.Assert("37", "ordering period is required on summary invoices (IBR-138-AE)",
+					is.Func("has ordering period", invoiceHasOrderingPeriod),
+				),
+			),
+			rules.When(
+				is.Func("disclosed agent billing", invoiceIsDisclosedAgent),
+				rules.Assert("38", "principal ID is required on disclosed agent billing (IBR-137-AE)",
+					is.Func("has principal ID", invoiceHasExt(ExtKeyPrincipalID)),
+				),
+				rules.Assert("39", "principal ID must differ from the supplier tax ID on disclosed agent billing (IBR-176-AE)",
+					is.Func("principal ID is not the supplier tax ID", principalIsNotSupplier),
+				),
+				rules.Field("supplier",
+					rules.Assert("40", "supplier tax registration is required on disclosed agent billing (IBR-177-AE)",
+						is.Func("has tax registration", partyHasTaxRegistration),
+					),
+				),
+			),
+			rules.When(
+				is.Func("e-commerce supply", invoiceIsECommerce),
+				rules.Assert("41", "delivery address must have a street, city and region on e-commerce supplies (IBR-142-AE)",
+					is.Func("delivery address is complete", invoiceDeliveryAddressIsComplete),
+				),
+			),
+			rules.When(
+				is.Func("export", invoiceIsExport),
+				rules.Assert("42", "delivery address outside the UAE must have a street, city and region on exports (IBR-152-AE)",
+					is.Func("delivery address is in the UAE or complete", invoiceDeliveryAddressIsAEOrComplete),
+				),
+			),
+			rules.When(
+				is.Func("document type is invoice outside scope or credit note related to goods and services",
+					documentTypeIn(docTypeInvoiceOutsideScope, docTypeCreditNoteGoodsServices)),
+				rules.Assert("43", "transaction type cannot be summary, deemed supply or margin scheme on outside scope documents or credit notes related to goods and services (IBR-157-AE)",
+					is.Not(is.Func("summary, deemed supply or margin scheme", invoiceIsSummaryDeemedOrMargin)),
+				),
+			),
+			rules.When(
+				is.Not(is.Func("export", invoiceIsExport)),
+				rules.Field("customer",
+					rules.When(
+						is.Func("has UAE Peppol endpoint that is not a TIN", partyHasUAEEndpointNotTIN),
+						rules.Assert("44", "customer identity or tax registration is required with a UAE Peppol endpoint that is not a TIN, except on exports (IBR-135-AE)",
+							is.Func("has identifier or tax registration", partyHasIdentificationOrTaxRegistration),
+						),
+					),
+				),
 			),
 		),
 	)
@@ -630,6 +689,128 @@ func customerTaxIdentitiesHaveSupplierTIN(val any) bool {
 		return true
 	}
 	return inv.Supplier != nil && partyTaxIdentityCount(inv.Supplier) > 0
+}
+
+// invoiceHasTransactionType reports whether the invoice has a transaction
+// type of 8 flags of 0 or 1, written as cbc:ProfileExecutionID (IBR-154-AE).
+// GOBL doesn't check an extension's pattern on its own.
+func invoiceHasTransactionType(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	return ok && inv != nil && transactionTypeRegexp.MatchString(inv.Tax.GetExt(ExtKeyTransactionType).String())
+}
+
+// invoiceHasExt returns a predicate that reports whether the invoice's tax
+// extensions have a value for the key.
+func invoiceHasExt(key cbc.Key) func(any) bool {
+	return func(val any) bool {
+		inv, ok := val.(*bill.Invoice)
+		return ok && inv != nil && inv.Tax.GetExt(key) != ""
+	}
+}
+
+// invoiceHasOrderingPeriod reports whether the invoice has an ordering
+// period, which gobl.ubl writes as cac:InvoicePeriod (IBR-138-AE).
+func invoiceHasOrderingPeriod(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	return ok && inv != nil && inv.Ordering != nil && inv.Ordering.Period != nil
+}
+
+// principalIsNotSupplier reports whether the principal ID differs from the
+// supplier's tax registrations, the cbc:CompanyID values of its
+// PartyTaxSchemes (IBR-176-AE). A missing principal ID or supplier tax
+// registration passes, as rules 38 and 40 report those.
+func principalIsNotSupplier(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	if !ok || inv == nil {
+		return false
+	}
+	principal := inv.Tax.GetExt(ExtKeyPrincipalID)
+	if principal == "" || inv.Supplier == nil {
+		return true
+	}
+	var codes []cbc.Code
+	if inv.Supplier.TaxID != nil && inv.Supplier.TaxID.Code != "" {
+		codes = append(codes, inv.Supplier.TaxID.Code)
+	}
+	for _, id := range inv.Supplier.Identities {
+		if identityHasTaxScope(id) {
+			codes = append(codes, id.Code)
+		}
+	}
+	if len(codes) == 0 {
+		return true
+	}
+	for _, c := range codes {
+		if c != principal {
+			return true
+		}
+	}
+	return false
+}
+
+// invoiceDeliveryAddress returns the first address of the delivery receiver,
+// which gobl.ubl writes as cac:DeliveryLocation/cac:Address, or nil.
+func invoiceDeliveryAddress(inv *bill.Invoice) *org.Address {
+	if inv == nil || inv.Delivery == nil || inv.Delivery.Receiver == nil {
+		return nil
+	}
+	return partyFirstAddress(inv.Delivery.Receiver)
+}
+
+// invoiceDeliveryAddressIsComplete reports whether the invoice has a delivery
+// address with a street, city and region (IBR-142-AE).
+func invoiceDeliveryAddressIsComplete(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	if !ok {
+		return false
+	}
+	a := invoiceDeliveryAddress(inv)
+	return a != nil && a.Street != "" && a.Locality != "" && a.Region != ""
+}
+
+// invoiceDeliveryAddressIsAEOrComplete reports whether the invoice has a
+// delivery address in the UAE, or one with a street, city and region
+// (IBR-152-AE).
+func invoiceDeliveryAddressIsAEOrComplete(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	if !ok {
+		return false
+	}
+	a := invoiceDeliveryAddress(inv)
+	return a != nil && (a.Country == l10n.AE.ISO() || (a.Street != "" && a.Locality != "" && a.Region != ""))
+}
+
+// partyHasUAEEndpointNotTIN reports whether the party's electronic address
+// uses the UAE Peppol scheme 0235 with a code that is not a TIN, 1XXXXXXXXX
+// (IBR-135-AE).
+func partyHasUAEEndpointNotTIN(val any) bool {
+	p, ok := val.(*org.Party)
+	if !ok || p == nil {
+		return false
+	}
+	scheme, code := partyEndpointID(p)
+	return scheme == endpointSchemeUAE && !tinRegexp.MatchString(code)
+}
+
+// partyHasIdentificationOrTaxRegistration reports whether the party has an
+// identity gobl.ubl writes as cac:PartyIdentification (any identity that is
+// neither a tax registration nor the first legal one) or a tax registration
+// (IBR-135-AE).
+func partyHasIdentificationOrTaxRegistration(val any) bool {
+	if partyHasTaxRegistration(val) {
+		return true
+	}
+	p, ok := val.(*org.Party)
+	if !ok || p == nil {
+		return false
+	}
+	legal := partyFirstLegalIdentity(p)
+	for _, id := range p.Identities {
+		if id != nil && id != legal && id.Scope != org.IdentityScopeTax {
+			return true
+		}
+	}
+	return false
 }
 
 // taxesHaveVAT reports whether a line's taxes include a VAT combo (IBR-145-AE).

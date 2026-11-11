@@ -32,7 +32,7 @@ const (
 // invoiceTags are the document tags the PINT addon adds to invoices.
 var invoiceTags = &tax.TagSet{
 	Schema: bill.ShortSchemaInvoice,
-	List: []*cbc.Definition{
+	List: append([]*cbc.Definition{
 		{
 			Key: TagOutsideScope,
 			Name: i18n.String{
@@ -42,7 +42,7 @@ var invoiceTags = &tax.TagSet{
 				i18n.EN: "Marks a PINT AE document as out of scope of VAT, the UAE 'commercial invoice'. Invoices are sent with document type 480 and credit notes with 81. Has no effect outside the UAE.",
 			},
 		},
-	},
+	}, transactionTypeTags...),
 }
 
 // invoiceScenarios set the UNTDID 1001 document type for PINT AE's

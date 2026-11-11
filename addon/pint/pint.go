@@ -51,6 +51,10 @@ func init() {
 	norm.RegisterWithGuard(
 		is.InContext(tax.AddonIn(V1)),
 		norm.For(normalizeTaxCombo),
+		norm.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			norm.For(normalizeTransactionType),
+		),
 	)
 }
 
@@ -83,6 +87,10 @@ func newV1Addon() *tax.AddonDef {
 
 				UAE trade licences carry their issuing authority in the description,
 				and passports their issuing country.
+
+				UAE invoices get the PINT AE transaction type from their tags:
+				"free-trade-zone", "deemed-supply", "margin-scheme", "summary",
+				"continuous-supply", "disclosed-agent", "e-commerce" and "export".
 			`),
 		},
 		Sources: []*cbc.Source{
@@ -103,6 +111,7 @@ func newV1Addon() *tax.AddonDef {
 				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
 			},
 		},
+		Extensions: extensions,
 		Tags: []*tax.TagSet{
 			invoiceTags,
 		},

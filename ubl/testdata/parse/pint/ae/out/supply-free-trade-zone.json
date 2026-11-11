@@ -1,0 +1,264 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "9049e38006f38c835aa5868ac295abed694f299b1770fb468dd5cbfc34da89a5"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"$tags": [
+			"free-trade-zone"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "AE-001FTZ-TEST",
+		"issue_date": "2025-02-07",
+		"currency": "AED",
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"peppol-pint-ae-beneficiary-id": "189098765401003",
+				"peppol-pint-ae-transaction-type": "10000000",
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "124680135701003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"key": "ae-trade-license",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1246801357"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"locality": "Sharjah",
+					"region": "SHJ",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Email Address"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact Number"
+				}
+			]
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "178901234501003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"key": "ae-trade-license",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1789012345"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Email address"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact Number"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "500",
+				"item": {
+					"name": "Item Name",
+					"identities": [
+						{
+							"label": "HS",
+							"code": "112233"
+						}
+					],
+					"description": "Item Description",
+					"list": "150",
+					"discount": "10",
+					"price": "140.00",
+					"unit": "piece",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "70000.00",
+				"charges": [
+					{
+						"reason": "Technical Modification",
+						"base": "70000.00",
+						"percent": "1%",
+						"amount": "700.00",
+						"ext": {
+							"untdid-charge": "AAC"
+						}
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "70700.00",
+				"notes": [
+					{
+						"text": "Invoice line note"
+					}
+				]
+			}
+		],
+		"discounts": [
+			{
+				"i": 1,
+				"reason": "Special Rebate",
+				"base": "70700",
+				"percent": "5%",
+				"amount": "3535",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"ext": {
+					"untdid-allowance": "100"
+				}
+			}
+		],
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-03-07",
+						"amount": "70523.25",
+						"percent": "100%"
+					}
+				],
+				"notes": "1 month"
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"detail": "Credit transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE0000000001",
+						"bic": "236000",
+						"name": "current account"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "70700.00",
+			"discount": "3535.00",
+			"total": "67165.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "67165.00",
+								"percent": "5%",
+								"amount": "3358.25"
+							}
+						],
+						"amount": "3358.25"
+					}
+				],
+				"sum": "3358.25"
+			},
+			"tax": "3358.25",
+			"total_with_tax": "70523.25",
+			"payable": "70523.25"
+		},
+		"notes": [
+			{
+				"text": "Tax invoice"
+			}
+		],
+		"attachments": [
+			{
+				"code": "Sample-04",
+				"url": "https://www.site.ae/Sample-04.pdf"
+			}
+		]
+	}
+}

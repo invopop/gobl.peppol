@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "75991753b00d053853430037bab2f81cbdd44f0fec6b6aa00844ef25d1cc437c"
+			"val": "d8858ddd18559301d6d750bc12ca4ae8b47f13c60c9b9df6cee38fbf98a2cd0c"
 		}
 	},
 	"doc": {
@@ -23,6 +23,7 @@
 		"tax": {
 			"rounding": "currency",
 			"ext": {
+				"peppol-pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "380"
 			}
 		},
