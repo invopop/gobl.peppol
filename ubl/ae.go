@@ -1,13 +1,18 @@
 package ubl
 
 import (
+	"strings"
+
 	"github.com/invopop/gobl"
 	"github.com/invopop/gobl.peppol/addon/pint"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
+	"github.com/invopop/gobl/org"
+	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/tax"
 )
 
@@ -28,6 +33,9 @@ const aedTotalDocumentType = "aedtotal-incl-vat"
 // write 5.
 const aeReverseChargeRate = "5"
 
+// taxSchemeTIN is the tax scheme PINT AE writes the seller TIN under.
+const taxSchemeTIN = "TIN"
+
 // exportAE applies the Peppol PINT AE rules to an exported invoice. Each step
 // only uses data GOBL already has; the AE amounts and the BTAE extensions are
 // added by later steps.
@@ -43,6 +51,8 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	for _, p := range goblubl.InvoiceParties(inv, out) {
 		exportAEPartyTaxID(p.UBL, p.GOBL.TaxID)
 	}
+	exportAEPartyIdentities(out.AccountingSupplierParty.Party, inv.Supplier)
+	exportAEPartyIdentities(out.AccountingCustomerParty.Party, inv.Customer)
 	for i := range out.TaxTotal {
 		exportAETaxTotal(&out.TaxTotal[i])
 	}
@@ -58,6 +68,8 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 		return nil
 	}
 	importAEOutsideScope(in, inv)
+	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
+	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
 	return nil
 }
 
@@ -263,6 +275,132 @@ func exportAEPartyTaxID(out *goblubl.Party, tID *tax.Identity) {
 		id := out.PartyTaxScheme[i].CompanyID
 		if id != nil && id.Value == prefixed {
 			id.Value = tID.Code.String()
+		}
+	}
+}
+
+// exportAEPartyIdentities writes the PINT AE details of the seller and buyer
+// identities that gobl.ubl has no place for.
+func exportAEPartyIdentities(out *goblubl.Party, p *org.Party) {
+	if out == nil || p == nil {
+		return
+	}
+	exportAELegalIdentity(out, p)
+	exportAETINScheme(out, p)
+}
+
+// exportAELegalIdentity writes the legal registration identifier type of the
+// party's legal identity as @schemeAgencyID (BTAE-15, BTAE-16), and, as
+// @schemeAgencyName, the issuing country of a passport (BTAE-18, BTAE-19) or
+// the issuing authority of a trade licence, taken from its description
+// (BTAE-11, BTAE-12; IBR-101-AE, IBR-172-AE). The syntax binding also allows
+// an authority on Emirates IDs and Cabinet Decisions, but no rule or text asks
+// for one, so none is written. gobl.ubl writes the first legal identity as
+// cac:PartyLegalEntity/cbc:CompanyID, so that is the one described here.
+func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
+	if out.PartyLegalEntity == nil || out.PartyLegalEntity.CompanyID == nil {
+		return
+	}
+	var id *org.Identity
+	for _, i := range p.Identities {
+		if i != nil && i.Scope == org.IdentityScopeLegal {
+			id = i
+			break
+		}
+	}
+	if id == nil {
+		return
+	}
+	typ := pint.IdentityTypeAE(id.Key)
+	if typ == "" {
+		return
+	}
+	cid := out.PartyLegalEntity.CompanyID
+	agencyID := typ.String()
+	cid.SchemeAgencyID = &agencyID
+	switch typ {
+	case pint.IdentityTypePassport:
+		if id.Country != "" {
+			name := id.Country.String()
+			cid.SchemeAgencyName = &name
+		}
+	case pint.IdentityTypeTradeLicense:
+		if id.Description != "" {
+			name := id.Description
+			cid.SchemeAgencyName = &name
+		}
+	}
+}
+
+// importAEPartyIdentities reads back what exportAEPartyIdentities writes:
+// the legal identity's key from @schemeAgencyID, with @schemeAgencyName as
+// the passport's country or the trade licence's description, and, for the
+// supplier, the TIN key on the tax registration that is not VAT, as PINT AE
+// defines IBT-032 as the seller TIN.
+func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
+	if in == nil || p == nil {
+		return
+	}
+	if le := in.PartyLegalEntity; le != nil && le.CompanyID != nil && le.CompanyID.SchemeAgencyID != nil {
+		cid := le.CompanyID
+		for _, id := range p.Identities {
+			if id == nil || id.Scope != org.IdentityScopeLegal || id.Code.String() != cid.Value {
+				continue
+			}
+			importAELegalIdentity(id, cid)
+			break
+		}
+	}
+	if supplier {
+		for _, id := range p.Identities {
+			if id != nil && id.Scope == org.IdentityScopeTax && id.Key == "" && id.Type == "" {
+				id.Key = ae.IdentityKeyTIN
+			}
+		}
+	}
+}
+
+// importAELegalIdentity sets the identity's key and, from @schemeAgencyName,
+// its issuing country or description.
+func importAELegalIdentity(id *org.Identity, cid *goblubl.IDType) {
+	key := pint.IdentityKeyAE(cbc.Code(strings.TrimSpace(*cid.SchemeAgencyID)))
+	if key == "" {
+		return
+	}
+	id.Key = key
+	if cid.SchemeAgencyName == nil {
+		return
+	}
+	name := strings.TrimSpace(*cid.SchemeAgencyName)
+	switch key {
+	case org.IdentityKeyPassport:
+		id.Country = l10n.ISOCountryCode(name)
+	case ae.IdentityKeyTradeLicense:
+		id.Description = name
+	}
+}
+
+// exportAETINScheme writes the TIN tax scheme on the party tax schemes that
+// gobl.ubl writes for the party's TIN identities, which it gives the generic
+// LOC scheme.
+//
+// No rule asks for TIN: the BIS only says the scheme of the seller TIN
+// (IBT-032) must not be VAT, the syntax binding gives no code list, and
+// IBR-133-AE and IBR-178-AE only check for "not VAT", so LOC would pass too.
+// TIN is the value the only official example with a seller TIN uses
+// (Seller-TIN-identifier.xml), so receivers are most likely to expect it.
+// It is not the TIN of UNCL 1153, which is a transport instruction number.
+func exportAETINScheme(out *goblubl.Party, p *org.Party) {
+	for _, id := range p.Identities {
+		if id == nil || id.Key != ae.IdentityKeyTIN || id.Scope != org.IdentityScopeTax {
+			continue
+		}
+		for i := range out.PartyTaxScheme {
+			pts := &out.PartyTaxScheme[i]
+			if pts.CompanyID != nil && pts.CompanyID.Value == id.Code.String() &&
+				pts.TaxScheme != nil && pts.TaxScheme.ID.Value != goblubl.TaxSchemeVAT {
+				pts.TaxScheme.ID.Value = taxSchemeTIN
+			}
 		}
 	}
 }

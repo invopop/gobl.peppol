@@ -8,7 +8,10 @@ import (
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
+	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/num"
+	"github.com/invopop/gobl/org"
+	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/tax"
 	"github.com/invopop/gobl/uuid"
 	"github.com/stretchr/testify/assert"
@@ -170,6 +173,180 @@ func TestExportAEPartyTaxID(t *testing.T) {
 		out := party("AE100000000000003")
 		exportAEPartyTaxID(out, nil)
 		assert.Equal(t, "AE100000000000003", out.PartyTaxScheme[0].CompanyID.Value)
+	})
+}
+
+func TestExportAEPartyIdentities(t *testing.T) {
+	// export builds the UBL party the way gobl.ubl does, then adds the AE
+	// details.
+	export := func(p *org.Party) *goblubl.Party {
+		out := goblubl.NewParty(p)
+		exportAEPartyIdentities(out, p)
+		return out
+	}
+	legal := func(key cbc.Key, code string) *org.Identity {
+		return &org.Identity{Key: key, Scope: org.IdentityScopeLegal, Code: cbc.Code(code)}
+	}
+
+	t.Run("trade licence gets TL and its authority", func(t *testing.T) {
+		id := legal(ae.IdentityKeyTradeLicense, "112345678900003")
+		id.Description = "Trade License issuing Authority"
+		cid := export(&org.Party{Name: "Seller", Identities: []*org.Identity{id}}).PartyLegalEntity.CompanyID
+		assert.Equal(t, "112345678900003", cid.Value)
+		assert.Equal(t, "TL", *cid.SchemeAgencyID)
+		assert.Equal(t, "Trade License issuing Authority", *cid.SchemeAgencyName)
+	})
+
+	t.Run("passport gets PAS and its issuing country", func(t *testing.T) {
+		id := legal(org.IdentityKeyPassport, "P1234567890")
+		id.Country = "IN"
+		cid := export(&org.Party{Name: "Buyer", Identities: []*org.Identity{id}}).PartyLegalEntity.CompanyID
+		assert.Equal(t, "PAS", *cid.SchemeAgencyID)
+		assert.Equal(t, "IN", *cid.SchemeAgencyName)
+	})
+
+	t.Run("Emirates ID and Cabinet Decision get their type only", func(t *testing.T) {
+		for key, typ := range map[cbc.Key]string{
+			ae.IdentityKeyEmiratesID:      "EID",
+			ae.IdentityKeyCabinetDecision: "CD",
+		} {
+			id := legal(key, "784199012345671")
+			id.Description = "not an authority"
+			cid := export(&org.Party{Name: "Party", Identities: []*org.Identity{id}}).PartyLegalEntity.CompanyID
+			assert.Equal(t, typ, *cid.SchemeAgencyID, key)
+			assert.Nil(t, cid.SchemeAgencyName, key)
+		}
+	})
+
+	t.Run("passport ignores the description", func(t *testing.T) {
+		id := legal(org.IdentityKeyPassport, "P1234567890")
+		id.Description = "not a country"
+		cid := export(&org.Party{Name: "Buyer", Identities: []*org.Identity{id}}).PartyLegalEntity.CompanyID
+		assert.Nil(t, cid.SchemeAgencyName)
+	})
+
+	t.Run("legal identity without a PINT AE type is left alone", func(t *testing.T) {
+		cid := export(&org.Party{Name: "Party", Identities: []*org.Identity{
+			{Scope: org.IdentityScopeLegal, Code: "CN-1234567"},
+		}}).PartyLegalEntity.CompanyID
+		assert.Nil(t, cid.SchemeAgencyID)
+		assert.Nil(t, cid.SchemeAgencyName)
+	})
+
+	t.Run("the first legal identity is described, after a tax one", func(t *testing.T) {
+		cid := export(&org.Party{Name: "Party", Identities: []*org.Identity{
+			{Key: ae.IdentityKeyTIN, Scope: org.IdentityScopeTax, Code: "1234567890"},
+			legal(ae.IdentityKeyEmiratesID, "784199012345671"),
+			legal(ae.IdentityKeyCabinetDecision, "CD-1"),
+		}}).PartyLegalEntity.CompanyID
+		assert.Equal(t, "784199012345671", cid.Value)
+		assert.Equal(t, "EID", *cid.SchemeAgencyID)
+	})
+
+	t.Run("TIN is written under the TIN scheme, next to the VAT TRN", func(t *testing.T) {
+		out := export(&org.Party{
+			Name:  "Seller",
+			TaxID: &tax.Identity{Country: "AE", Code: "100000000000003"},
+			Identities: []*org.Identity{
+				{Key: ae.IdentityKeyTIN, Scope: org.IdentityScopeTax, Code: "1234567890"},
+			},
+		})
+		require.Len(t, out.PartyTaxScheme, 2)
+		assert.Equal(t, "VAT", out.PartyTaxScheme[0].TaxScheme.ID.Value)
+		assert.Equal(t, "1234567890", out.PartyTaxScheme[1].CompanyID.Value)
+		assert.Equal(t, "TIN", out.PartyTaxScheme[1].TaxScheme.ID.Value)
+	})
+
+	t.Run("other tax identities keep the scheme gobl.ubl gives them", func(t *testing.T) {
+		out := export(&org.Party{Name: "Seller", Identities: []*org.Identity{
+			{Scope: org.IdentityScopeTax, Code: "1234567890"},
+		}})
+		require.Len(t, out.PartyTaxScheme, 1)
+		assert.Equal(t, goblubl.TaxSchemeTaxRegistration, out.PartyTaxScheme[0].TaxScheme.ID.Value)
+	})
+
+	t.Run("nil parties are skipped", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			exportAEPartyIdentities(nil, &org.Party{})
+			exportAEPartyIdentities(&goblubl.Party{}, nil)
+		})
+	})
+}
+
+func TestImportAEPartyIdentities(t *testing.T) {
+	companyID := func(agencyID, agencyName string) *goblubl.Party {
+		cid := &goblubl.IDType{Value: "112345678900003"}
+		if agencyID != "" {
+			cid.SchemeAgencyID = &agencyID
+		}
+		if agencyName != "" {
+			cid.SchemeAgencyName = &agencyName
+		}
+		return &goblubl.Party{PartyLegalEntity: &goblubl.PartyLegalEntity{CompanyID: cid}}
+	}
+	// imported builds the GOBL party the way gobl.ubl imports it, then reads
+	// the AE details.
+	imported := func(in *goblubl.Party, supplier bool) *org.Party {
+		p := goblubl.ParseParty(in)
+		importAEPartyIdentities(in, p, supplier)
+		return p
+	}
+
+	t.Run("trade licence with its authority", func(t *testing.T) {
+		id := imported(companyID("TL", "Trade License issuing Authority"), false).Identities[0]
+		assert.Equal(t, ae.IdentityKeyTradeLicense, id.Key)
+		assert.Equal(t, "Trade License issuing Authority", id.Description)
+	})
+
+	t.Run("CL is read as a trade licence", func(t *testing.T) {
+		id := imported(companyID("CL", "Dubai Economy and Tourism"), false).Identities[0]
+		assert.Equal(t, ae.IdentityKeyTradeLicense, id.Key)
+		assert.Equal(t, "Dubai Economy and Tourism", id.Description)
+	})
+
+	t.Run("passport with its issuing country", func(t *testing.T) {
+		id := imported(companyID("PAS", "IN"), false).Identities[0]
+		assert.Equal(t, org.IdentityKeyPassport, id.Key)
+		assert.Equal(t, l10n.ISOCountryCode("IN"), id.Country)
+		assert.Empty(t, id.Description)
+	})
+
+	t.Run("Emirates ID and Cabinet Decision, without an authority", func(t *testing.T) {
+		for typ, key := range map[string]cbc.Key{"EID": ae.IdentityKeyEmiratesID, "CD": ae.IdentityKeyCabinetDecision} {
+			id := imported(companyID(typ, "Some Authority"), false).Identities[0]
+			assert.Equal(t, key, id.Key, typ)
+			assert.Empty(t, id.Description, typ)
+		}
+	})
+
+	t.Run("unknown or missing types are left alone", func(t *testing.T) {
+		for _, typ := range []string{"XYZ", ""} {
+			id := imported(companyID(typ, "Some Authority"), false).Identities[0]
+			assert.Empty(t, id.Key, typ)
+			assert.Empty(t, id.Description, typ)
+		}
+	})
+
+	t.Run("supplier non-VAT tax registration is the TIN", func(t *testing.T) {
+		in := companyID("TL", "Authority")
+		in.PartyTaxScheme = []goblubl.PartyTaxScheme{
+			{CompanyID: &goblubl.IDType{Value: "198765432102003"}, TaxScheme: &goblubl.TaxScheme{ID: goblubl.IDType{Value: "VAT"}}},
+			{CompanyID: &goblubl.IDType{Value: "1234567890"}, TaxScheme: &goblubl.TaxScheme{ID: goblubl.IDType{Value: "TIN"}}},
+		}
+		p := imported(in, true)
+		require.Len(t, p.Identities, 2)
+		assert.Equal(t, ae.IdentityKeyTIN, p.Identities[1].Key)
+		assert.Equal(t, cbc.Code("1234567890"), p.Identities[1].Code)
+
+		p = imported(in, false)
+		assert.Empty(t, p.Identities[1].Key, "only the seller has a TIN")
+	})
+
+	t.Run("nil parties are skipped", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			importAEPartyIdentities(nil, &org.Party{}, true)
+			importAEPartyIdentities(&goblubl.Party{}, nil, true)
+		})
 	})
 }
 

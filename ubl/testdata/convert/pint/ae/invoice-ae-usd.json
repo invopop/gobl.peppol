@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "5fece2baa64586bcbc6e5745758a2922f2d07451f7803c46b6f15bad0a23559b"
+			"val": "f25821e82fde28f7f2c23b2f569035e5e434fbcb3007b4369e5f6bc8aef73950"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -43,7 +43,9 @@
 			"identities": [
 				{
 					"scope": "legal",
-					"code": "112345678900003"
+					"key": "ae-trade-license",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
 				}
 			],
 			"endpoints": [
@@ -76,7 +78,9 @@
 			"identities": [
 				{
 					"scope": "legal",
-					"code": "112345679000001"
+					"key": "ae-trade-license",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
 				}
 			],
 			"endpoints": [

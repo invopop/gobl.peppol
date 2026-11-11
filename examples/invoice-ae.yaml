@@ -14,8 +14,9 @@ supplier:
     country: "AE"
     code: "135790246801003"
   identities:
-    - scope: "legal"
+    - key: "ae-trade-license"
       code: "112345678900003"
+      description: "Trade License issuing Authority"
   inboxes:
     - key: "peppol"
       scheme: "0235"
@@ -32,8 +33,9 @@ customer:
     country: "AE"
     code: "134567890123003"
   identities:
-    - scope: "legal"
+    - key: "ae-trade-license"
       code: "112345679000001"
+      description: "Trade License issuing Authority"
   inboxes:
     - key: "peppol"
       scheme: "0235"

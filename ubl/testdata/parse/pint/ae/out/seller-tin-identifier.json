@@ -1,0 +1,216 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "f54c8bbf372d9d4409c59110b5b98f4f12aced96e73d14c40bd21080203af780"
+		}
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "AE-SELLER-TIN-01",
+		"issue_date": "2025-03-15",
+		"value_date": "2025-03-10",
+		"currency": "AED",
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Seller Legal Name",
+			"alias": "Seller Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "198765432102003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"key": "ae-trade-license",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				},
+				{
+					"scope": "tax",
+					"country": "AE",
+					"key": "ae-tin",
+					"code": "1234567890"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1987654321"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Al Maktoum Road",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "seller@example.ae"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+971501234567"
+				}
+			]
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"alias": "Buyer Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890123003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"key": "ae-trade-license",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Buyer Contact"
+					}
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1345678901"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Khalifa Street",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "buyer@example.ae"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+971502345678"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "10",
+				"item": {
+					"name": "Electronic Components",
+					"description": "Standard rated goods",
+					"list": "100",
+					"price": "100.00",
+					"unit": "piece",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "1000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "1000.00"
+			}
+		],
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-03-30",
+						"amount": "1050.00",
+						"percent": "100%"
+					}
+				],
+				"notes": "Net 15 days"
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"detail": "Credit transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"bic": "ABORAEADXXX",
+						"name": "current account"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "1000.00",
+			"total": "1000.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "1000.00",
+								"percent": "5%",
+								"amount": "50.00"
+							}
+						],
+						"amount": "50.00"
+					}
+				],
+				"sum": "50.00"
+			},
+			"tax": "50.00",
+			"total_with_tax": "1050.00",
+			"payable": "1050.00"
+		},
+		"notes": [
+			{
+				"text": "Tax invoice"
+			}
+		]
+	}
+}

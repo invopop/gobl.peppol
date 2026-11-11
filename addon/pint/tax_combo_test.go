@@ -112,8 +112,12 @@ func TestTaxComboRulesAE(t *testing.T) {
 	ae := l10n.AE.Tax()
 
 	t.Run("AE subset categories are accepted (IBR-139-AE)", func(t *testing.T) {
-		for _, cat := range []string{"E", "O", "AE"} {
-			err := validateIn(vatCombo(cbc.KeyEmpty, cat, nil), ae)
+		for cat, key := range map[string]cbc.Key{
+			"E":  tax.KeyExempt,
+			"O":  tax.KeyOutsideScope,
+			"AE": tax.KeyReverseCharge,
+		} {
+			err := validateIn(vatCombo(key, cat, nil), ae)
 			assert.NoError(t, err, "category %s", cat)
 		}
 		assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(5, 2)), ae))

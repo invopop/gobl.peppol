@@ -108,8 +108,14 @@ invoice UUID, the price base quantity and gross price, the UAE TRN without
 its country prefix, the 5% rate on reverse charge lines and breakdowns, no
 rate on exempt ones, one VAT breakdown per category, and each line's amount
 with VAT and VAT amount. For invoices not in AED, it also writes the exchange
-rate to AED and the total with VAT in AED. On import, it reads
-the out-of-scope type codes 480 and 81 back as the `outside-scope` tag.
+rate to AED and the total with VAT in AED. The seller and buyer legal
+identities get their PINT AE type (`TL`, `EID`, `PAS` or `CD`, from the AE
+regime's identity keys and `passport`), with the trade licence authority
+(the identity's description) or the passport's issuing country, and the
+seller's TIN goes under the `TIN` tax scheme. On import, it reads
+the out-of-scope type codes 480 and 81 back as the `outside-scope` tag, and
+the identity types, authorities, passport countries and seller TIN back as
+identity keys and fields.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,
