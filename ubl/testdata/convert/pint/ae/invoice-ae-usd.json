@@ -1,0 +1,272 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "5fece2baa64586bcbc6e5745758a2922f2d07451f7803c46b6f15bad0a23559b"
+		},
+		"from": "iso6523-actorid-upis::0235:1357902468",
+		"to": "iso6523-actorid-upis::0235:1345678901"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"series": "AE",
+		"code": "006",
+		"issue_date": "2025-01-30",
+		"currency": "USD",
+		"exchange_rates": [
+			{
+				"from": "USD",
+				"to": "AED",
+				"amount": "3.67285"
+			}
+		],
+		"tax": {
+			"ext": {
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "135790246801003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "112345678900003"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1357902468"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0235",
+					"code": "1357902468"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Sheikh Zayed Road",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			]
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890123003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "112345679000001"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1345678901"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0235",
+					"code": "1345678901"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Corniche Road",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "100",
+				"item": {
+					"name": "Item Name",
+					"description": "Item Description",
+					"price": "10.00",
+					"unit": "one"
+				},
+				"sum": "1000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "1000.00"
+			},
+			{
+				"i": 2,
+				"quantity": "2",
+				"item": {
+					"name": "Export goods",
+					"description": "Zero rated supply",
+					"price": "250.00",
+					"unit": "one"
+				},
+				"sum": "500.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "zero",
+						"percent": "0%",
+						"ext": {
+							"untdid-tax-category": "Z"
+						}
+					}
+				],
+				"total": "500.00"
+			},
+			{
+				"i": 3,
+				"quantity": "1",
+				"item": {
+					"name": "Financial service",
+					"description": "Exempt supply",
+					"price": "120.00",
+					"unit": "one"
+				},
+				"sum": "120.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"cef-vatex": "VATEX-EU-132-1I",
+							"untdid-tax-category": "E"
+						}
+					}
+				],
+				"total": "120.00"
+			},
+			{
+				"i": 4,
+				"quantity": "3",
+				"item": {
+					"name": "Imported service",
+					"description": "Reverse charge supply",
+					"price": "33.33",
+					"unit": "one"
+				},
+				"sum": "99.99",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "reverse-charge",
+						"ext": {
+							"cef-vatex": "VATEX-EU-AE",
+							"untdid-tax-category": "AE"
+						}
+					}
+				],
+				"total": "99.99"
+			}
+		],
+		"payment": {
+			"terms": {
+				"key": "due-date",
+				"due_dates": [
+					{
+						"date": "2025-02-06",
+						"amount": "1769.99",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"name": "Emirates NBD"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "1719.99",
+			"total": "1719.99",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "1000.00",
+								"percent": "5%",
+								"amount": "50.00"
+							},
+							{
+								"key": "zero",
+								"ext": {
+									"untdid-tax-category": "Z"
+								},
+								"base": "500.00",
+								"percent": "0%",
+								"amount": "0.00"
+							},
+							{
+								"key": "exempt",
+								"ext": {
+									"cef-vatex": "VATEX-EU-132-1I",
+									"untdid-tax-category": "E"
+								},
+								"base": "120.00",
+								"amount": "0.00"
+							},
+							{
+								"key": "reverse-charge",
+								"ext": {
+									"cef-vatex": "VATEX-EU-AE",
+									"untdid-tax-category": "AE"
+								},
+								"base": "99.99",
+								"amount": "0.00"
+							}
+						],
+						"amount": "50.00"
+					}
+				],
+				"sum": "50.00"
+			},
+			"tax": "50.00",
+			"total_with_tax": "1769.99",
+			"payable": "1769.99"
+		}
+	}
+}

@@ -7,6 +7,8 @@ import (
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
+	"github.com/invopop/gobl/currency"
+	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/tax"
 	"github.com/invopop/gobl/uuid"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +25,7 @@ func aeCategory(id string, percent *string) goblubl.TaxCategory {
 	}
 }
 
-func aeAmount(v string) goblubl.Amount {
+func aedAmount(v string) goblubl.Amount {
 	return goblubl.Amount{CurrencyID: strPtr("AED"), Value: v}
 }
 
@@ -42,7 +44,7 @@ func TestExportAEPrice(t *testing.T) {
 	t.Run("adds the base quantity and a zero discount on the net price", func(t *testing.T) {
 		line := &goblubl.InvoiceLine{
 			InvoicedQuantity: &goblubl.Quantity{UnitCode: "HUR", Value: "10"},
-			Price:            &goblubl.Price{PriceAmount: aeAmount("100.00")},
+			Price:            &goblubl.Price{PriceAmount: aedAmount("100.00")},
 		}
 		exportAEPrice(line)
 		require.NotNil(t, line.Price.BaseQuantity)
@@ -58,17 +60,17 @@ func TestExportAEPrice(t *testing.T) {
 	t.Run("uses the credited quantity's unit on credit notes", func(t *testing.T) {
 		line := &goblubl.InvoiceLine{
 			CreditedQuantity: &goblubl.Quantity{UnitCode: "C62", Value: "1"},
-			Price:            &goblubl.Price{PriceAmount: aeAmount("5.00")},
+			Price:            &goblubl.Price{PriceAmount: aedAmount("5.00")},
 		}
 		exportAEPrice(line)
 		assert.Equal(t, "C62", line.Price.BaseQuantity.UnitCode)
 	})
 
 	t.Run("keeps a price discount gobl.ubl already wrote", func(t *testing.T) {
-		existing := &goblubl.AllowanceCharge{Amount: aeAmount("20.00"), BaseAmount: &goblubl.Amount{Value: "120.00"}}
+		existing := &goblubl.AllowanceCharge{Amount: aedAmount("20.00"), BaseAmount: &goblubl.Amount{Value: "120.00"}}
 		line := &goblubl.InvoiceLine{
 			InvoicedQuantity: &goblubl.Quantity{UnitCode: "C62", Value: "1"},
-			Price:            &goblubl.Price{PriceAmount: aeAmount("100.00"), AllowanceCharge: existing},
+			Price:            &goblubl.Price{PriceAmount: aedAmount("100.00"), AllowanceCharge: existing},
 		}
 		exportAEPrice(line)
 		assert.Same(t, existing, line.Price.AllowanceCharge)
@@ -96,11 +98,11 @@ func TestMergeAETaxSubtotals(t *testing.T) {
 	exempt := func(base, code string) goblubl.TaxSubtotal {
 		c := aeCategory("E", nil)
 		c.TaxExemptionReasonCode = strPtr(code)
-		return goblubl.TaxSubtotal{TaxableAmount: aeAmount(base), TaxAmount: aeAmount("0.00"), TaxCategory: c}
+		return goblubl.TaxSubtotal{TaxableAmount: aedAmount(base), TaxAmount: aedAmount("0.00"), TaxCategory: c}
 	}
 	standard := goblubl.TaxSubtotal{
-		TaxableAmount: aeAmount("1000.00"),
-		TaxAmount:     aeAmount("50.00"),
+		TaxableAmount: aedAmount("1000.00"),
+		TaxAmount:     aedAmount("50.00"),
 		TaxCategory:   aeCategory("S", strPtr("5")),
 	}
 
@@ -121,7 +123,7 @@ func TestMergeAETaxSubtotals(t *testing.T) {
 	})
 
 	t.Run("does not merge different rates", func(t *testing.T) {
-		zero := goblubl.TaxSubtotal{TaxableAmount: aeAmount("10.00"), TaxAmount: aeAmount("0.00"), TaxCategory: aeCategory("S", strPtr("0"))}
+		zero := goblubl.TaxSubtotal{TaxableAmount: aedAmount("10.00"), TaxAmount: aedAmount("0.00"), TaxCategory: aeCategory("S", strPtr("0"))}
 		out := mergeAETaxSubtotals([]goblubl.TaxSubtotal{standard, zero})
 		assert.Len(t, out, 2)
 	})
@@ -129,8 +131,8 @@ func TestMergeAETaxSubtotals(t *testing.T) {
 
 func TestExportAETaxTotal(t *testing.T) {
 	tt := &goblubl.TaxTotal{TaxSubtotal: []goblubl.TaxSubtotal{
-		{TaxableAmount: aeAmount("100.00"), TaxAmount: aeAmount("0.00"), TaxCategory: aeCategory("AE", strPtr("0"))},
-		{TaxableAmount: aeAmount("50.00"), TaxAmount: aeAmount("0.00"), TaxCategory: aeCategory("E", strPtr("0"))},
+		{TaxableAmount: aedAmount("100.00"), TaxAmount: aedAmount("0.00"), TaxCategory: aeCategory("AE", strPtr("0"))},
+		{TaxableAmount: aedAmount("50.00"), TaxAmount: aedAmount("0.00"), TaxCategory: aeCategory("E", strPtr("0"))},
 	}}
 	exportAETaxTotal(tt)
 	require.Len(t, tt.TaxSubtotal, 2)
@@ -202,5 +204,104 @@ func TestImportAEOutsideScope(t *testing.T) {
 		inv := &bill.Invoice{Tags: tax.WithTags(pint.TagOutsideScope)}
 		importAEOutsideScope(in, inv)
 		assert.Equal(t, []cbc.Key{pint.TagOutsideScope}, inv.Tags.List)
+	})
+}
+
+func TestExportAELineAmounts(t *testing.T) {
+	line := func(category string) *goblubl.InvoiceLine {
+		return &goblubl.InvoiceLine{Item: &goblubl.Item{
+			ClassifiedTaxCategory: &goblubl.ClassifiedTaxCategory{ID: &goblubl.IDType{Value: category}},
+		}}
+	}
+	goblLine := func(total string, key cbc.Key, percent *num.Percentage) *bill.Line {
+		a, err := num.AmountFromString(total)
+		require.NoError(t, err)
+		return &bill.Line{Total: &a, Taxes: tax.Set{{Category: tax.CategoryVAT, Key: key, Percent: percent}}}
+	}
+
+	t.Run("standard rated line gets its VAT and the total with VAT", func(t *testing.T) {
+		out := line("S")
+		exportAELineAmounts(out, goblLine("10486.00", tax.KeyStandard, num.NewPercentage(5, 2)), currency.AED)
+		ext := out.ItemPriceExtension
+		require.NotNil(t, ext)
+		assert.Equal(t, "11010.30", ext.Amount.Value)
+		assert.Equal(t, "AED", *ext.Amount.CurrencyID)
+		require.Len(t, ext.TaxTotal, 1)
+		assert.Equal(t, "524.30", ext.TaxTotal[0].TaxAmount.Value)
+	})
+
+	t.Run("line VAT is rounded to the currency", func(t *testing.T) {
+		out := line("S")
+		exportAELineAmounts(out, goblLine("99.99", tax.KeyStandard, num.NewPercentage(5, 2)), currency.USD)
+		assert.Equal(t, "5.00", out.ItemPriceExtension.TaxTotal[0].TaxAmount.Value)
+		assert.Equal(t, "104.99", out.ItemPriceExtension.Amount.Value)
+		assert.Equal(t, "USD", *out.ItemPriceExtension.Amount.CurrencyID, "document currency, as in the examples")
+	})
+
+	t.Run("zero rated and reverse charge lines get a zero VAT amount", func(t *testing.T) {
+		for _, c := range []struct {
+			category string
+			key      cbc.Key
+		}{{"Z", tax.KeyZero}, {"AE", tax.KeyReverseCharge}} {
+			out := line(c.category)
+			exportAELineAmounts(out, goblLine("200.00", c.key, nil), currency.AED)
+			ext := out.ItemPriceExtension
+			assert.Equal(t, "200.00", ext.Amount.Value, c.category)
+			require.Len(t, ext.TaxTotal, 1, c.category)
+			assert.Equal(t, "0.00", ext.TaxTotal[0].TaxAmount.Value, c.category)
+		}
+	})
+
+	t.Run("exempt lines get no VAT amount", func(t *testing.T) {
+		out := line("E")
+		exportAELineAmounts(out, goblLine("120.00", tax.KeyExempt, nil), currency.AED)
+		assert.Equal(t, "120.00", out.ItemPriceExtension.Amount.Value)
+		assert.Empty(t, out.ItemPriceExtension.TaxTotal)
+	})
+
+	t.Run("lines without a total are left alone", func(t *testing.T) {
+		out := line("S")
+		exportAELineAmounts(out, &bill.Line{}, currency.AED)
+		assert.Nil(t, out.ItemPriceExtension)
+	})
+}
+
+func TestExportAEExchangeRate(t *testing.T) {
+	invoice := func(cur currency.Code, rates ...*currency.ExchangeRate) *bill.Invoice {
+		return &bill.Invoice{
+			Currency:      cur,
+			ExchangeRates: rates,
+			Totals:        &bill.Totals{TotalWithTax: num.MakeAmount(24875000, 2)},
+		}
+	}
+
+	t.Run("writes the rate and the AED total with VAT", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		inv := invoice(currency.USD, &currency.ExchangeRate{From: currency.USD, To: currency.AED, Amount: num.MakeAmount(367285, 5)})
+		exportAEExchangeRate(out, inv)
+		require.NotNil(t, out.TaxExchangeRate)
+		assert.Equal(t, "USD", *out.TaxExchangeRate.SourceCurrencyCode)
+		assert.Equal(t, "AED", *out.TaxExchangeRate.TargetCurrencyCode)
+		assert.Equal(t, "3.67285", *out.TaxExchangeRate.CalculationRate)
+		require.Len(t, out.AdditionalDocumentReference, 1)
+		ref := out.AdditionalDocumentReference[0]
+		assert.Equal(t, "AED", ref.ID.Value)
+		assert.Equal(t, "aedtotal-incl-vat", ref.DocumentTypeCode)
+		assert.Equal(t, "AED 913621.44", ref.DocumentDescription, "the Exports.xml example: 248750 USD at 3.67285")
+	})
+
+	t.Run("AED invoices need neither", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAEExchangeRate(out, invoice(currency.AED))
+		assert.Nil(t, out.TaxExchangeRate)
+		assert.Empty(t, out.AdditionalDocumentReference)
+	})
+
+	t.Run("invoices without a rate to AED are left to the PINT addon", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		inv := invoice(currency.USD, &currency.ExchangeRate{From: currency.USD, To: currency.EUR, Amount: num.MakeAmount(92, 2)})
+		exportAEExchangeRate(out, inv)
+		assert.Nil(t, out.TaxExchangeRate)
+		assert.Empty(t, out.AdditionalDocumentReference)
 	})
 }

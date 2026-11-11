@@ -114,5 +114,11 @@
         <cbc:BaseAmount currencyID="AED">10.00</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>
+    <cac:ItemPriceExtension>
+      <cbc:Amount currencyID="AED">1050.00</cbc:Amount>
+      <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="AED">50.00</cbc:TaxAmount>
+      </cac:TaxTotal>
+    </cac:ItemPriceExtension>
   </cac:InvoiceLine>
 </Invoice>

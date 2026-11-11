@@ -106,7 +106,9 @@ and `urn:peppol:bis:selfbilling`. Documents carrying either are imported with
 `FormatAE` also adjusts the output to the PINT AE rules: it writes the
 invoice UUID, the price base quantity and gross price, the UAE TRN without
 its country prefix, the 5% rate on reverse charge lines and breakdowns, no
-rate on exempt ones, and one VAT breakdown per category. On import, it reads
+rate on exempt ones, one VAT breakdown per category, and each line's amount
+with VAT and VAT amount. For invoices not in AED, it also writes the exchange
+rate to AED and the total with VAT in AED. On import, it reads
 the out-of-scope type codes 480 and 81 back as the `outside-scope` tag.
 
 Each one's Peppol document type identifier is
