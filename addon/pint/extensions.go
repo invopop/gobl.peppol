@@ -18,11 +18,17 @@ const (
 	ExtKeyPrincipalID cbc.Key = "peppol-pint-ae-principal-id"
 	// ExtKeyCreditNoteReason is the reason for a PINT AE credit note (BTAE-03).
 	ExtKeyCreditNoteReason cbc.Key = "peppol-pint-ae-credit-note-reason"
+	// ExtKeyBillingFrequency is the frequency of billing (BTAE-06).
+	ExtKeyBillingFrequency cbc.Key = "peppol-pint-ae-billing-frequency"
 )
 
 // CreditNoteReasonVolumeDiscount is the credit note reason for a volume
 // discount, the only one that needs no preceding invoice (IBR-055-AE).
 const CreditNoteReasonVolumeDiscount cbc.Code = "VD"
+
+// BillingFrequencyOthers is the billing frequency "Others", whose value goes
+// in an invoice note (IBR-160-AE).
+const BillingFrequencyOthers cbc.Code = "OTH"
 
 // extensions are the extensions the PINT addon defines. They are only used
 // on UAE documents.
@@ -116,6 +122,31 @@ var extensions = []*cbc.Definition{
 				Code: CreditNoteReasonVolumeDiscount,
 				Name: i18n.String{i18n.EN: "Volume Discount."},
 			},
+		},
+	},
+	{
+		Key: ExtKeyBillingFrequency,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Frequency of Billing",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Frequency of billing (BTAE-06), from the frequency of billing code list
+				(IBR-005-AE). With "OTH" (Others), the frequency is given in an invoice
+				note (IBR-160-AE).
+			`),
+		},
+		Values: []*cbc.Definition{
+			{Code: "DLY", Name: i18n.String{i18n.EN: "Daily"}},
+			{Code: "WKY", Name: i18n.String{i18n.EN: "Weekly"}},
+			{Code: "Q15", Name: i18n.String{i18n.EN: "Once in 15 days"}},
+			{Code: "MTH", Name: i18n.String{i18n.EN: "Monthly"}},
+			{Code: "Q45", Name: i18n.String{i18n.EN: "Once in 45 days"}},
+			{Code: "Q60", Name: i18n.String{i18n.EN: "Once in 60 days"}},
+			{Code: "QTR", Name: i18n.String{i18n.EN: "Quarterly"}},
+			{Code: "YRL", Name: i18n.String{i18n.EN: "Yearly"}},
+			{Code: "HYR", Name: i18n.String{i18n.EN: "Half-Yearly"}},
+			{Code: BillingFrequencyOthers, Name: i18n.String{i18n.EN: "Others"}},
 		},
 	},
 }

@@ -331,6 +331,25 @@ func billInvoiceRules() *rules.Set {
 					rules.Assert("48", "credit note reason must be from the Reasons for credit note code list (IBR-001-AE)",
 						tax.ExtensionHasValidCode(ExtKeyCreditNoteReason),
 					),
+					rules.Assert("49", "billing frequency must be from the frequency of billing code list (IBR-005-AE)",
+						tax.ExtensionHasValidCode(ExtKeyBillingFrequency),
+					),
+				),
+				// PINT AE writes the billing frequency where EN writes the VAT
+				// point date code (BT-8), cac:InvoicePeriod/cbc:DescriptionCode,
+				// and IBR-005-AE only accepts frequencies there.
+				rules.Field("point",
+					rules.Assert("50", "tax point must not be set, as its code goes where the billing frequency does (IBR-005-AE)",
+						is.Not(is.Present),
+					),
+				),
+			),
+			rules.When(
+				is.Func("billing frequency is Others", billingFrequencyIs(BillingFrequencyOthers)),
+				rules.Field("notes",
+					rules.Assert("51", "a note is required with the billing frequency Others (IBR-160-AE)",
+						is.Present,
+					),
 				),
 			),
 		),
@@ -865,6 +884,15 @@ func creditNoteReasonIs(code cbc.Code) func(any) bool {
 	return func(val any) bool {
 		inv, ok := val.(*bill.Invoice)
 		return ok && inv != nil && inv.Tax.GetExt(ExtKeyCreditNoteReason) == code
+	}
+}
+
+// billingFrequencyIs returns a predicate that reports whether the invoice's
+// billing frequency is the given code.
+func billingFrequencyIs(code cbc.Code) func(any) bool {
+	return func(val any) bool {
+		inv, ok := val.(*bill.Invoice)
+		return ok && inv != nil && inv.Tax.GetExt(ExtKeyBillingFrequency) == code
 	}
 }
 

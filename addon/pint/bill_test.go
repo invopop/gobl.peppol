@@ -948,6 +948,49 @@ func TestBillCreditNoteReasonRulesAE(t *testing.T) {
 	})
 }
 
+func TestBillBillingFrequencyRulesAE(t *testing.T) {
+	const (
+		faultFrequencyCode = "GOBL-PEPPOL-PINT-BILL-INVOICE-49"
+		faultTaxPoint      = "GOBL-PEPPOL-PINT-BILL-INVOICE-50"
+		faultOthersNote    = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
+	)
+	withFrequency := func(code cbc.Code) *bill.Invoice {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyBillingFrequency: code})}
+		return inv
+	}
+
+	t.Run("frequency must be from the code list (IBR-005-AE)", func(t *testing.T) {
+		for _, code := range []cbc.Code{"DLY", "WKY", "Q15", "MTH", "Q45", "Q60", "QTR", "YRL", "HYR"} {
+			assert.Empty(t, aeFaults(t, withFrequency(code)), code)
+		}
+		assert.Contains(t, aeFaults(t, withFrequency("FTN")), faultFrequencyCode)
+	})
+
+	t.Run("Others needs a note (IBR-160-AE)", func(t *testing.T) {
+		inv := withFrequency(pint.BillingFrequencyOthers)
+		assert.Contains(t, aeFaults(t, inv), faultOthersNote)
+		inv.Notes = []*org.Note{{Text: "Every 3 weeks"}}
+		assert.Empty(t, aeFaults(t, inv))
+	})
+
+	t.Run("tax point can't be set, as it would take the frequency's place (IBR-005-AE)", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Tax = &bill.Tax{Point: tax.PointIssue}
+		assert.Contains(t, aeFaults(t, inv), faultTaxPoint)
+	})
+
+	t.Run("tax point is fine outside the UAE", func(t *testing.T) {
+		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)
+		inv.Tax = &bill.Tax{Point: tax.PointIssue}
+		require.NoError(t, inv.Calculate())
+		err := rules.Validate(inv, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
+		if err != nil {
+			assert.NotContains(t, err.Error(), faultTaxPoint)
+		}
+	})
+}
+
 func TestBillLineRulesAE(t *testing.T) {
 	const (
 		faultLineVAT         = "GOBL-PEPPOL-PINT-BILL-LINE-01"

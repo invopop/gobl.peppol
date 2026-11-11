@@ -485,6 +485,44 @@ func TestAECreditNoteReason(t *testing.T) {
 	})
 }
 
+func TestAEBillingFrequency(t *testing.T) {
+	invoice := func(freq cbc.Code) *bill.Invoice {
+		return &bill.Invoice{Tax: &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyBillingFrequency: freq})}}
+	}
+
+	t.Run("writes the frequency on the ordering period", func(t *testing.T) {
+		out := &goblubl.Invoice{InvoicePeriod: []goblubl.Period{{StartDate: "2025-01-01", EndDate: "2025-01-31"}}}
+		exportAEBillingFrequency(out, invoice("MTH"))
+		require.Len(t, out.InvoicePeriod, 1)
+		assert.Equal(t, "MTH", out.InvoicePeriod[0].DescriptionCode)
+		assert.Equal(t, "2025-01-01", out.InvoicePeriod[0].StartDate)
+	})
+
+	t.Run("writes a period of its own without an ordering period", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAEBillingFrequency(out, invoice("QTR"))
+		require.Len(t, out.InvoicePeriod, 1)
+		assert.Equal(t, "QTR", out.InvoicePeriod[0].DescriptionCode)
+	})
+
+	t.Run("nothing without a frequency", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAEBillingFrequency(out, new(bill.Invoice))
+		assert.Empty(t, out.InvoicePeriod)
+	})
+
+	t.Run("reads the frequency back", func(t *testing.T) {
+		in := &goblubl.Invoice{InvoicePeriod: []goblubl.Period{{DescriptionCode: " OTH "}}}
+		inv := new(bill.Invoice)
+		importAEBillingFrequency(in, inv)
+		assert.Equal(t, cbc.Code("OTH"), inv.Tax.GetExt(pint.ExtKeyBillingFrequency))
+
+		inv = new(bill.Invoice)
+		importAEBillingFrequency(new(goblubl.Invoice), inv)
+		assert.Nil(t, inv.Tax)
+	})
+}
+
 func TestExportAELineAmounts(t *testing.T) {
 	line := func(category string) *goblubl.InvoiceLine {
 		return &goblubl.InvoiceLine{Item: &goblubl.Item{

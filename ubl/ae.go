@@ -48,6 +48,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	exportAEUUID(out, inv)
 	exportAETransactionType(out, inv)
 	exportAECreditNoteReason(out, inv)
+	exportAEBillingFrequency(out, inv)
 	exportAELines(out.InvoiceLines, inv)
 	exportAELines(out.CreditNoteLines, inv)
 	for _, p := range goblubl.InvoiceParties(inv, out) {
@@ -72,6 +73,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAEOutsideScope(in, inv)
 	importAETransactionType(in, inv)
 	importAECreditNoteReason(in, inv)
+	importAEBillingFrequency(in, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
 	return nil
@@ -199,6 +201,31 @@ func importAECreditNoteReason(in *goblubl.Invoice, inv *bill.Invoice) {
 			return
 		}
 	}
+}
+
+// exportAEBillingFrequency writes the billing frequency as
+// cac:InvoicePeriod/cbc:DescriptionCode (BTAE-06), on the period gobl.ubl
+// writes from the ordering period, or on its own: IBR-CO-19 accepts a period
+// with only a description code.
+func exportAEBillingFrequency(out *goblubl.Invoice, inv *bill.Invoice) {
+	freq := inv.Tax.GetExt(pint.ExtKeyBillingFrequency)
+	if freq == "" {
+		return
+	}
+	if len(out.InvoicePeriod) == 0 {
+		out.InvoicePeriod = []goblubl.Period{{}}
+	}
+	out.InvoicePeriod[0].DescriptionCode = freq.String()
+}
+
+// importAEBillingFrequency reads the billing frequency back. The frequency
+// codes don't overlap the VAT point date codes gobl.ubl reads from the same
+// element, so it never sets a tax point from them.
+func importAEBillingFrequency(in *goblubl.Invoice, inv *bill.Invoice) {
+	if len(in.InvoicePeriod) == 0 {
+		return
+	}
+	setAEExt(inv, pint.ExtKeyBillingFrequency, cbc.Code(strings.TrimSpace(in.InvoicePeriod[0].DescriptionCode)))
 }
 
 // exportAELines completes the UBL lines, which gobl.ubl writes in the same
