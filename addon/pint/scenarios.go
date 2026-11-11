@@ -17,8 +17,16 @@ const (
 
 	// UNTDID 1001 codes PINT AE uses for out-of-scope documents. 480 is in
 	// UNTDID D.23A but not in the EN 16931 code list, so it lives here.
-	docTypeOutsideScopeInvoice    cbc.Code = "480"
-	docTypeOutsideScopeCreditNote cbc.Code = "81"
+	docTypeInvoiceOutsideScope     cbc.Code = "480"
+	docTypeCreditNoteGoodsServices cbc.Code = "81"
+
+	// UNTDID 1001 codes the EN 16931 scenarios set on standard invoices and
+	// credit notes, which some PINT AE rules check.
+	docTypeCommercialInvoice cbc.Code = "380"
+	docTypeCreditNote        cbc.Code = "381"
+	// docTypeSelfBilledCreditNote is the code the EN 16931 scenarios set on
+	// self-billed credit notes.
+	docTypeSelfBilledCreditNote cbc.Code = "261"
 )
 
 // invoiceTags are the document tags the PINT addon adds to invoices.
@@ -50,7 +58,7 @@ var invoiceScenarios = &tax.ScenarioSet{
 			Tags:   []cbc.Key{TagOutsideScope},
 			Filter: invoiceIsAE,
 			Ext: tax.ExtensionsOf(cbc.CodeMap{
-				untdid.ExtKeyDocumentType: docTypeOutsideScopeInvoice,
+				untdid.ExtKeyDocumentType: docTypeInvoiceOutsideScope,
 			}),
 		},
 		{
@@ -58,7 +66,7 @@ var invoiceScenarios = &tax.ScenarioSet{
 			Tags:   []cbc.Key{TagOutsideScope},
 			Filter: invoiceIsAE,
 			Ext: tax.ExtensionsOf(cbc.CodeMap{
-				untdid.ExtKeyDocumentType: docTypeOutsideScopeCreditNote,
+				untdid.ExtKeyDocumentType: docTypeCreditNoteGoodsServices,
 			}),
 		},
 	},
