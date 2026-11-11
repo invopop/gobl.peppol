@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "74892345f1e0facccbb0e97af17879ee9d58bfeb2b6bcb6b1cca0db972465e9d"
+			"val": "2ac7756b37527bdb78d4162d8299a74c4a3f5139ef22446415cab69975670eb6"
 		}
 	},
 	"doc": {
@@ -23,7 +23,7 @@
 			{
 				"from": "EUR",
 				"to": "SEK",
-				"amount": "7.61"
+				"amount": "7.611429"
 			}
 		],
 		"tax": {
@@ -72,7 +72,10 @@
 					"code": "GB 123 EW",
 					"country": "GB"
 				}
-			]
+			],
+			"registration": {
+				"other": "AdditionalLegalInformation"
+			}
 		},
 		"customer": {
 			"name": "Buyer Official Name",
