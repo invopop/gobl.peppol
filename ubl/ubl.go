@@ -157,5 +157,7 @@ func isSelfBilled(doc any) bool {
 }
 
 func init() {
-	goblubl.RegisterFormats(FormatBIS, FormatPINT, FormatAUNZ)
+	// gobl.ubl still registers its own ubl+peppol+bis-v3 format, so FormatBIS
+	// is only registered once gobl.ubl drops it.
+	goblubl.RegisterFormats(FormatPINT, FormatAUNZ)
 }
