@@ -523,6 +523,55 @@ func TestAEBillingFrequency(t *testing.T) {
 	})
 }
 
+func TestAELineExemption(t *testing.T) {
+	ublLine := func() goblubl.InvoiceLine {
+		return goblubl.InvoiceLine{Item: &goblubl.Item{ClassifiedTaxCategory: &goblubl.ClassifiedTaxCategory{
+			ID: &goblubl.IDType{Value: "E"},
+		}}}
+	}
+	goblLine := func(code cbc.Code) *bill.Line {
+		c := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt}
+		if code != "" {
+			c.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyExemption: code})
+		}
+		return &bill.Line{Taxes: tax.Set{c}}
+	}
+
+	t.Run("writes the exemption reason on the line", func(t *testing.T) {
+		line := ublLine()
+		exportAELineExemption(&line, goblLine("DL8.46.2"))
+		require.NotNil(t, line.Item.ClassifiedTaxCategory.TaxExemptionReasonCode)
+		assert.Equal(t, "DL8.46.2", *line.Item.ClassifiedTaxCategory.TaxExemptionReasonCode)
+	})
+
+	t.Run("nothing without a reason", func(t *testing.T) {
+		line := ublLine()
+		exportAELineExemption(&line, goblLine(""))
+		assert.Nil(t, line.Item.ClassifiedTaxCategory.TaxExemptionReasonCode)
+		exportAELineExemption(&line, nil)
+		assert.Nil(t, line.Item.ClassifiedTaxCategory.TaxExemptionReasonCode)
+	})
+
+	t.Run("reads the reasons back onto the line combos", func(t *testing.T) {
+		code := " DL8.46.4 "
+		with := ublLine()
+		with.Item.ClassifiedTaxCategory.TaxExemptionReasonCode = &code
+		inv := &bill.Invoice{Lines: []*bill.Line{goblLine(""), goblLine("")}}
+		importAELineExemptions([]goblubl.InvoiceLine{ublLine(), with}, inv)
+		assert.Empty(t, inv.Lines[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
+		assert.Equal(t, cbc.Code("DL8.46.4"), inv.Lines[1].Taxes[0].Ext.Get(pint.ExtKeyExemption))
+	})
+
+	t.Run("lines that don't match are skipped", func(t *testing.T) {
+		code := "DL8.46.4"
+		with := ublLine()
+		with.Item.ClassifiedTaxCategory.TaxExemptionReasonCode = &code
+		inv := &bill.Invoice{Lines: []*bill.Line{goblLine(""), goblLine("")}}
+		importAELineExemptions([]goblubl.InvoiceLine{with}, inv)
+		assert.Empty(t, inv.Lines[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
+	})
+}
+
 func TestExportAELineAmounts(t *testing.T) {
 	line := func(category string) *goblubl.InvoiceLine {
 		return &goblubl.InvoiceLine{Item: &goblubl.Item{

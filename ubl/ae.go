@@ -74,6 +74,8 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAETransactionType(in, inv)
 	importAECreditNoteReason(in, inv)
 	importAEBillingFrequency(in, inv)
+	importAELineExemptions(in.InvoiceLines, inv)
+	importAELineExemptions(in.CreditNoteLines, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
 	return nil
@@ -203,10 +205,49 @@ func importAECreditNoteReason(in *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
+// exportAELineExemption writes the UAE VAT exemption reason of an exempt line
+// as its cac:ClassifiedTaxCategory/cbc:TaxExemptionReasonCode (IBT-186,
+// IBR-167-AE).
+func exportAELineExemption(line *goblubl.InvoiceLine, l *bill.Line) {
+	if l == nil || line.Item == nil || line.Item.ClassifiedTaxCategory == nil {
+		return
+	}
+	c := l.Taxes.Get(tax.CategoryVAT)
+	if c == nil {
+		return
+	}
+	if code := c.Ext.Get(pint.ExtKeyExemption); code != "" {
+		v := code.String()
+		line.Item.ClassifiedTaxCategory.TaxExemptionReasonCode = &v
+	}
+}
+
+// importAELineExemptions reads the line exemption reasons back onto the VAT
+// combos of the invoice's lines, which gobl.ubl imports in the same order.
+func importAELineExemptions(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
+	if len(lines) == 0 || len(lines) != len(inv.Lines) {
+		return
+	}
+	for i, line := range lines {
+		if line.Item == nil || line.Item.ClassifiedTaxCategory == nil ||
+			line.Item.ClassifiedTaxCategory.TaxExemptionReasonCode == nil {
+			continue
+		}
+		code := cbc.Code(strings.TrimSpace(*line.Item.ClassifiedTaxCategory.TaxExemptionReasonCode))
+		if c := inv.Lines[i].Taxes.Get(tax.CategoryVAT); c != nil && code != "" {
+			c.Ext = c.Ext.Set(pint.ExtKeyExemption, code)
+		}
+	}
+}
+
 // exportAEBillingFrequency writes the billing frequency as
 // cac:InvoicePeriod/cbc:DescriptionCode (BTAE-06), on the period gobl.ubl
 // writes from the ordering period, or on its own: IBR-CO-19 accepts a period
 // with only a description code.
+//
+// The PINT AE syntax binds BTAE-06 to cbc:Description, but the IBR-005-AE
+// and IBR-160-AE tests read cbc:DescriptionCode, so we follow the tests. The
+// official examples use both.
 func exportAEBillingFrequency(out *goblubl.Invoice, inv *bill.Invoice) {
 	freq := inv.Tax.GetExt(pint.ExtKeyBillingFrequency)
 	if freq == "" {
@@ -235,6 +276,7 @@ func exportAELines(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 		exportAELine(&lines[i])
 		if len(lines) == len(inv.Lines) {
 			exportAELineAmounts(&lines[i], inv.Lines[i], inv.Currency)
+			exportAELineExemption(&lines[i], inv.Lines[i])
 		}
 	}
 }

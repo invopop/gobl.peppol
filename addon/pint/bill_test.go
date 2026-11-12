@@ -991,6 +991,66 @@ func TestBillBillingFrequencyRulesAE(t *testing.T) {
 	})
 }
 
+func TestBillExemptionRulesAE(t *testing.T) {
+	const (
+		faultLineExemption  = "GOBL-PEPPOL-PINT-BILL-LINE-03"
+		faultDiscountReason = "GOBL-PEPPOL-PINT-BILL-INVOICE-52"
+		faultChargeReason   = "GOBL-PEPPOL-PINT-BILL-INVOICE-53"
+	)
+	exempt := func(code cbc.Code) *tax.Combo {
+		c := lineCombo(tax.KeyExempt)
+		if code != "" {
+			c.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyExemption: code})
+		}
+		return c
+	}
+
+	t.Run("exempt line needs a UAE exemption reason (IBR-167-AE)", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Lines[0].Taxes = tax.Set{exempt("")}
+		assert.Contains(t, aeFaults(t, inv), faultLineExemption)
+
+		// IBR-167-AE only checks a code is there, so codes outside the AE
+		// list, like the official examples' VATEX-AE-EDU, are accepted.
+		for _, code := range []cbc.Code{"DL8.46.1", "DL8.46.4", "VATEX-AE-EDU"} {
+			inv = aeDocument(bill.InvoiceTypeStandard)
+			inv.Lines[0].Taxes = tax.Set{exempt(code)}
+			assert.NotContains(t, aeFaults(t, inv), faultLineExemption, code)
+		}
+	})
+
+	t.Run("other categories need no exemption reason", func(t *testing.T) {
+		assert.NotContains(t, aeFaults(t, aeDocument(bill.InvoiceTypeStandard)), faultLineExemption)
+	})
+
+	t.Run("exempt discount needs an allowance reason code (IBR-168-AE)", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{exempt("DL8.46.1")}}}
+		assert.Contains(t, aeFaults(t, inv), faultDiscountReason)
+
+		inv.Discounts[0].Ext = tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyAllowance: "95"})
+		assert.NotContains(t, aeFaults(t, inv), faultDiscountReason)
+	})
+
+	t.Run("exempt charge needs a charge reason code (IBR-169-AE)", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Charges = []*bill.Charge{{Reason: "Handling", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{exempt("DL8.46.1")}}}
+		assert.Contains(t, aeFaults(t, inv), faultChargeReason)
+
+		inv.Charges[0].Ext = tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyCharge: "AAT"})
+		assert.NotContains(t, aeFaults(t, inv), faultChargeReason)
+	})
+
+	t.Run("standard rated discounts and charges need no reason code", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{standardVAT()}}}
+		inv.Charges = []*bill.Charge{{Reason: "Handling", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{standardVAT()}}}
+		out := aeFaults(t, inv)
+		assert.NotContains(t, out, faultDiscountReason)
+		assert.NotContains(t, out, faultChargeReason)
+	})
+}
+
 func TestBillLineRulesAE(t *testing.T) {
 	const (
 		faultLineVAT         = "GOBL-PEPPOL-PINT-BILL-LINE-01"

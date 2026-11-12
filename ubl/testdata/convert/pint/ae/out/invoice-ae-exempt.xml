@@ -85,6 +85,7 @@
   </cac:AllowanceCharge>
   <cac:AllowanceCharge>
     <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+    <cbc:AllowanceChargeReasonCode>95</cbc:AllowanceChargeReasonCode>
     <cbc:AllowanceChargeReason>Loyalty discount</cbc:AllowanceChargeReason>
     <cbc:Amount currencyID="AED">20.00</cbc:Amount>
     <cac:TaxCategory>
@@ -168,6 +169,7 @@
       <cbc:Name>Financial service</cbc:Name>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>E</cbc:ID>
+        <cbc:TaxExemptionReasonCode>DL8.46.1</cbc:TaxExemptionReasonCode>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
@@ -195,6 +197,7 @@
       <cbc:Name>Residential rent</cbc:Name>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>E</cbc:ID>
+        <cbc:TaxExemptionReasonCode>DL8.46.2</cbc:TaxExemptionReasonCode>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>

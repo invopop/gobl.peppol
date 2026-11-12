@@ -352,6 +352,29 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
+			// IBR-168-AE and IBR-169-AE name the exemption reason code (IBT-196,
+			// IBT-198), but their tests check the allowance or charge reason code,
+			// cbc:AllowanceChargeReasonCode. We follow the tests.
+			rules.Field("discounts", rules.Each(
+				rules.When(
+					is.Func("has exempt VAT", taxesIn(comboIsExemptVAT)),
+					rules.Field("ext",
+						rules.Assert("52", "exempt discount needs an allowance reason code (IBR-168-AE)",
+							tax.ExtensionsRequire(untdid.ExtKeyAllowance),
+						),
+					),
+				),
+			)),
+			rules.Field("charges", rules.Each(
+				rules.When(
+					is.Func("has exempt VAT", taxesIn(comboIsExemptVAT)),
+					rules.Field("ext",
+						rules.Assert("53", "exempt charge needs a charge reason code (IBR-169-AE)",
+							tax.ExtensionsRequire(untdid.ExtKeyCharge),
+						),
+					),
+				),
+			)),
 		),
 	)
 }
@@ -373,6 +396,16 @@ func billLineRules() *rules.Set {
 					rules.Assert("02", "item description is required (IBR-125-AE)", is.Present),
 				),
 			),
+			rules.Field("taxes", rules.Each(
+				rules.When(
+					is.Func("exempt VAT", comboIsExemptVAT),
+					rules.Field("ext",
+						rules.Assert("03", "exempt line needs a UAE VAT exemption reason (IBR-167-AE)",
+							tax.ExtensionsRequire(ExtKeyExemption),
+						),
+					),
+				),
+			)),
 		),
 	)
 }
@@ -893,6 +926,38 @@ func billingFrequencyIs(code cbc.Code) func(any) bool {
 	return func(val any) bool {
 		inv, ok := val.(*bill.Invoice)
 		return ok && inv != nil && inv.Tax.GetExt(ExtKeyBillingFrequency) == code
+	}
+}
+
+// comboIsExemptVAT reports whether a tax combo is VAT with the exempt
+// category code E.
+func comboIsExemptVAT(val any) bool {
+	c, ok := val.(*tax.Combo)
+	return ok && c != nil && c.Category == tax.CategoryVAT &&
+		c.Ext.Get(untdid.ExtKeyTaxCategory) == en16931.TaxCategoryExempt
+}
+
+// taxesIn returns a predicate that reports whether a discount or charge has
+// a tax combo that check accepts.
+func taxesIn(check func(any) bool) func(any) bool {
+	return func(val any) bool {
+		var set tax.Set
+		switch v := val.(type) {
+		case *bill.Discount:
+			if v != nil {
+				set = v.Taxes
+			}
+		case *bill.Charge:
+			if v != nil {
+				set = v.Taxes
+			}
+		}
+		for _, c := range set {
+			if check(c) {
+				return true
+			}
+		}
+		return false
 	}
 }
 

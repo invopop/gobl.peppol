@@ -20,6 +20,9 @@ const (
 	ExtKeyCreditNoteReason cbc.Key = "peppol-pint-ae-credit-note-reason"
 	// ExtKeyBillingFrequency is the frequency of billing (BTAE-06).
 	ExtKeyBillingFrequency cbc.Key = "peppol-pint-ae-billing-frequency"
+	// ExtKeyExemption is the UAE VAT exemption reason of an exempt tax combo
+	// (IBT-186 on lines).
+	ExtKeyExemption cbc.Key = "peppol-pint-ae-exemption"
 )
 
 // CreditNoteReasonVolumeDiscount is the credit note reason for a volume
@@ -147,6 +150,26 @@ var extensions = []*cbc.Definition{
 			{Code: "YRL", Name: i18n.String{i18n.EN: "Yearly"}},
 			{Code: "HYR", Name: i18n.String{i18n.EN: "Half-Yearly"}},
 			{Code: BillingFrequencyOthers, Name: i18n.String{i18n.EN: "Others"}},
+		},
+	},
+	{
+		Key: ExtKeyExemption,
+		Name: i18n.String{
+			i18n.EN: "PINT AE VAT Exemption Reason",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Reason a supply is exempt from UAE VAT, such as one of the PINT AE
+				"Reasons for exemption from tax" codes (DL8.46.1 to DL8.46.4).
+				Required on exempt lines (IBR-167-AE), where it is written as the
+				line's exemption reason code.
+			`),
+		},
+		Sources: []*cbc.Source{
+			{
+				Title: i18n.NewString("PINT AE Reasons for exemption from tax"),
+				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/codelist/Aligned-TaxExemptionCodes/",
+			},
 		},
 	},
 }

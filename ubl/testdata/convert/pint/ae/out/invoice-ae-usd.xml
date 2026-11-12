@@ -210,6 +210,7 @@
       <cbc:Name>Financial service</cbc:Name>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>E</cbc:ID>
+        <cbc:TaxExemptionReasonCode>DL8.46.3</cbc:TaxExemptionReasonCode>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
