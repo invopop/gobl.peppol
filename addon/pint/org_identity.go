@@ -79,7 +79,3 @@ func GTINIdentity(ids []*org.Identity) *org.Identity {
 	}
 	return nil
 }
-
-// IdentityLabelIncoterms is the label of the delivery identity that holds
-// the Incoterms code (BTAE-22), such as "CIF".
-const IdentityLabelIncoterms = "Incoterms"

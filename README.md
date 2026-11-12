@@ -122,8 +122,8 @@ item's type of goods or services subject to the reverse charge as its
 `goods`, `services` or `goods-services` get the item type `G`, `S` or `B`, and
 identities labelled `SAC` are written as service accounting codes. Lines
 with the AE regime's `margin-scheme` VAT key get the `N` category at 5%, with
-no VAT amount, and the delivery identity labelled `Incoterms` is written as
-the delivery terms. On import, it reads
+no VAT amount, and the delivery's ICC Incoterms (`icc-incoterms-2020` or
+`-2010`) are written as the delivery terms. On import, it reads
 the out-of-scope type codes 480 and 81 back as the `outside-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as
 identity keys and fields, the transaction type back as its extension and
@@ -131,7 +131,7 @@ tags, and the credit note reason, billing frequency, line exemption
 reasons and item goods types back as their extensions, and the item
 types and service accounting codes back as item keys and identities, and
 the `N` category back as the `margin-scheme` key, and the delivery terms back
-as the `Incoterms` delivery identity.
+as the `icc-incoterms-2020` extension.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,

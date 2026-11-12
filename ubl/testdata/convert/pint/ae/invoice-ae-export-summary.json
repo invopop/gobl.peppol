@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "3427bb173c02dafd94df0157402357448d0a62e64497bc8cd64d5979ba5f332d"
+			"val": "5ae6ba316b341cf944951696196580d75e1787daa1f691beb85003953d560203"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -170,12 +170,9 @@
 					}
 				]
 			},
-			"identities": [
-				{
-					"label": "Incoterms",
-					"code": "CIF"
-				}
-			]
+			"ext": {
+				"icc-incoterms-2020": "CIF"
+			}
 		},
 		"totals": {
 			"sum": "1000.00",

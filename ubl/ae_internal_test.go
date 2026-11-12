@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/gobl.peppol/addon/pint"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/catalogues/icc"
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
@@ -743,50 +744,46 @@ func TestAELineItems(t *testing.T) {
 }
 
 func TestAEIncoterms(t *testing.T) {
-	incoterms := &org.Identity{Label: pint.IdentityLabelIncoterms, Code: "CIF"}
-	gln := &org.Identity{Code: "5790000436101", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: "0088"})}
-	withLocation := func(id string) *goblubl.Invoice {
-		return &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryLocation: &goblubl.Location{ID: &goblubl.IDType{Value: id}}}}}
+	delivery := func(key cbc.Key, code cbc.Code) *bill.Invoice {
+		return &bill.Invoice{Delivery: &bill.DeliveryDetails{Ext: tax.ExtensionsOf(cbc.CodeMap{key: code})}}
 	}
 
 	t.Run("writes the Incoterms as the delivery terms", func(t *testing.T) {
 		out := new(goblubl.Invoice)
-		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{Identities: []*org.Identity{incoterms}}})
+		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2020, "CIF"))
 		require.Len(t, out.Delivery, 1)
 		require.NotNil(t, out.Delivery[0].DeliveryTerms)
 		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms.ID)
 	})
 
-	t.Run("keeps the Incoterms out of the delivery location ID", func(t *testing.T) {
-		out := withLocation("CIF")
-		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{Identities: []*org.Identity{incoterms, gln}}})
-		id := out.Delivery[0].DeliveryLocation.ID
-		require.NotNil(t, id)
-		assert.Equal(t, "5790000436101", id.Value)
-		assert.Equal(t, "0088", *id.SchemeID)
+	t.Run("also from the 2010 edition", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2010, "DAT"))
+		assert.Equal(t, "DAT", out.Delivery[0].DeliveryTerms.ID)
+	})
 
-		out = withLocation("CIF")
-		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{Identities: []*org.Identity{incoterms}}})
-		assert.Nil(t, out.Delivery[0].DeliveryLocation.ID)
+	t.Run("on the delivery gobl.ubl wrote", func(t *testing.T) {
+		out := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryLocation: &goblubl.Location{ID: &goblubl.IDType{Value: "5790000436101"}}}}}
+		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2020, "CIF"))
+		require.Len(t, out.Delivery, 1)
+		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms.ID)
+		assert.Equal(t, "5790000436101", out.Delivery[0].DeliveryLocation.ID.Value)
 	})
 
 	t.Run("nothing without Incoterms", func(t *testing.T) {
-		out := withLocation("5790000436101")
-		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{Identities: []*org.Identity{gln}}})
-		assert.Nil(t, out.Delivery[0].DeliveryTerms)
-		assert.Equal(t, "5790000436101", out.Delivery[0].DeliveryLocation.ID.Value)
+		out := new(goblubl.Invoice)
+		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{}})
+		assert.Empty(t, out.Delivery)
 		exportAEIncoterms(out, &bill.Invoice{})
-		assert.Nil(t, out.Delivery[0].DeliveryTerms)
+		assert.Empty(t, out.Delivery)
 	})
 
-	t.Run("reads the Incoterms back", func(t *testing.T) {
+	t.Run("reads the Incoterms back as the 2020 edition", func(t *testing.T) {
 		in := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: &goblubl.DeliveryTerms{ID: " CIF "}}}}
 		inv := new(bill.Invoice)
 		importAEIncoterms(in, inv)
 		require.NotNil(t, inv.Delivery)
-		require.Len(t, inv.Delivery.Identities, 1)
-		assert.Equal(t, pint.IdentityLabelIncoterms, inv.Delivery.Identities[0].Label)
-		assert.Equal(t, cbc.Code("CIF"), inv.Delivery.Identities[0].Code)
+		assert.Equal(t, cbc.Code("CIF"), inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2020))
 
 		inv = new(bill.Invoice)
 		importAEIncoterms(new(goblubl.Invoice), inv)

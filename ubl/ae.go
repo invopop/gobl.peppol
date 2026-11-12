@@ -7,7 +7,7 @@ import (
 	"github.com/invopop/gobl.peppol/addon/pint"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
-	"github.com/invopop/gobl/catalogues/iso"
+	"github.com/invopop/gobl/catalogues/icc"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
@@ -431,50 +431,29 @@ func importAEBillingFrequency(in *goblubl.Invoice, inv *bill.Invoice) {
 	setAEExt(inv, pint.ExtKeyBillingFrequency, cbc.Code(strings.TrimSpace(in.InvoicePeriod[0].DescriptionCode)))
 }
 
-// exportAEIncoterms writes the delivery identity labelled "Incoterms" as
-// cac:Delivery/cac:DeliveryTerms/cbc:ID (BTAE-22). gobl.ubl writes the first
-// delivery identity as the delivery location ID, so the Incoterms one is
-// replaced there by the next identity, or removed.
+// exportAEIncoterms writes the delivery's Incoterms rule code, from the ICC
+// Incoterms 2020 or 2010 extension, as cac:Delivery/cac:DeliveryTerms/cbc:ID
+// (BTAE-22).
 func exportAEIncoterms(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Delivery == nil {
 		return
 	}
-	var incoterms *org.Identity
-	var others []*org.Identity
-	for _, id := range inv.Delivery.Identities {
-		if id == nil {
-			continue
-		}
-		if id.Label == pint.IdentityLabelIncoterms && incoterms == nil {
-			incoterms = id
-			continue
-		}
-		others = append(others, id)
+	code := inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2020)
+	if code == "" {
+		code = inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2010)
 	}
-	if incoterms == nil {
+	if code == "" {
 		return
 	}
 	if len(out.Delivery) == 0 {
 		out.Delivery = []*goblubl.Delivery{{}}
 	}
-	d := out.Delivery[0]
-	d.DeliveryTerms = &goblubl.DeliveryTerms{ID: incoterms.Code.String()}
-	if d.DeliveryLocation == nil || d.DeliveryLocation.ID == nil {
-		return
-	}
-	if len(others) == 0 {
-		d.DeliveryLocation.ID = nil
-		return
-	}
-	id := &goblubl.IDType{Value: others[0].Code.String()}
-	if s := others[0].Ext.Get(iso.ExtKeySchemeID).String(); s != "" {
-		id.SchemeID = &s
-	}
-	d.DeliveryLocation.ID = id
+	out.Delivery[0].DeliveryTerms = &goblubl.DeliveryTerms{ID: code.String()}
 }
 
-// importAEIncoterms reads the Incoterms back as a delivery identity labelled
-// "Incoterms".
+// importAEIncoterms reads the delivery terms back as the ICC Incoterms 2020
+// extension, the current edition, as PINT AE doesn't say which one a code is
+// from.
 func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
 	if len(in.Delivery) == 0 || in.Delivery[0] == nil || in.Delivery[0].DeliveryTerms == nil {
 		return
@@ -486,10 +465,7 @@ func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Delivery == nil {
 		inv.Delivery = new(bill.DeliveryDetails)
 	}
-	inv.Delivery.Identities = append(inv.Delivery.Identities, &org.Identity{
-		Label: pint.IdentityLabelIncoterms,
-		Code:  code,
-	})
+	inv.Delivery.Ext = inv.Delivery.Ext.Set(icc.ExtKeyIncoterms2020, code)
 }
 
 // exportAELines completes the UBL lines, which gobl.ubl writes in the same
