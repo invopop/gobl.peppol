@@ -1,0 +1,172 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "9d5f7e184ece141543a8c205f363b5aafd431716944e0962914e7a3e4dc94d5a"
+		},
+		"from": "iso6523-actorid-upis::0235:1357902468",
+		"to": "iso6523-actorid-upis::0235:1345678901"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "AE001-Test",
+		"issue_date": "2025-01-30",
+		"currency": "AED",
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"peppol-pint-ae-transaction-type": "00000000",
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "135790246801003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"key": "ae-trade-license",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1357902468"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"locality": "City Name",
+					"region": "DXB",
+					"country": "AE"
+				}
+			]
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890123003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"key": "ae-trade-license",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1345678901"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"locality": "CityName",
+					"region": "AUH",
+					"country": "AE"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "100",
+				"item": {
+					"key": "goods",
+					"name": "Item Name",
+					"identities": [
+						{
+							"label": "HS",
+							"code": "aaa"
+						}
+					],
+					"description": "Item Description",
+					"list": "10",
+					"price": "10.00",
+					"unit": "piece",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "1000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "1000.00"
+			}
+		],
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-02-06",
+						"amount": "1050.00",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "any",
+				"detail": "Debit Card",
+				"card": {
+					"last4": "1234",
+					"holder": "Card Holder Name"
+				},
+				"ext": {
+					"untdid-payment-means": "1"
+				}
+			}
+		},
+		"totals": {
+			"sum": "1000.00",
+			"total": "1000.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "1000.00",
+								"percent": "5%",
+								"amount": "50.00"
+							}
+						],
+						"amount": "50.00"
+					}
+				],
+				"sum": "50.00"
+			},
+			"tax": "50.00",
+			"total_with_tax": "1050.00",
+			"payable": "1050.00"
+		}
+	}
+}

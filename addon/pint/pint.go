@@ -28,6 +28,9 @@ const (
 // regimesAUNZ lists the tax regimes the PINT A-NZ jurisdiction rules apply to.
 var regimesAUNZ = []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax()}
 
+// regimesAE lists the tax regimes the PINT AE jurisdiction rules apply to.
+var regimesAE = []l10n.TaxCountryCode{l10n.AE.Tax()}
+
 func init() {
 	tax.RegisterAddonDef(newV1Addon())
 	rules.RegisterWithGuard(
@@ -35,14 +38,22 @@ func init() {
 		rules.GOBL.Add(Namespace),
 		is.InContext(tax.AddonIn(V1)),
 		billInvoiceRules(),
+		billLineRules(),
 		taxComboRules(),
 		taxCategoryTotalRules(),
+		taxIdentityRules(),
 		payInstructionsRules(),
 		creditTransferRules(),
 	)
 	norm.RegisterWithGuard(
 		is.InContext(tax.AddonIn(V1)),
 		norm.For(normalizeTaxCombo),
+		norm.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			norm.For(normalizeTransactionType),
+			norm.For(normalizeIdentityScopes),
+			norm.For(normalizeTaxComboAE),
+		),
 	)
 }
 
@@ -68,7 +79,22 @@ func newV1Addon() *tax.AddonDef {
 
 				Jurisdiction-specific requirements are applied according to the
 				document's tax regime: Australian and New Zealand documents are also
-				validated against the PINT A-NZ rules.
+				validated against the PINT A-NZ rules; and UAE documents are validated against the PINT AE rules.
+
+				UAE documents out of scope of VAT use the "outside-scope" tag, which
+				sets the document type to 480 on invoices and 81 on credit notes.
+
+				UAE trade licences carry their issuing authority in the description,
+				and passports their issuing country.
+
+				The supplier's and customer's UAE identities without a scope get the
+				one PINT AE reads them from: "legal" for the first trade licence,
+				Emirates ID, passport or Cabinet Decision of a party that has no legal
+				identity yet, and "tax" for the supplier's TIN.
+
+				UAE invoices get the PINT AE transaction type from their tags:
+				"free-trade-zone", "deemed-supply", "margin-scheme", "summary",
+				"continuous-supply", "disclosed-agent", "e-commerce" and "export".
 			`),
 		},
 		Sources: []*cbc.Source{
@@ -84,6 +110,17 @@ func newV1Addon() *tax.AddonDef {
 				Title: i18n.NewString("PINT A-NZ jurisdiction-aligned rules"),
 				URL:   "https://docs.peppol.eu/poac/aunz/pint-aunz/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
 			},
+			{
+				Title: i18n.NewString("PINT AE jurisdiction-aligned rules"),
+				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
+			},
+		},
+		Extensions: extensions,
+		Tags: []*tax.TagSet{
+			invoiceTags,
+		},
+		Scenarios: []*tax.ScenarioSet{
+			invoiceScenarios,
 		},
 	}
 }

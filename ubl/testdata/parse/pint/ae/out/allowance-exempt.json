@@ -1,0 +1,245 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "38d4dfc2b7ead64cb1486d0cc2bdc72a7d6a5a878772929d8a73de2c64b823e2"
+		},
+		"from": "iso6523-actorid-upis::0235:1987654321",
+		"to": "iso6523-actorid-upis::0235:1345678901"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"$tags": [
+			"outside-scope"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "AE-ALLOW-E-01",
+		"issue_date": "2025-03-15",
+		"value_date": "2025-03-10",
+		"currency": "AED",
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"peppol-pint-ae-transaction-type": "00000000",
+				"untdid-document-type": "480"
+			}
+		},
+		"supplier": {
+			"name": "Seller Legal Name",
+			"alias": "Seller Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "198765432102003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"key": "ae-trade-license",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1987654321"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Al Maktoum Road",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "seller@example.ae"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+971501234567"
+				}
+			],
+			"registration": {
+				"other": "Merchant"
+			}
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"alias": "Buyer Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890123003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"key": "ae-trade-license",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Buyer Contact"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1345678901"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Khalifa Street",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "buyer@example.ae"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+971502345678"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "10",
+				"item": {
+					"name": "Education Services",
+					"description": "Educational services exempt from VAT",
+					"list": "100",
+					"price": "100.00",
+					"unit": "piece",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "1000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"peppol-pint-ae-exemption": "VATEX-AE-EDU",
+							"untdid-tax-category": "E"
+						}
+					}
+				],
+				"total": "1000.00"
+			}
+		],
+		"discounts": [
+			{
+				"i": 1,
+				"reason": "Special Rebate",
+				"amount": "100.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"untdid-tax-category": "E"
+						}
+					}
+				],
+				"ext": {
+					"untdid-allowance": "100"
+				}
+			}
+		],
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-03-30",
+						"amount": "900.00",
+						"percent": "100%"
+					}
+				],
+				"notes": "Net 15 days"
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"detail": "Credit transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"bic": "ABORAEADXXX",
+						"name": "current account"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "1000.00",
+			"discount": "100.00",
+			"total": "900.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "exempt",
+								"ext": {
+									"peppol-pint-ae-exemption": "VATEX-AE-EDU",
+									"untdid-tax-category": "E"
+								},
+								"base": "1000.00",
+								"amount": "0.00"
+							},
+							{
+								"key": "exempt",
+								"ext": {
+									"untdid-tax-category": "E"
+								},
+								"base": "-100.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "900.00",
+			"payable": "900.00"
+		},
+		"notes": [
+			{
+				"text": "Exempt supply invoice"
+			}
+		]
+	}
+}
