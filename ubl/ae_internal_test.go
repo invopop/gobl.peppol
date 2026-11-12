@@ -795,21 +795,21 @@ func TestAEIncoterms(t *testing.T) {
 		out := new(goblubl.Invoice)
 		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2020, "CIF"))
 		require.Len(t, out.Delivery, 1)
-		require.NotNil(t, out.Delivery[0].DeliveryTerms)
-		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms.ID)
+		require.Len(t, out.Delivery[0].DeliveryTerms, 1)
+		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms[0].ID)
 	})
 
 	t.Run("also from the 2010 edition", func(t *testing.T) {
 		out := new(goblubl.Invoice)
 		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2010, "DAT"))
-		assert.Equal(t, "DAT", out.Delivery[0].DeliveryTerms.ID)
+		assert.Equal(t, "DAT", out.Delivery[0].DeliveryTerms[0].ID)
 	})
 
 	t.Run("on the delivery gobl.ubl wrote", func(t *testing.T) {
 		out := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryLocation: &goblubl.Location{ID: &goblubl.IDType{Value: "5790000436101"}}}}}
 		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2020, "CIF"))
 		require.Len(t, out.Delivery, 1)
-		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms.ID)
+		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms[0].ID)
 		assert.Equal(t, "5790000436101", out.Delivery[0].DeliveryLocation.ID.Value)
 	})
 
@@ -822,7 +822,7 @@ func TestAEIncoterms(t *testing.T) {
 	})
 
 	t.Run("reads the Incoterms back as the 2020 edition", func(t *testing.T) {
-		in := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: &goblubl.DeliveryTerms{ID: " CIF "}}}}
+		in := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: " CIF "}}}}}
 		inv := new(bill.Invoice)
 		importAEIncoterms(in, inv)
 		require.NotNil(t, inv.Delivery)

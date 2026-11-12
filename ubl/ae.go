@@ -452,17 +452,17 @@ func exportAEIncoterms(out *goblubl.Invoice, inv *bill.Invoice) {
 	if len(out.Delivery) == 0 {
 		out.Delivery = []*goblubl.Delivery{{}}
 	}
-	out.Delivery[0].DeliveryTerms = &goblubl.DeliveryTerms{ID: code.String()}
+	out.Delivery[0].DeliveryTerms = []goblubl.DeliveryTerms{{ID: code.String()}}
 }
 
 // importAEIncoterms reads the delivery terms back as the ICC Incoterms 2020
 // extension, the current edition, as PINT AE doesn't say which one a code is
 // from.
 func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
-	if len(in.Delivery) == 0 || in.Delivery[0] == nil || in.Delivery[0].DeliveryTerms == nil {
+	if len(in.Delivery) == 0 || in.Delivery[0] == nil || len(in.Delivery[0].DeliveryTerms) == 0 {
 		return
 	}
-	code := cbc.Code(strings.TrimSpace(in.Delivery[0].DeliveryTerms.ID))
+	code := cbc.Code(strings.TrimSpace(in.Delivery[0].DeliveryTerms[0].ID))
 	if code == "" {
 		return
 	}
