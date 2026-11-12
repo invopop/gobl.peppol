@@ -121,23 +121,19 @@ func invoiceTransactionType(val any) TransactionType {
 	return ParseTransactionType(inv.Tax.GetExt(ExtKeyTransactionType))
 }
 
-// normalizeTransactionType sets the transaction type of a UAE invoice. Every
-// PINT AE document needs one (IBR-154-AE). When the invoice has any of the
-// flag tags, the tags decide the code, so a code from an earlier calculation
-// follows the tags when they change. Without tags, a code set directly is
-// kept, and "00000000" is set when there is none.
+// normalizeTransactionType sets the transaction type of a UAE invoice from its
+// flag tags, "00000000" without any. Every PINT AE document needs one
+// (IBR-154-AE). The tags are the only source: a code from an earlier
+// calculation can't be told apart from one set directly, so keeping it would
+// leave the flags of removed tags in place.
 func normalizeTransactionType(inv *bill.Invoice) {
 	if inv == nil {
-		return
-	}
-	t := transactionTypeFromTags(inv)
-	if len(t.Tags()) == 0 && inv.Tax.GetExt(ExtKeyTransactionType) != "" {
 		return
 	}
 	if inv.Tax == nil {
 		inv.Tax = new(bill.Tax)
 	}
-	inv.Tax.Ext = inv.Tax.Ext.Set(ExtKeyTransactionType, t.Code())
+	inv.Tax.Ext = inv.Tax.Ext.Set(ExtKeyTransactionType, transactionTypeFromTags(inv).Code())
 }
 
 // transactionTypeTags are the invoice tags for the transaction type flags.

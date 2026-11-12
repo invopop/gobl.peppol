@@ -18,7 +18,8 @@ import (
 const TaxCategoryMarginScheme cbc.Code = "N"
 
 // taxCategoryMap maps GOBL tax keys to the UNTDID 5305 tax category codes that
-// PINT recognises, mirroring EN 16931's VAT key mapping.
+// PINT recognises, mirroring EN 16931's VAT key mapping. The PINT AE margin
+// scheme category is not here, as it is only for UAE documents.
 var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyStandard:       en16931.TaxCategoryStandard,
 	tax.KeyZero:           en16931.TaxCategoryZero,
@@ -27,7 +28,6 @@ var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyIntraCommunity: en16931.TaxCategoryIntraCommunity,
 	tax.KeyExport:         en16931.TaxCategoryExport,
 	tax.KeyOutsideScope:   en16931.TaxCategoryOutsideScope,
-	ae.TaxKeyMarginScheme: TaxCategoryMarginScheme,
 })
 
 // taxCategoryCodesAUNZ lists the subset of UNTDID 5305 tax category codes
@@ -62,6 +62,14 @@ func normalizeTaxCombo(tc *tax.Combo) {
 	}
 }
 
+// normalizeTaxComboAE maps the AE regime's margin scheme key to the PINT AE
+// margin scheme category on UAE documents.
+func normalizeTaxComboAE(tc *tax.Combo) {
+	if tc != nil && tc.Key == ae.TaxKeyMarginScheme {
+		tc.Ext = tc.Ext.Set(untdid.ExtKeyTaxCategory, TaxCategoryMarginScheme)
+	}
+}
+
 func taxComboRules() *rules.Set {
 	return rules.For(new(tax.Combo),
 		// PINT recognises GST (and other non-VAT schemes) as standard, zero or
@@ -69,9 +77,14 @@ func taxComboRules() *rules.Set {
 		// to outside scope must not apply here.
 		rules.Ignore("GOBL-EU-EN16931-TAX-COMBO-05"),
 
-		rules.Field("ext",
-			rules.Assert("01", "invoice line tax category code must be a recognised PINT UNTDID 5305 code",
-				tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryMap.Values()...),
+		// UAE documents have their own list, with the margin scheme category
+		// (rule 03).
+		rules.When(
+			is.Not(is.InContext(tax.RegimeIn(regimesAE...))),
+			rules.Field("ext",
+				rules.Assert("01", "invoice line tax category code must be a recognised PINT UNTDID 5305 code",
+					tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryMap.Values()...),
+				),
 			),
 		),
 		rules.When(
@@ -83,12 +96,13 @@ func taxComboRules() *rules.Set {
 			),
 		),
 
-		// TODO: rules 04 and 06 should also apply to AUNZ.
+		// TODO: A-NZ has the same zero rate rule (05), and asks for a standard
+		// rate above zero (ALIGNED-IBRP-S-05/06/07).
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			// EN 16931 checks VAT category codes against its own list, which has
-			// no PINT AE margin scheme category (N). Rule 01 checks them against
-			// the PINT list instead.
+			// no PINT AE margin scheme category (N). Rule 03 checks them against
+			// the PINT AE list instead.
 			rules.Ignore("GOBL-EU-EN16931-TAX-COMBO-02"),
 			rules.Field("ext",
 				rules.Assert("03", "tax category code must be an AE UNCL5305 code: E, S, Z, O, AE or N (IBR-139-AE)",
@@ -99,10 +113,9 @@ func taxComboRules() *rules.Set {
 			rules.When(
 				is.Func("tax combo is standard rated", taxComboIsStandard),
 				rules.Field("percent",
-					rules.Assert("04", "tax percentage must be a positive number (ALIGNED-IBRP-S-05/06/07)",
-						num.Positive,
-					),
-					rules.Assert("05", "tax percentage must be 5.00 (IBR-190-AE)",
+					// 5.00 also covers the rate above zero ALIGNED-IBRP-S-05/06/07
+					// ask for.
+					rules.Assert("04", "tax percentage must be 5.00 (IBR-190-AE, ALIGNED-IBRP-S-05/06/07)",
 						num.Equals(num.MakePercentage(5, 2)),
 					),
 				),
@@ -111,7 +124,7 @@ func taxComboRules() *rules.Set {
 			rules.When(
 				is.Func("tax combo is zero rated", taxComboIsZero),
 				rules.Field("percent",
-					rules.Assert("06", "tax percentage must be 0.00 (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)",
+					rules.Assert("05", "tax percentage must be 0.00 (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)",
 						num.Equals(num.MakePercentage(0, 2)),
 					),
 				),

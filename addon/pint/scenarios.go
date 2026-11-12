@@ -39,7 +39,7 @@ var invoiceTags = &tax.TagSet{
 				i18n.EN: "Outside Scope",
 			},
 			Desc: i18n.String{
-				i18n.EN: "Marks a PINT AE document as out of scope of VAT, the UAE 'commercial invoice'. Invoices are sent with document type 480 and credit notes with 81. Has no effect outside the UAE.",
+				i18n.EN: "Marks a PINT AE document as out of scope of VAT, the UAE 'commercial invoice'. Invoices are sent with document type 480 and credit notes with 81. Only for UAE documents.",
 			},
 		},
 	}, transactionTypeTags...),

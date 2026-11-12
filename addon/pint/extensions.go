@@ -79,7 +79,7 @@ var extensions = []*cbc.Definition{
 				It is built from the invoice tags with the same names
 				("free-trade-zone", "deemed-supply", "margin-scheme", "summary",
 				"continuous-supply", "disclosed-agent", "e-commerce" and "export").
-				Without any of those tags, a code set directly is kept.
+				A code set directly is replaced.
 			`),
 		},
 		Sources: []*cbc.Source{

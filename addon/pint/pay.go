@@ -32,7 +32,7 @@ func payInstructionsRules() *rules.Set {
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			rules.When(is.Func("payment means is credit transfer", instructionsMeanCreditTransferAE),
-				rules.Assert("02", "credit transfer must include an IBAN or account number (IBR-192-AE)",
+				rules.Assert("02", "first credit transfer must include an IBAN or account number (IBR-192-AE)",
 					is.Func("has a payment account identifier", instructionsHaveAccountID),
 				),
 			),
@@ -89,19 +89,19 @@ func creditTransferHasAccountID(val any) bool {
 	return ct.IBAN != "" || ct.Number != ""
 }
 
-// instructionsHaveAccountID reports whether at least one of the instructions'
-// credit transfers carries an account identifier (ibt-084), either an IBAN or
-// an account number. A missing credit transfer list fails, so one check covers
-// both cases of IBR-192-AE.
+// instructionsHaveAccountID reports whether the instructions' first credit
+// transfer carries an account identifier (ibt-084), either an IBAN or an
+// account number. gobl.ubl only writes the first credit transfer as
+// cac:PayeeFinancialAccount, so the others can't satisfy IBR-192-AE. A missing
+// credit transfer list fails, so one check covers both cases of the rule.
 func instructionsHaveAccountID(val any) bool {
 	instr, ok := val.(*pay.Instructions)
 	if !ok || instr == nil {
 		return true
 	}
-	for _, ct := range instr.CreditTransfer {
-		if ct != nil && (ct.IBAN != "" || ct.Number != "") {
-			return true
-		}
+	if len(instr.CreditTransfer) == 0 {
+		return false
 	}
-	return false
+	ct := instr.CreditTransfer[0]
+	return ct != nil && (ct.IBAN != "" || ct.Number != "")
 }

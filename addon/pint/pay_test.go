@@ -11,6 +11,7 @@ import (
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func instructionsWithMeansCode(code string) *pay.Instructions {
@@ -117,6 +118,16 @@ func TestPayInstructionsRulesAE(t *testing.T) {
 		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
 	})
 
+	t.Run("only the first credit transfer counts, as it is the one written (IBR-192-AE)", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{
+			{Name: "Emirates NBD"},
+			{IBAN: "AE070331234567890123456"},
+		}
+		err := validate(instr)
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
+	})
+
 	t.Run("other payment means are not checked", func(t *testing.T) {
 		for _, code := range []string{"58", "31"} {
 			instr := instructionsWithMeansCode(code)
@@ -140,5 +151,10 @@ func TestPayInstructionsRulesAE(t *testing.T) {
 		instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD"}}
 		err := rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
 		assert.NoError(t, err)
+
+		// A-NZ documents get their own rule for the same case, not the AE one.
+		err = rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
+		require.Error(t, err)
+		assert.NotContains(t, err.Error(), "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
 	})
 }

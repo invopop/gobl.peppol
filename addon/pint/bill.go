@@ -10,7 +10,6 @@ import (
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
-	"github.com/invopop/gobl/num"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/rules"
@@ -57,15 +56,16 @@ func billInvoiceRules() *rules.Set {
 		),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
+			// EN 16931 wants an EU VATEX code or an exemption note for every E, O
+			// and AE breakdown (BR-E-10, BR-O-10, BR-AE-10). PINT AE has no such
+			// rule: it only asks for the UAE exemption reason on exempt lines
+			// (IBR-167-AE), and no official example has a reason on a breakdown.
+			rules.Ignore("GOBL-EU-EN16931-BILL-INVOICE-08"),
 			rules.Assert("05", "exchange_rates must have a rate from the invoice currency to AED (IBR-159-AE)",
 				is.Func("has AED exchange rate", exchangeRateHasAED),
 			),
-			rules.Field("exchange_rates",
-				rules.Each(rules.Field("amount",
-					rules.Assert("06", "exchange rate must have at most 6 decimals (IBR-002-AE)",
-						is.Func("has at most 6 decimals", amountHasAtMost6Decimals),
-					),
-				)),
+			rules.Assert("06", "exchange rate to AED must have at most 6 decimals (IBR-002-AE)",
+				is.Func("AED rate has at most 6 decimals", exchangeRateToAEDHasAtMost6Decimals),
 			),
 			rules.When(
 				is.Not(is.Or(
@@ -81,7 +81,7 @@ func billInvoiceRules() *rules.Set {
 					documentTypeIn(docTypeInvoiceOutsideScope, docTypeCreditNoteGoodsServices))),
 				rules.Field("supplier",
 					rules.Assert("08", "supplier tax ID code is required, except on outside scope documents (IBR-134-AE)",
-						is.Func("has tax ID code", partyHasTaxIDCode),
+						org.PartyHasTaxIDCode(),
 					),
 				),
 			),
@@ -152,12 +152,21 @@ func billInvoiceRules() *rules.Set {
 					is.Func("deemed supply", invoiceIsDeemedSupply),
 				)),
 				rules.When(
-					is.Func("amount is due", invoiceIsDue),
-					rules.Assert("17", "payment due date is required when an amount is due, except on credit notes and deemed supplies (IBR-127-AE)",
+					is.Func("amount due is positive", invoiceIsDue),
+					rules.Assert("17", "payment due date is required when the amount due is positive, except on credit notes and deemed supplies (IBR-127-AE)",
 						is.Func("has due date", invoiceHasDueDate),
 					),
 				),
 			),
+			// IBR-128-AE's text names the seller, buyer, tax representative and
+			// delivery subdivisions (IBT-039, IBT-054, IBT-068, IBT-079), but its
+			// test never runs on the seller's and buyer's addresses: its context,
+			// cac:PostalAddress, comes after their address rules (IBR-143-AE,
+			// IBR-144-AE) in the same pattern, where a node only fires the first
+			// rule it matches. Rules 19 and 21 follow the text there, as the
+			// official examples do, so they check more than the test. Rules 22
+			// and 23, and line rule 11, follow the test: gobl.ubl also writes the
+			// issuer and the line sellers with a cac:PostalAddress.
 			rules.Field("supplier",
 				rules.Assert("18", "supplier address must have a street, city and region (IBR-143-AE)",
 					is.Func("first address has street, city and region", partyAddressIsComplete),
@@ -180,26 +189,31 @@ func billInvoiceRules() *rules.Set {
 						is.Func("first address region is an emirate", partyAddressHasEmirate),
 					),
 				),
+				rules.Field("issuer",
+					rules.Assert("23", "issuer region must be an emirate code when the country is AE (IBR-128-AE)",
+						is.Func("first address region is an emirate", partyAddressHasEmirate),
+					),
+				),
 			),
 			rules.Field("supplier",
 				rules.When(
 					is.Func("has UAE Peppol endpoint", partyHasUAEEndpoint),
-					rules.Assert("23", "supplier legal identity is required with a UAE Peppol endpoint (IBR-150-AE)",
+					rules.Assert("24", "supplier legal identity is required with a UAE Peppol endpoint (IBR-150-AE)",
 						is.Func("has legal identity", partyHasLegalIdentity),
 					),
-					rules.Assert("24", "supplier legal identity must be a trade license, Emirates ID, passport or Cabinet Decision with a UAE Peppol endpoint (IBR-173-AE, IBR-181-AE)",
+					rules.Assert("25", "supplier legal identity must be a trade license, Emirates ID, passport or Cabinet Decision with a UAE Peppol endpoint (IBR-173-AE, IBR-181-AE)",
 						is.Func("legal identity has a PINT AE type", partyLegalIdentityHasTypeAE),
 					),
 				),
-				rules.Assert("25", "supplier passport must have the issuing country (IBR-012-AE)",
+				rules.Assert("26", "supplier passport must have the issuing country (IBR-012-AE)",
 					is.Func("passport has country", partyPassportHasCountry),
 				),
-				rules.Assert("26", "supplier trade license must have the issuing authority in the description (IBR-172-AE)",
+				rules.Assert("27", "supplier trade license must have the issuing authority in the description (IBR-172-AE)",
 					is.Func("trade license has authority", partyTradeLicenseHasAuthority),
 				),
-				rules.Assert("27", "supplier must have at most one tax scope identity (IBR-178-AE)",
-					is.Func("at most one tax scope identity", partyHasAtMostOneTaxIdentity),
-				),
+				// IBR-178-AE needs no rule: EN 16931 allows one tax scope identity
+				// (GOBL-EU-EN16931-ORG-PARTY-03), which, with the TRN, is the two
+				// PartyTaxSchemes with one VAT that it accepts.
 				rules.Field("identities", rules.Each(
 					rules.When(
 						is.Func("tax scope", identityHasTaxScope),
@@ -228,6 +242,9 @@ func billInvoiceRules() *rules.Set {
 				rules.Assert("31", "customer trade license must have the issuing authority in the description (IBR-101-AE)",
 					is.Func("trade license has authority", partyTradeLicenseHasAuthority),
 				),
+				// IBR-149-AE's text asks for the buyer legal registration identifier
+				// (IBT-047), but its test checks the tax registration,
+				// cac:PartyTaxScheme/cbc:CompanyID. We follow the test.
 				rules.When(
 					is.Func("has UAE Peppol endpoint not starting with 1 or 9", partyHasUAEEndpointNotStartingWith1or9),
 					rules.Assert("32", "customer tax registration is required with a UAE Peppol endpoint not starting with 1 or 9 (IBR-149-AE)",
@@ -252,8 +269,8 @@ func billInvoiceRules() *rules.Set {
 			),
 			rules.When(
 				is.Func("summary invoice", invoiceIsSummary),
-				rules.Assert("37", "ordering period is required on summary invoices (IBR-138-AE)",
-					is.Func("has ordering period", invoiceHasOrderingPeriod),
+				rules.Assert("37", "ordering period or billing frequency is required on summary invoices (IBR-138-AE)",
+					is.Func("has invoice period", invoiceHasInvoicePeriod),
 				),
 			),
 			rules.When(
@@ -276,6 +293,10 @@ func billInvoiceRules() *rules.Set {
 					is.Func("delivery address is complete", invoiceDeliveryAddressIsComplete),
 				),
 			),
+			// IBR-152-AE's text says the delivery country should not be AE on
+			// exports, but its test accepts a delivery address in the UAE, and
+			// only asks the others for a street, city and region. We follow the
+			// test, which fails exports without a delivery address.
 			rules.When(
 				is.Func("export", invoiceIsExport),
 				rules.Assert("42", "delivery address outside the UAE must have a street, city and region on exports (IBR-152-AE)",
@@ -394,6 +415,16 @@ func billInvoiceRules() *rules.Set {
 				),
 			),
 		),
+		// The tags the addon defines are for UAE documents, but GOBL can't limit
+		// an addon's tags to a regime. Other documents can only use the ones
+		// their regime, another addon or GOBL itself defines too, as before the
+		// addon had tags.
+		rules.When(
+			is.Not(is.InContext(tax.RegimeIn(regimesAE...))),
+			rules.Assert("57", "PINT AE tags can only be used on UAE documents",
+				is.Func("has no PINT AE tags", invoiceHasNoAETags),
+			),
+		),
 	)
 }
 
@@ -481,10 +512,17 @@ func billLineRules() *rules.Set {
 				// gobl.ubl writes identities with a label and no scheme ID as item
 				// classifications, with the label as their list. FormatAE writes the
 				// SAC ones as service accounting codes instead (IBR-189-AE).
+				// IBR-188-AE's text asks for HS on every classification, but its
+				// test passes when any one is HS.
 				rules.Field("identities",
-					rules.Assert("10", "item classifications must use the HS list (IBR-188-AE)",
-						is.Func("classifications are HS", identitiesClassifiedAsHS),
+					rules.Assert("10", "item classifications must include one from the HS list (IBR-188-AE)",
+						is.Func("classifications include HS", identitiesClassifiedWithHS),
 					),
+				),
+			),
+			rules.Field("seller",
+				rules.Assert("11", "line seller region must be an emirate code when the country is AE (IBR-128-AE)",
+					is.Func("first address region is an emirate", partyAddressHasEmirate),
 				),
 			),
 		),
@@ -506,6 +544,32 @@ func documentTypeIn(codes ...cbc.Code) func(any) bool {
 	}
 }
 
+// invoiceHasNoAETags reports whether the invoice has none of the tags only
+// the PINT addon defines. A tag its regime, another addon or GOBL itself
+// defines with the same key, such as the Spanish "summary", is not one.
+func invoiceHasNoAETags(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	if !ok || inv == nil {
+		return true
+	}
+	others := bill.DefaultInvoiceTags()
+	if r := inv.RegimeDef(); r != nil {
+		others = others.Merge(tax.TagSetForSchema(r.Tags, bill.ShortSchemaInvoice))
+	}
+	for _, a := range inv.AddonDefs() {
+		if a.Key != V1 {
+			others = others.Merge(tax.TagSetForSchema(a.Tags, bill.ShortSchemaInvoice))
+		}
+	}
+	keys := others.Keys()
+	for _, def := range invoiceTags.List {
+		if inv.HasTags(def.Key) && !def.Key.In(keys...) {
+			return false
+		}
+	}
+	return true
+}
+
 // partyHasIdentifier reports whether the party can be identified through a tax
 // identity code or at least one organisation identity.
 func partyHasIdentifier(val any) bool {
@@ -525,12 +589,17 @@ func exchangeRateHasAED(val any) bool {
 		currency.MatchExchangeRate(inv.ExchangeRates, inv.Currency, currency.AED) != nil
 }
 
-// amountHasAtMost6Decimals reports whether an exchange rate amount has at
-// most 6 decimals, the limit for cbc:CalculationRate (IBR-002-AE). The rules
-// engine passes struct fields as pointers, hence *num.Amount.
-func amountHasAtMost6Decimals(val any) bool {
-	a, ok := val.(*num.Amount)
-	return ok && a != nil && a.Exp() <= 6
+// exchangeRateToAEDHasAtMost6Decimals reports whether the exchange rate from
+// the invoice currency to AED has at most 6 decimals, the limit for
+// cbc:CalculationRate (IBR-002-AE). It is the only rate written. Invoices
+// without it pass: they are in AED, or rule 05 reports them.
+func exchangeRateToAEDHasAtMost6Decimals(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	if !ok || inv == nil {
+		return true
+	}
+	rate := currency.MatchExchangeRate(inv.ExchangeRates, inv.Currency, currency.AED)
+	return rate == nil || rate.Amount.Exp() <= 6
 }
 
 // invoiceIsCreditNote reports whether the invoice is a credit note. The EN
@@ -547,13 +616,6 @@ func invoiceIsCreditNote(val any) bool {
 func invoiceHasPaymentInstructions(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	return ok && inv != nil && inv.Payment != nil && inv.Payment.Instructions != nil
-}
-
-// partyHasTaxIDCode reports whether the party has a tax ID with a code, the
-// TRN written as the seller's PartyTaxScheme/CompanyID (IBR-134-AE).
-func partyHasTaxIDCode(val any) bool {
-	p, ok := val.(*org.Party)
-	return ok && p != nil && p.TaxID != nil && p.TaxID.Code != ""
 }
 
 // invoiceHasReverseChargeLine reports whether any line of the invoice has a
@@ -658,17 +720,18 @@ func pointDateBeforeIssueDate(val any) bool {
 	return inv.IssueDate.DaysSince(inv.ValueDate.Date) > 0
 }
 
-// invoiceIsDue reports whether the invoice has an amount due for payment: the
-// due total when set, the payable total otherwise. It follows isDue in the
-// EN 16931 addon, which is not exported.
+// invoiceIsDue reports whether the amount gobl.ubl writes as
+// cbc:PayableAmount is greater than zero, as IBR-127-AE tests it: the due
+// total when set, the payable total otherwise.
 func invoiceIsDue(val any) bool {
 	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil {
+	if !ok || inv == nil || inv.Totals == nil {
 		return false
 	}
-	return inv.Totals != nil &&
-		((inv.Totals.Due != nil && !inv.Totals.Due.IsZero()) ||
-			(inv.Totals.Due == nil && !inv.Totals.Payable.IsZero()))
+	if inv.Totals.Due != nil {
+		return inv.Totals.Due.IsPositive()
+	}
+	return inv.Totals.Payable.IsPositive()
 }
 
 // invoiceHasDueDate reports whether the invoice's payment terms have a due date,
@@ -819,14 +882,6 @@ func identityHasTaxScope(val any) bool {
 	return ok && id != nil && id.Scope == org.IdentityScopeTax
 }
 
-// partyHasAtMostOneTaxIdentity reports whether the party has at most one tax
-// scope identity. With the TRN, that makes at most two seller PartyTaxSchemes,
-// only one of them VAT (IBR-178-AE).
-func partyHasAtMostOneTaxIdentity(val any) bool {
-	p, ok := val.(*org.Party)
-	return ok && p != nil && partyTaxIdentityCount(p) <= 1
-}
-
 // partyHasAtMostOneTaxRegistration reports whether the party has at most one
 // tax registration, counting the tax ID code and the tax scope identities, as
 // the buyer can only have one PartyTaxScheme/CompanyID (IBR-179-AE).
@@ -874,11 +929,17 @@ func invoiceHasExt(key cbc.Key) func(any) bool {
 	}
 }
 
-// invoiceHasOrderingPeriod reports whether the invoice has an ordering
-// period, which gobl.ubl writes as cac:InvoicePeriod (IBR-138-AE).
-func invoiceHasOrderingPeriod(val any) bool {
+// invoiceHasInvoicePeriod reports whether the invoice has what is written as
+// cac:InvoicePeriod: an ordering period or a billing frequency. IBR-138-AE's
+// text asks for the invoicing period, but its test only checks the element
+// is there, so the frequency alone passes.
+func invoiceHasInvoicePeriod(val any) bool {
 	inv, ok := val.(*bill.Invoice)
-	return ok && inv != nil && inv.Ordering != nil && inv.Ordering.Period != nil
+	if !ok || inv == nil {
+		return false
+	}
+	return (inv.Ordering != nil && inv.Ordering.Period != nil) ||
+		inv.Tax.GetExt(ExtKeyBillingFrequency) != ""
 }
 
 // principalIsNotSupplier reports whether the principal ID differs from the
@@ -1104,23 +1165,26 @@ func identitiesHaveLabelOf(ids []*org.Identity, label string) bool {
 	return false
 }
 
-// identitiesClassifiedAsHS reports whether the identities gobl.ubl writes as
-// item classifications, those with a label and no scheme ID, are all HS ones,
-// apart from the service accounting codes.
-func identitiesClassifiedAsHS(val any) bool {
+// identitiesClassifiedWithHS reports whether the identities gobl.ubl writes
+// as item classifications, those with a label and no scheme ID, include an HS
+// one. Items without classifications pass, and the service accounting codes
+// don't count as one.
+func identitiesClassifiedWithHS(val any) bool {
 	ids, ok := val.([]*org.Identity)
 	if !ok {
 		return false
 	}
+	classified := false
 	for _, id := range ids {
-		if id == nil || id.Label == "" || id.Ext.Has(iso.ExtKeySchemeID) {
+		if id == nil || id.Label == "" || id.Label == IdentityLabelSAC || id.Ext.Has(iso.ExtKeySchemeID) {
 			continue
 		}
-		if id.Label != IdentityLabelHS && id.Label != IdentityLabelSAC {
-			return false
+		if id.Label == IdentityLabelHS {
+			return true
 		}
+		classified = true
 	}
-	return true
+	return !classified
 }
 
 // comboIsMarginScheme reports whether a tax combo is VAT under the profit

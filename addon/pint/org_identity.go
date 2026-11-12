@@ -66,6 +66,46 @@ func IdentityKeyAE(typ cbc.Code) cbc.Key {
 	return ""
 }
 
+// normalizePartyIdentityScopes gives a party's UAE identities the scope
+// gobl.ubl needs to write them where PINT AE reads them: tax for the TIN,
+// written as a cac:PartyTaxScheme, and legal for the trade licence, Emirates
+// ID, passport and Cabinet Decision, written as
+// cac:PartyLegalEntity/cbc:CompanyID. Only an identity without a scope gets
+// one, and only when no other identity of the party has it, as EN 16931
+// allows one identity per scope (BT-30, BT-47, BT-31, BT-48).
+func normalizePartyIdentityScopes(p *org.Party) {
+	if p == nil {
+		return
+	}
+	taken := make(map[cbc.Key]bool)
+	for _, id := range p.Identities {
+		if id != nil {
+			taken[id.Scope] = true
+		}
+	}
+	for _, id := range p.Identities {
+		if id == nil || id.Scope != "" {
+			continue
+		}
+		if scope := identityScopeAE(id.Key); scope != "" && !taken[scope] {
+			id.Scope = scope
+			taken[scope] = true
+		}
+	}
+}
+
+// identityScopeAE returns the scope PINT AE reads an identity key from, or an
+// empty key if it has none.
+func identityScopeAE(key cbc.Key) cbc.Key {
+	if key == ae.IdentityKeyTIN {
+		return org.IdentityScopeTax
+	}
+	if IdentityTypeAE(key) != "" {
+		return org.IdentityScopeLegal
+	}
+	return ""
+}
+
 // IdentitySchemeGTIN is the ISO 6523 scheme of a GTIN, the item standard
 // identifier reverse charge lines need (IBR-174-AE).
 const IdentitySchemeGTIN cbc.Code = "0160"

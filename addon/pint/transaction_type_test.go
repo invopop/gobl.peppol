@@ -59,10 +59,17 @@ func TestNormalizeTransactionType(t *testing.T) {
 		assert.Equal(t, cbc.Code("00010011"), code(inv))
 	})
 
-	t.Run("a code set directly is kept without tags", func(t *testing.T) {
+	t.Run("a code set directly is replaced without tags", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyTransactionType: "00001000"})}
-		assert.Equal(t, cbc.Code("00001000"), code(inv))
+		assert.Equal(t, cbc.Code("00000000"), code(inv))
+	})
+
+	t.Run("removing the last tag clears its flag", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard, tax.TagExport)
+		assert.Equal(t, cbc.Code("00000001"), code(inv))
+		inv.Tags.List = nil
+		assert.Equal(t, cbc.Code("00000000"), code(inv))
 	})
 
 	t.Run("tags replace an earlier code", func(t *testing.T) {
