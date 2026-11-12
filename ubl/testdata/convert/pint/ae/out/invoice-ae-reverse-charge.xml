@@ -99,6 +99,12 @@
     <cac:Item>
       <cbc:Description>Item Description</cbc:Description>
       <cbc:Name>Item Name</cbc:Name>
+      <cac:StandardItemIdentification>
+        <cbc:ID schemeID="0160">4006381333931</cbc:ID>
+      </cac:StandardItemIdentification>
+      <cac:CommodityClassification>
+        <cbc:NatureCode>DL8.48.3.1</cbc:NatureCode>
+      </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>AE</cbc:ID>
         <cbc:Percent>5</cbc:Percent>

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "14bd99bcb0c6322bd83948861f4ac6cef7327f87d563e1ab08da213721774ff7"
+			"val": "894fe7b79f37056933f5da8a3555ae3a12f53507054151dbbdfe9e53b684b33d"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -104,9 +104,20 @@
 				"quantity": "100",
 				"item": {
 					"name": "Item Name",
+					"identities": [
+						{
+							"code": "4006381333931",
+							"ext": {
+								"iso-scheme-id": "0160"
+							}
+						}
+					],
 					"description": "Item Description",
 					"price": "10.00",
-					"unit": "one"
+					"unit": "one",
+					"ext": {
+						"peppol-pint-ae-goods-type": "DL8.48.8.1"
+					}
 				},
 				"sum": "1000.00",
 				"taxes": [

@@ -76,6 +76,8 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAEBillingFrequency(in, inv)
 	importAELineExemptions(in.InvoiceLines, inv)
 	importAELineExemptions(in.CreditNoteLines, inv)
+	importAELineGoods(in.InvoiceLines, inv)
+	importAELineGoods(in.CreditNoteLines, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
 	return nil
@@ -240,6 +242,52 @@ func importAELineExemptions(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 	}
 }
 
+// exportAELineGoods writes the type of goods or services (BTAE-09) as the
+// item's cac:CommodityClassification/cbc:NatureCode, and the item's GTIN as
+// its standard identifier (IBR-174-AE): gobl.ubl writes the first identity
+// with a scheme there, which may not be the GTIN.
+func exportAELineGoods(line *goblubl.InvoiceLine, l *bill.Line) {
+	if l == nil || l.Item == nil || line.Item == nil {
+		return
+	}
+	if code := l.Item.Ext.Get(pint.ExtKeyGoodsType); code != "" {
+		v := code.String()
+		if line.Item.CommodityClassification == nil || len(*line.Item.CommodityClassification) == 0 {
+			line.Item.CommodityClassification = &[]goblubl.CommodityClassification{{}}
+		}
+		(*line.Item.CommodityClassification)[0].NatureCode = &v
+	}
+	if id := pint.GTINIdentity(l.Item.Identities); id != nil {
+		scheme := pint.IdentitySchemeGTIN.String()
+		line.Item.StandardItemIdentification = &goblubl.ItemIdentification{
+			ID: &goblubl.IDType{SchemeID: &scheme, Value: id.Code.String()},
+		}
+	}
+}
+
+// importAELineGoods reads the type of goods or services back onto the items
+// of the invoice's lines, which gobl.ubl imports in the same order. gobl.ubl
+// already reads the GTIN as an identity.
+func importAELineGoods(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
+	if len(lines) == 0 || len(lines) != len(inv.Lines) {
+		return
+	}
+	for i, line := range lines {
+		if line.Item == nil || line.Item.CommodityClassification == nil || inv.Lines[i].Item == nil {
+			continue
+		}
+		for _, cc := range *line.Item.CommodityClassification {
+			if cc.NatureCode == nil {
+				continue
+			}
+			if code := cbc.Code(strings.TrimSpace(*cc.NatureCode)); code != "" {
+				inv.Lines[i].Item.Ext = inv.Lines[i].Item.Ext.Set(pint.ExtKeyGoodsType, code)
+				break
+			}
+		}
+	}
+}
+
 // exportAEBillingFrequency writes the billing frequency as
 // cac:InvoicePeriod/cbc:DescriptionCode (BTAE-06), on the period gobl.ubl
 // writes from the ordering period, or on its own: IBR-CO-19 accepts a period
@@ -277,6 +325,7 @@ func exportAELines(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 		if len(lines) == len(inv.Lines) {
 			exportAELineAmounts(&lines[i], inv.Lines[i], inv.Currency)
 			exportAELineExemption(&lines[i], inv.Lines[i])
+			exportAELineGoods(&lines[i], inv.Lines[i])
 		}
 	}
 }

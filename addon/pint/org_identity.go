@@ -3,6 +3,7 @@ package pint
 import (
 	"regexp"
 
+	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/ae"
@@ -63,4 +64,18 @@ func IdentityKeyAE(typ cbc.Code) cbc.Key {
 		return ae.IdentityKeyCabinetDecision
 	}
 	return ""
+}
+
+// IdentitySchemeGTIN is the ISO 6523 scheme of a GTIN, the item standard
+// identifier reverse charge lines need (IBR-174-AE).
+const IdentitySchemeGTIN cbc.Code = "0160"
+
+// GTINIdentity returns the first identity with the GTIN scheme, or nil.
+func GTINIdentity(ids []*org.Identity) *org.Identity {
+	for _, id := range ids {
+		if id != nil && id.Ext.Get(iso.ExtKeySchemeID) == IdentitySchemeGTIN {
+			return id
+		}
+	}
+	return nil
 }

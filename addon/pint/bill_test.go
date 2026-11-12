@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
+	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
@@ -1080,5 +1081,52 @@ func TestBillLineRulesAE(t *testing.T) {
 		if err != nil {
 			assert.NotContains(t, err.Error(), faultLineDescription)
 		}
+	})
+}
+
+func TestBillGoodsTypeRulesAE(t *testing.T) {
+	const (
+		faultGoodsType      = "GOBL-PEPPOL-PINT-BILL-LINE-04"
+		faultGoodsTypeValue = "GOBL-PEPPOL-PINT-BILL-LINE-05"
+		faultGTIN           = "GOBL-PEPPOL-PINT-BILL-LINE-06"
+	)
+	gtin := func(scheme cbc.Code) []*org.Identity {
+		return []*org.Identity{{Code: "4006381333931", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: scheme})}}
+	}
+	reverseCharge := func(goodsType cbc.Code, ids []*org.Identity) *bill.Invoice {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Lines[0].Taxes = tax.Set{lineCombo(tax.KeyReverseCharge)}
+		inv.Lines[0].Item.Identities = ids
+		if goodsType != "" {
+			inv.Lines[0].Item.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyGoodsType: goodsType})
+		}
+		return inv
+	}
+
+	t.Run("reverse charge item needs the goods type (IBR-166-AE)", func(t *testing.T) {
+		assert.Contains(t, aeFaults(t, reverseCharge("", gtin("0160"))), faultGoodsType)
+		out := aeFaults(t, reverseCharge("DL8.48.3.1", gtin("0160")))
+		assert.NotContains(t, out, faultGoodsType)
+		assert.NotContains(t, out, faultGoodsTypeValue)
+		assert.NotContains(t, out, faultGTIN)
+	})
+
+	t.Run("goods type must be from the AE list on any line (IBR-006-AE)", func(t *testing.T) {
+		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.9", gtin("0160"))), faultGoodsTypeValue)
+
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Lines[0].Item.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyGoodsType: "OTHER"})
+		assert.Contains(t, aeFaults(t, inv), faultGoodsTypeValue)
+	})
+
+	t.Run("reverse charge item needs a GTIN (IBR-174-AE)", func(t *testing.T) {
+		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.3.1", nil)), faultGTIN)
+		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.3.1", gtin("0088"))), faultGTIN)
+	})
+
+	t.Run("other lines need neither", func(t *testing.T) {
+		out := aeFaults(t, aeDocument(bill.InvoiceTypeStandard))
+		assert.NotContains(t, out, faultGoodsType)
+		assert.NotContains(t, out, faultGTIN)
 	})
 }

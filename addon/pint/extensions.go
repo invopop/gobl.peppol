@@ -23,6 +23,9 @@ const (
 	// ExtKeyExemption is the UAE VAT exemption reason of an exempt tax combo
 	// (IBT-186 on lines).
 	ExtKeyExemption cbc.Key = "peppol-pint-ae-exemption"
+	// ExtKeyGoodsType is the type of goods or services subject to the reverse
+	// charge mechanism, on the item (BTAE-09).
+	ExtKeyGoodsType cbc.Key = "peppol-pint-ae-goods-type"
 )
 
 // CreditNoteReasonVolumeDiscount is the credit note reason for a volume
@@ -100,6 +103,12 @@ var extensions = []*cbc.Definition{
 				(IBR-055-AE).
 			`),
 		},
+		Sources: []*cbc.Source{
+			{
+				Title: i18n.NewString("PINT AE Reasons for credit note"),
+				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-creditnote/codelist/CreditReason/",
+			},
+		},
 		Values: []*cbc.Definition{
 			{
 				Code: "DL8.61.1.A",
@@ -139,6 +148,12 @@ var extensions = []*cbc.Definition{
 				note (IBR-160-AE).
 			`),
 		},
+		Sources: []*cbc.Source{
+			{
+				Title: i18n.NewString("PINT AE Frequency of billing codes"),
+				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/codelist/FreqBilling/",
+			},
+		},
 		Values: []*cbc.Definition{
 			{Code: "DLY", Name: i18n.String{i18n.EN: "Daily"}},
 			{Code: "WKY", Name: i18n.String{i18n.EN: "Weekly"}},
@@ -170,6 +185,32 @@ var extensions = []*cbc.Definition{
 				Title: i18n.NewString("PINT AE Reasons for exemption from tax"),
 				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/codelist/Aligned-TaxExemptionCodes/",
 			},
+		},
+	},
+	{
+		Key: ExtKeyGoodsType,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Type of Goods or Services",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Type of goods or services subject to the reverse charge mechanism
+				(BTAE-09), from the PINT AE code list (IBR-006-AE). Required on the
+				items of reverse charge lines (IBR-166-AE).
+			`),
+		},
+		Sources: []*cbc.Source{
+			{
+				Title: i18n.NewString("PINT AE Type of goods or services subject to RCM"),
+				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/codelist/GoodsType/",
+			},
+		},
+		Values: []*cbc.Definition{
+			{Code: "DL8.48.8.2", Name: i18n.String{i18n.EN: "Electronic Devices"}},
+			{Code: "DL8.48.8.1", Name: i18n.String{i18n.EN: "Gold and Diamonds"}},
+			{Code: "DL8.48.3.1", Name: i18n.String{i18n.EN: "Crude or refined oil"}},
+			{Code: "DL8.48.3.2", Name: i18n.String{i18n.EN: "Unprocessed or processed natural gas"}},
+			{Code: "DL8.48.3.3", Name: i18n.String{i18n.EN: "Pure hydrocarbons"}},
 		},
 	},
 }

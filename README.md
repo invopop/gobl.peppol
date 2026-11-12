@@ -116,12 +116,14 @@ seller's TIN goes under the `TIN` tax scheme. It also writes the transaction
 type as `cbc:ProfileExecutionID`, with the free trade zone beneficiary and
 the disclosed agent's principal as the buyer and seller parties, and the
 credit note reason as `cac:DiscrepancyResponse`, the billing frequency in
-`cac:InvoicePeriod`, and the UAE VAT exemption reason of exempt lines. On import, it reads
+`cac:InvoicePeriod`, the UAE VAT exemption reason of exempt lines, and each
+item's type of goods or services subject to the reverse charge as its
+`cbc:NatureCode`, with its GTIN as the standard identifier. On import, it reads
 the out-of-scope type codes 480 and 81 back as the `outside-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as
 identity keys and fields, the transaction type back as its extension and
-tags, and the credit note reason, billing frequency and line exemption
-reasons back as their extensions.
+tags, and the credit note reason, billing frequency, line exemption
+reasons and item goods types back as their extensions.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,

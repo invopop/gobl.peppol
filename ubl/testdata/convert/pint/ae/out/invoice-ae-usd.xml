@@ -235,7 +235,13 @@
     <cbc:LineExtensionAmount currencyID="USD">99.99</cbc:LineExtensionAmount>
     <cac:Item>
       <cbc:Description>Reverse charge supply</cbc:Description>
-      <cbc:Name>Imported service</cbc:Name>
+      <cbc:Name>Electronic devices</cbc:Name>
+      <cac:StandardItemIdentification>
+        <cbc:ID schemeID="0160">4006381333931</cbc:ID>
+      </cac:StandardItemIdentification>
+      <cac:CommodityClassification>
+        <cbc:NatureCode>DL8.48.8.2</cbc:NatureCode>
+      </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>AE</cbc:ID>
         <cbc:Percent>5</cbc:Percent>

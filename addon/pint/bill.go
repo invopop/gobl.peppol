@@ -406,6 +406,35 @@ func billLineRules() *rules.Set {
 					),
 				),
 			)),
+			rules.When(
+				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
+				rules.Field("item",
+					rules.Field("ext",
+						rules.Assert("04", "reverse charge line item needs the type of goods or services (IBR-166-AE)",
+							tax.ExtensionsRequire(ExtKeyGoodsType),
+						),
+					),
+				),
+			),
+			// The IBR-006-AE test checks every goods type, not only those of
+			// reverse charge lines as its text says.
+			rules.Field("item",
+				rules.Field("ext",
+					rules.Assert("05", "type of goods or services must be from the PINT AE code list (IBR-006-AE)",
+						tax.ExtensionHasValidCode(ExtKeyGoodsType),
+					),
+				),
+			),
+			rules.When(
+				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
+				rules.Field("item",
+					rules.Field("identities",
+						rules.Assert("06", "reverse charge line item needs a GTIN identity, scheme 0160 (IBR-174-AE)",
+							is.Func("has GTIN", identitiesHaveGTIN),
+						),
+					),
+				),
+			),
 		),
 	)
 }
@@ -966,4 +995,25 @@ func taxesIn(check func(any) bool) func(any) bool {
 func taxesHaveVAT(val any) bool {
 	set, ok := val.(tax.Set)
 	return ok && set.Get(tax.CategoryVAT) != nil
+}
+
+// lineHasReverseChargeVAT reports whether a line's VAT combo is reverse
+// charge.
+func lineHasReverseChargeVAT(val any) bool {
+	l, ok := val.(*bill.Line)
+	if !ok || l == nil {
+		return false
+	}
+	c := l.Taxes.Get(tax.CategoryVAT)
+	return c != nil && c.Ext.Get(untdid.ExtKeyTaxCategory) == en16931.TaxCategoryReverseCharge
+}
+
+// identitiesHaveGTIN reports whether an item has an identity with the GTIN
+// scheme, 0160, the one gobl.ubl writes as the standard item identifier.
+func identitiesHaveGTIN(val any) bool {
+	ids, ok := val.([]*org.Identity)
+	if !ok {
+		return false
+	}
+	return GTINIdentity(ids) != nil
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/gobl.peppol/addon/pint"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
@@ -569,6 +570,77 @@ func TestAELineExemption(t *testing.T) {
 		inv := &bill.Invoice{Lines: []*bill.Line{goblLine(""), goblLine("")}}
 		importAELineExemptions([]goblubl.InvoiceLine{with}, inv)
 		assert.Empty(t, inv.Lines[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
+	})
+}
+
+func TestAELineGoods(t *testing.T) {
+	gtin := func(scheme cbc.Code, code cbc.Code) *org.Identity {
+		return &org.Identity{Code: code, Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: scheme})}
+	}
+	goblLine := func(goodsType cbc.Code, ids ...*org.Identity) *bill.Line {
+		it := &org.Item{Name: "Gold bars", Identities: ids}
+		if goodsType != "" {
+			it.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyGoodsType: goodsType})
+		}
+		return &bill.Line{Item: it}
+	}
+
+	t.Run("writes the goods type as the nature code", func(t *testing.T) {
+		line := goblubl.InvoiceLine{Item: &goblubl.Item{}}
+		exportAELineGoods(&line, goblLine("DL8.48.8.1"))
+		require.NotNil(t, line.Item.CommodityClassification)
+		require.Len(t, *line.Item.CommodityClassification, 1)
+		assert.Equal(t, "DL8.48.8.1", *(*line.Item.CommodityClassification)[0].NatureCode)
+	})
+
+	t.Run("on the first classification when there is one", func(t *testing.T) {
+		list := "HS"
+		line := goblubl.InvoiceLine{Item: &goblubl.Item{CommodityClassification: &[]goblubl.CommodityClassification{
+			{ItemClassificationCode: &goblubl.IDType{Value: "7108", ListID: &list}},
+		}}}
+		exportAELineGoods(&line, goblLine("DL8.48.8.1"))
+		require.Len(t, *line.Item.CommodityClassification, 1)
+		cc := (*line.Item.CommodityClassification)[0]
+		assert.Equal(t, "DL8.48.8.1", *cc.NatureCode)
+		assert.Equal(t, "7108", cc.ItemClassificationCode.Value)
+	})
+
+	t.Run("writes the GTIN as the standard identifier", func(t *testing.T) {
+		other := "0088"
+		line := goblubl.InvoiceLine{Item: &goblubl.Item{StandardItemIdentification: &goblubl.ItemIdentification{
+			ID: &goblubl.IDType{SchemeID: &other, Value: "5410000000000"},
+		}}}
+		exportAELineGoods(&line, goblLine("", gtin("0088", "5410000000000"), gtin("0160", "4006381333931")))
+		id := line.Item.StandardItemIdentification.ID
+		assert.Equal(t, "0160", *id.SchemeID)
+		assert.Equal(t, "4006381333931", id.Value)
+	})
+
+	t.Run("nothing without a goods type or GTIN", func(t *testing.T) {
+		line := goblubl.InvoiceLine{Item: &goblubl.Item{}}
+		exportAELineGoods(&line, goblLine(""))
+		assert.Nil(t, line.Item.CommodityClassification)
+		assert.Nil(t, line.Item.StandardItemIdentification)
+		exportAELineGoods(&line, nil)
+		assert.Nil(t, line.Item.CommodityClassification)
+	})
+
+	t.Run("reads the goods type back onto the items", func(t *testing.T) {
+		code := " DL8.48.3.2 "
+		with := goblubl.InvoiceLine{Item: &goblubl.Item{CommodityClassification: &[]goblubl.CommodityClassification{{NatureCode: &code}}}}
+		without := goblubl.InvoiceLine{Item: &goblubl.Item{}}
+		inv := &bill.Invoice{Lines: []*bill.Line{goblLine(""), goblLine("")}}
+		importAELineGoods([]goblubl.InvoiceLine{without, with}, inv)
+		assert.Empty(t, inv.Lines[0].Item.Ext.Get(pint.ExtKeyGoodsType))
+		assert.Equal(t, cbc.Code("DL8.48.3.2"), inv.Lines[1].Item.Ext.Get(pint.ExtKeyGoodsType))
+	})
+
+	t.Run("lines that don't match are skipped", func(t *testing.T) {
+		code := "DL8.48.3.2"
+		with := goblubl.InvoiceLine{Item: &goblubl.Item{CommodityClassification: &[]goblubl.CommodityClassification{{NatureCode: &code}}}}
+		inv := &bill.Invoice{Lines: []*bill.Line{goblLine(""), goblLine("")}}
+		importAELineGoods([]goblubl.InvoiceLine{with}, inv)
+		assert.Empty(t, inv.Lines[0].Item.Ext.Get(pint.ExtKeyGoodsType))
 	})
 }
 

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "61f1035d0de70f800c2148bdff809dddf5d721fe4e76c1fa9a077239ab883b29"
+			"val": "68fe470bbd55f8fa912e75a928cf3277ae212d5b66153538a883accc1c79ede2"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -177,10 +177,21 @@
 				"i": 4,
 				"quantity": "3",
 				"item": {
-					"name": "Imported service",
+					"name": "Electronic devices",
+					"identities": [
+						{
+							"code": "4006381333931",
+							"ext": {
+								"iso-scheme-id": "0160"
+							}
+						}
+					],
 					"description": "Reverse charge supply",
 					"price": "33.33",
-					"unit": "one"
+					"unit": "one",
+					"ext": {
+						"peppol-pint-ae-goods-type": "DL8.48.8.2"
+					}
 				},
 				"sum": "99.99",
 				"taxes": [
