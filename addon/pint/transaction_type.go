@@ -199,6 +199,7 @@ var (
 	invoiceIsDisclosedAgent = transactionTypeIs(func(t TransactionType) bool { return t.DisclosedAgent })
 	invoiceIsECommerce      = transactionTypeIs(func(t TransactionType) bool { return t.ECommerce })
 	invoiceIsExport         = transactionTypeIs(func(t TransactionType) bool { return t.Export })
+	invoiceIsMarginScheme   = transactionTypeIs(func(t TransactionType) bool { return t.MarginScheme })
 	// invoiceIsSummaryDeemedOrMargin reports the flags outside scope documents
 	// and credit notes related to goods and services can't have (IBR-157-AE).
 	invoiceIsSummaryDeemedOrMargin = transactionTypeIs(func(t TransactionType) bool {

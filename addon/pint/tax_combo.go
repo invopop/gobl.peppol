@@ -5,10 +5,17 @@ import (
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/num"
+	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/rules/is"
 	"github.com/invopop/gobl/tax"
 )
+
+// TaxCategoryMarginScheme is the PINT AE VAT category for supplies under the
+// profit margin scheme, "Standard rate additional VAT". The official code list
+// writes it with a Greek capital Nu (U+039D), but the Schematron tests and
+// examples use the Latin N, so we follow them.
+const TaxCategoryMarginScheme cbc.Code = "N"
 
 // taxCategoryMap maps GOBL tax keys to the UNTDID 5305 tax category codes that
 // PINT recognises, mirroring EN 16931's VAT key mapping.
@@ -20,6 +27,7 @@ var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyIntraCommunity: en16931.TaxCategoryIntraCommunity,
 	tax.KeyExport:         en16931.TaxCategoryExport,
 	tax.KeyOutsideScope:   en16931.TaxCategoryOutsideScope,
+	ae.TaxKeyMarginScheme: TaxCategoryMarginScheme,
 })
 
 // taxCategoryCodesAUNZ lists the subset of UNTDID 5305 tax category codes
@@ -40,6 +48,7 @@ var taxCategoryCodesAE = []cbc.Code{
 	en16931.TaxCategoryZero,
 	en16931.TaxCategoryOutsideScope,
 	en16931.TaxCategoryReverseCharge,
+	TaxCategoryMarginScheme,
 }
 
 // normalizeTaxCombo re-maps the UNTDID tax category code from the tax combo's
@@ -77,8 +86,12 @@ func taxComboRules() *rules.Set {
 		// TODO: rules 04 and 06 should also apply to AUNZ.
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
+			// EN 16931 checks VAT category codes against its own list, which has
+			// no PINT AE margin scheme category (N). Rule 01 checks them against
+			// the PINT list instead.
+			rules.Ignore("GOBL-EU-EN16931-TAX-COMBO-02"),
 			rules.Field("ext",
-				rules.Assert("03", "tax category code must be an AE UNCL5305 code: E, S, Z, O or AE (IBR-139-AE)",
+				rules.Assert("03", "tax category code must be an AE UNCL5305 code: E, S, Z, O, AE or N (IBR-139-AE)",
 					tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryCodesAE...),
 				),
 			),

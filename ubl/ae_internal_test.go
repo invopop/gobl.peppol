@@ -7,6 +7,7 @@ import (
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
+	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
@@ -93,6 +94,9 @@ func TestAERate(t *testing.T) {
 	rc := aeRate(&goblubl.IDType{Value: "AE"}, zero)
 	require.NotNil(t, rc)
 	assert.Equal(t, "5", *rc, "reverse charge is written at 5")
+	ms := aeRate(&goblubl.IDType{Value: "N"}, zero)
+	require.NotNil(t, ms)
+	assert.Equal(t, "5", *ms, "margin scheme is written at 5")
 	assert.Equal(t, strPtr("5"), aeRate(&goblubl.IDType{Value: "S"}, strPtr("5")), "standard keeps its rate")
 	assert.Nil(t, aeRate(&goblubl.IDType{Value: "O"}, nil), "outside scope keeps no rate")
 	assert.Equal(t, zero, aeRate(nil, zero), "no category, no change")
@@ -349,6 +353,31 @@ func TestImportAEPartyIdentities(t *testing.T) {
 			importAEPartyIdentities(&goblubl.Party{}, nil, true)
 		})
 	})
+}
+
+func TestImportAEMarginScheme(t *testing.T) {
+	combo := func(category cbc.Code) *tax.Combo {
+		five := num.MakePercentage(5, 2)
+		return &tax.Combo{
+			Category: tax.CategoryVAT,
+			Percent:  &five,
+			Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: category}),
+		}
+	}
+	inv := &bill.Invoice{
+		Lines:     []*bill.Line{{Taxes: tax.Set{combo("N")}}, {Taxes: tax.Set{combo("S")}}},
+		Discounts: []*bill.Discount{{Taxes: tax.Set{combo("N")}}},
+	}
+	importAEMarginScheme(inv)
+
+	ms := inv.Lines[0].Taxes[0]
+	assert.Equal(t, ae.TaxKeyMarginScheme, ms.Key)
+	assert.Nil(t, ms.Percent, "margin scheme lines charge no VAT")
+	assert.Equal(t, ae.TaxKeyMarginScheme, inv.Discounts[0].Taxes[0].Key)
+
+	other := inv.Lines[1].Taxes[0]
+	assert.Empty(t, other.Key, "other categories are left to EN 16931")
+	assert.NotNil(t, other.Percent)
 }
 
 func TestImportAEOutsideScope(t *testing.T) {

@@ -1182,3 +1182,50 @@ func TestBillItemTypeRulesAE(t *testing.T) {
 		assert.NotContains(t, aeFaults(t, item("", gtin)), faultClassification)
 	})
 }
+
+func TestBillMarginSchemeRulesAE(t *testing.T) {
+	const (
+		faultDiscount   = "GOBL-PEPPOL-PINT-BILL-INVOICE-54"
+		faultCharge     = "GOBL-PEPPOL-PINT-BILL-INVOICE-55"
+		faultOnlyMargin = "GOBL-PEPPOL-PINT-BILL-INVOICE-56"
+	)
+	margin := func(tags ...cbc.Key) *bill.Invoice {
+		inv := aeDocument(bill.InvoiceTypeStandard, tags...)
+		inv.Lines[0].Taxes = tax.Set{lineCombo(ae.TaxKeyMarginScheme)}
+		return inv
+	}
+
+	t.Run("margin scheme lines are N without VAT", func(t *testing.T) {
+		inv := margin(pint.TagMarginScheme)
+		assert.Empty(t, aeFaults(t, inv))
+		c := inv.Lines[0].Taxes[0]
+		assert.Equal(t, pint.TaxCategoryMarginScheme, c.Ext.Get(untdid.ExtKeyTaxCategory))
+		assert.Nil(t, c.Percent)
+		assert.True(t, inv.Totals.Tax.IsZero())
+	})
+
+	t.Run("discounts and charges can't be margin scheme (IBR-115-AE, IBR-114-AE)", func(t *testing.T) {
+		inv := margin()
+		inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(ae.TaxKeyMarginScheme)}}}
+		inv.Charges = []*bill.Charge{{Reason: "Delivery", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(ae.TaxKeyMarginScheme)}}}
+		out := aeFaults(t, inv)
+		assert.Contains(t, out, faultDiscount)
+		assert.Contains(t, out, faultCharge)
+
+		inv = aeDocument(bill.InvoiceTypeStandard)
+		inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(tax.KeyStandard)}}}
+		out = aeFaults(t, inv)
+		assert.NotContains(t, out, faultDiscount)
+	})
+
+	t.Run("margin scheme invoices only use the margin scheme key (IBR-116-AE)", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard, pint.TagMarginScheme)
+		assert.Contains(t, aeFaults(t, inv), faultOnlyMargin)
+
+		inv = margin(pint.TagMarginScheme)
+		inv.Charges = []*bill.Charge{{Reason: "Delivery", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(tax.KeyStandard)}}}
+		assert.Contains(t, aeFaults(t, inv), faultOnlyMargin)
+
+		assert.NotContains(t, aeFaults(t, margin()), faultOnlyMargin, "N lines don't need the tag")
+	})
+}

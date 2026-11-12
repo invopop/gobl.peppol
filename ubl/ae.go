@@ -7,6 +7,7 @@ import (
 	"github.com/invopop/gobl.peppol/addon/pint"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
 	"github.com/invopop/gobl/l10n"
@@ -21,17 +22,18 @@ const (
 	taxCategoryStandard      = "S"
 	taxCategoryExempt        = "E"
 	taxCategoryReverseCharge = "AE"
+	taxCategoryMarginScheme  = "N"
 )
 
 // aedTotalDocumentType is the document type code PINT AE gives the additional
 // document reference that carries the total with VAT in AED (BTAE-20).
 const aedTotalDocumentType = "aedtotal-incl-vat"
 
-// aeReverseChargeRate is the rate PINT AE expects on reverse charge lines and
-// breakdowns. GOBL keeps reverse charge without a percent, as no VAT is
-// charged, but the PINT AE examples and the 5% standard rate (IBR-190-AE)
-// write 5.
-const aeReverseChargeRate = "5"
+// aeStandardRate is the rate PINT AE expects on reverse charge and margin
+// scheme lines and breakdowns. GOBL keeps both without a percent, as the
+// invoice charges no VAT, but the PINT AE examples and the 5% standard rate
+// (IBR-190-AE) write 5, and margin scheme lines need a rate (IBR-111-AE).
+const aeStandardRate = "5"
 
 // taxSchemeTIN is the tax scheme PINT AE writes the seller TIN under.
 const taxSchemeTIN = "TIN"
@@ -71,6 +73,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 		return nil
 	}
 	importAEOutsideScope(in, inv)
+	importAEMarginScheme(inv)
 	importAETransactionType(in, inv)
 	importAECreditNoteReason(in, inv)
 	importAEBillingFrequency(in, inv)
@@ -107,6 +110,30 @@ func importAEOutsideScope(in *goblubl.Invoice, inv *bill.Invoice) {
 	}
 	if !inv.HasTags(pint.TagOutsideScope) {
 		inv.Tags.List = append(inv.Tags.List, pint.TagOutsideScope)
+	}
+}
+
+// importAEMarginScheme gives the margin scheme VAT key to the combos gobl.ubl
+// imports with the N category and a 5% rate. Without a key, EN 16931 would
+// read them as standard rated, which charges VAT the invoice doesn't.
+func importAEMarginScheme(inv *bill.Invoice) {
+	var sets []tax.Set
+	for _, l := range inv.Lines {
+		sets = append(sets, l.Taxes)
+	}
+	for _, d := range inv.Discounts {
+		sets = append(sets, d.Taxes)
+	}
+	for _, c := range inv.Charges {
+		sets = append(sets, c.Taxes)
+	}
+	for _, set := range sets {
+		for _, c := range set {
+			if c.Category == tax.CategoryVAT && c.Ext.Get(untdid.ExtKeyTaxCategory) == pint.TaxCategoryMarginScheme {
+				c.Key = ae.TaxKeyMarginScheme
+				c.Percent = nil
+			}
+		}
 	}
 }
 
@@ -430,8 +457,9 @@ func exportAELine(line *goblubl.InvoiceLine) {
 // (IBR-194-AE, IBR-104-AE). Despite their names, the official examples write
 // both in the document currency, not in AED. GOBL keeps no VAT per line, so it
 // is the line total at the line's rate, rounded to the currency. Exempt lines
-// get no VAT amount (IBR-163-AE), and zero rated and reverse charge lines a
-// zero one (IBR-165-AE, IBR-162-AE).
+// get no VAT amount (IBR-163-AE), and zero rated, reverse charge and margin
+// scheme lines a zero one (IBR-165-AE, IBR-162-AE, as the official margin
+// scheme example).
 func exportAELineAmounts(line *goblubl.InvoiceLine, l *bill.Line, cur currency.Code) {
 	if l == nil || l.Total == nil {
 		return
@@ -452,7 +480,7 @@ func exportAELineAmounts(line *goblubl.InvoiceLine, l *bill.Line, cur currency.C
 
 // aeLineVAT provides the VAT charged on a line, and false for exempt lines,
 // which must not have one. Only standard rated lines charge VAT: zero rated,
-// reverse charge and outside scope lines charge none.
+// reverse charge, margin scheme and outside scope lines charge none.
 func aeLineVAT(line *goblubl.InvoiceLine, l *bill.Line) (num.Amount, bool) {
 	zero := num.MakeAmount(0, l.Total.Exp())
 	if line.Item == nil || line.Item.ClassifiedTaxCategory == nil || line.Item.ClassifiedTaxCategory.ID == nil {
@@ -544,8 +572,8 @@ func lineUnitCode(line *goblubl.InvoiceLine) string {
 // aeRate provides the rate PINT AE expects for a line or breakdown VAT
 // category. gobl.ubl writes 0 when a combo has no percent, which is right for
 // A-NZ but not for AE: exempt must have no rate (aligned-ibrp-e-05,
-// IBR-121-AE), and reverse charge must have one (aligned-ibrp-ae-05-ae,
-// IBR-119-AE). Document allowances and charges keep gobl.ubl's 0, which is
+// IBR-121-AE), and reverse charge and margin scheme must have one
+// (aligned-ibrp-ae-05-ae, IBR-119-AE, IBR-111-AE). Document allowances and charges keep gobl.ubl's 0, which is
 // what PINT AE wants there for both (aligned-ibrp-e-06/07, ae-06/07).
 func aeRate(id *goblubl.IDType, percent *string) *string {
 	if id == nil {
@@ -554,8 +582,8 @@ func aeRate(id *goblubl.IDType, percent *string) *string {
 	switch id.Value {
 	case taxCategoryExempt:
 		return nil
-	case taxCategoryReverseCharge:
-		rate := aeReverseChargeRate
+	case taxCategoryReverseCharge, taxCategoryMarginScheme:
+		rate := aeStandardRate
 		return &rate
 	}
 	return percent

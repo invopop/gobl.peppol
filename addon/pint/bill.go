@@ -375,6 +375,24 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			)),
+			rules.Field("discounts", rules.Each(
+				rules.Assert("54", "discount VAT category cannot be margin scheme (IBR-115-AE)",
+					is.Not(is.Func("has margin scheme VAT", taxesIn(comboIsMarginScheme))),
+				),
+			)),
+			rules.Field("charges", rules.Each(
+				rules.Assert("55", "charge VAT category cannot be margin scheme (IBR-114-AE)",
+					is.Not(is.Func("has margin scheme VAT", taxesIn(comboIsMarginScheme))),
+				),
+			)),
+			// With rules 54 and 55, a margin scheme invoice can have no discounts
+			// or charges, as GOBL requires them to have taxes (BR-32, BR-37).
+			rules.When(
+				is.Func("margin scheme", invoiceIsMarginScheme),
+				rules.Assert("56", "margin scheme invoice must only use the margin scheme VAT key (IBR-116-AE)",
+					is.Func("only margin scheme VAT", invoiceTaxesAreMarginScheme),
+				),
+			),
 		),
 	)
 }
@@ -1100,6 +1118,47 @@ func identitiesClassifiedAsHS(val any) bool {
 		}
 		if id.Label != IdentityLabelHS && id.Label != IdentityLabelSAC {
 			return false
+		}
+	}
+	return true
+}
+
+// comboIsMarginScheme reports whether a tax combo is VAT under the profit
+// margin scheme.
+func comboIsMarginScheme(val any) bool {
+	c, ok := val.(*tax.Combo)
+	return ok && c != nil && c.Category == tax.CategoryVAT &&
+		c.Ext.Get(untdid.ExtKeyTaxCategory) == TaxCategoryMarginScheme
+}
+
+// invoiceTaxesAreMarginScheme reports whether every tax combo of an invoice's
+// lines, discounts and charges is VAT under the profit margin scheme.
+func invoiceTaxesAreMarginScheme(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	if !ok || inv == nil {
+		return false
+	}
+	var sets []tax.Set
+	for _, l := range inv.Lines {
+		if l != nil {
+			sets = append(sets, l.Taxes)
+		}
+	}
+	for _, d := range inv.Discounts {
+		if d != nil {
+			sets = append(sets, d.Taxes)
+		}
+	}
+	for _, c := range inv.Charges {
+		if c != nil {
+			sets = append(sets, c.Taxes)
+		}
+	}
+	for _, set := range sets {
+		for _, c := range set {
+			if !comboIsMarginScheme(c) {
+				return false
+			}
 		}
 	}
 	return true
