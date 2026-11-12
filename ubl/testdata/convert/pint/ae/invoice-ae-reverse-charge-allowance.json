@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "894fe7b79f37056933f5da8a3555ae3a12f53507054151dbbdfe9e53b684b33d"
+			"val": "37e899919569ef46b7819070afb2e807aed37b6a0c27f44451702e3e64510e52"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -125,7 +125,6 @@
 						"cat": "VAT",
 						"key": "reverse-charge",
 						"ext": {
-							"cef-vatex": "VATEX-EU-AE",
 							"untdid-tax-category": "AE"
 						}
 					}
@@ -143,7 +142,6 @@
 						"cat": "VAT",
 						"key": "reverse-charge",
 						"ext": {
-							"cef-vatex": "VATEX-EU-AE",
 							"untdid-tax-category": "AE"
 						}
 					}
@@ -160,7 +158,6 @@
 						"cat": "VAT",
 						"key": "reverse-charge",
 						"ext": {
-							"cef-vatex": "VATEX-EU-AE",
 							"untdid-tax-category": "AE"
 						}
 					}
@@ -204,7 +201,6 @@
 							{
 								"key": "reverse-charge",
 								"ext": {
-									"cef-vatex": "VATEX-EU-AE",
 									"untdid-tax-category": "AE"
 								},
 								"base": "975.00",

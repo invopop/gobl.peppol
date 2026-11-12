@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "6c1fddcee644f42bb3747b650d52fe8f218ac152b70ef7ae26e283d757c12ca9"
+			"val": "e8901d4b59f3f4f56f757b4fa85aa7f673bc52f499224e254c5d12eae5330fbe"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -130,7 +130,6 @@
 						"cat": "VAT",
 						"key": "reverse-charge",
 						"ext": {
-							"cef-vatex": "VATEX-EU-AE",
 							"untdid-tax-category": "AE"
 						}
 					}
@@ -173,7 +172,6 @@
 							{
 								"key": "reverse-charge",
 								"ext": {
-									"cef-vatex": "VATEX-EU-AE",
 									"untdid-tax-category": "AE"
 								},
 								"base": "1000.00",

@@ -1,6 +1,7 @@
 package ubl
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/invopop/gobl"
@@ -8,6 +9,7 @@ import (
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/icc"
+	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
@@ -88,6 +90,8 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAELineItems(in.CreditNoteLines, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
+	importAEPartyEndpoint(in.AccountingSupplierParty.Party, inv.Supplier)
+	importAEPartyEndpoint(in.AccountingCustomerParty.Party, inv.Customer)
 	return nil
 }
 
@@ -577,7 +581,8 @@ func aeAmount(a num.Amount, cur currency.Code) goblubl.Amount {
 // (ibt-148) PINT AE requires on every line (IBR-126-AE). GOBL prices are per
 // unit, so the base quantity is 1 in the line's unit. Without a list price,
 // gobl.ubl writes no price allowance, so the gross price is the net price with
-// a zero discount. The base quantity also lets IBR-147-AE compute the line net
+// a zero discount, written with the decimals of the price as gobl.ubl does for
+// a list price. The base quantity also lets IBR-147-AE compute the line net
 // amount.
 func exportAEPrice(line *goblubl.InvoiceLine) {
 	price := line.Price
@@ -589,9 +594,10 @@ func exportAEPrice(line *goblubl.InvoiceLine) {
 	}
 	if price.AllowanceCharge == nil {
 		gross := price.PriceAmount
+		net, _ := num.AmountFromString(gross.Value)
 		price.AllowanceCharge = &goblubl.AllowanceCharge{
 			ChargeIndicator: false,
-			Amount:          goblubl.Amount{CurrencyID: price.PriceAmount.CurrencyID, Value: "0"},
+			Amount:          goblubl.Amount{CurrencyID: gross.CurrencyID, Value: num.AmountZero.MatchPrecision(net).String()},
 			BaseAmount:      &gross,
 		}
 	}
@@ -725,6 +731,25 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 			}
 		}
 	}
+}
+
+// importAEPartyEndpoint reads the party's electronic address, cbc:EndpointID,
+// as an endpoint, which the PINT addon requires on the supplier and customer
+// (IBR-080, IBR-081). gobl.ubl imports it as an inbox, which the endpoint
+// replaces.
+func importAEPartyEndpoint(in *goblubl.Party, p *org.Party) {
+	if in == nil || p == nil || in.EndpointID == nil || in.EndpointID.Value == "" {
+		return
+	}
+	scheme, value := in.EndpointID.SchemeID, in.EndpointID.Value
+	uri := cbc.URI(iso.ActorIDScheme + "::" + scheme + ":" + value)
+	if scheme == goblubl.SchemeIDEmail {
+		uri = cbc.URI("mailto:" + value)
+	}
+	p.Inboxes = slices.DeleteFunc(p.Inboxes, func(ib *org.Inbox) bool {
+		return ib.Email == value || (ib.Scheme.String() == scheme && ib.Code.String() == value)
+	})
+	p.Endpoints = append(p.Endpoints, &org.Endpoint{URI: uri})
 }
 
 // importAELegalIdentity sets the identity's key and, from @schemeAgencyName,

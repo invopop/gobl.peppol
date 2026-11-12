@@ -58,9 +58,18 @@ func TestExportAEPrice(t *testing.T) {
 		ac := line.Price.AllowanceCharge
 		require.NotNil(t, ac)
 		assert.False(t, ac.ChargeIndicator)
-		assert.Equal(t, "0", ac.Amount.Value)
+		assert.Equal(t, "0.00", ac.Amount.Value)
 		require.NotNil(t, ac.BaseAmount)
 		assert.Equal(t, "100.00", ac.BaseAmount.Value)
+	})
+
+	t.Run("writes the zero discount with the decimals of the price", func(t *testing.T) {
+		line := &goblubl.InvoiceLine{
+			InvoicedQuantity: &goblubl.Quantity{UnitCode: "C62", Value: "1"},
+			Price:            &goblubl.Price{PriceAmount: aedAmount("10.1234")},
+		}
+		exportAEPrice(line)
+		assert.Equal(t, "0.0000", line.Price.AllowanceCharge.Amount.Value)
 	})
 
 	t.Run("uses the credited quantity's unit on credit notes", func(t *testing.T) {
@@ -352,6 +361,40 @@ func TestImportAEPartyIdentities(t *testing.T) {
 		assert.NotPanics(t, func() {
 			importAEPartyIdentities(nil, &org.Party{}, true)
 			importAEPartyIdentities(&goblubl.Party{}, nil, true)
+		})
+	})
+}
+
+func TestImportAEPartyEndpoint(t *testing.T) {
+	t.Run("the electronic address replaces the inbox gobl.ubl imports", func(t *testing.T) {
+		in := &goblubl.Party{EndpointID: &goblubl.EndpointID{SchemeID: "0235", Value: "1357902468"}}
+		p := &org.Party{Inboxes: []*org.Inbox{
+			{Scheme: "0235", Code: "1357902468"},
+			{Key: "other", Code: "ABC"},
+		}}
+		importAEPartyEndpoint(in, p)
+		require.Len(t, p.Endpoints, 1)
+		assert.Equal(t, cbc.URI("iso6523-actorid-upis::0235:1357902468"), p.Endpoints[0].URI)
+		require.Len(t, p.Inboxes, 1)
+		assert.Equal(t, cbc.Code("ABC"), p.Inboxes[0].Code)
+	})
+
+	t.Run("an email address is read as a mailto endpoint", func(t *testing.T) {
+		in := &goblubl.Party{EndpointID: &goblubl.EndpointID{SchemeID: goblubl.SchemeIDEmail, Value: "billing@example.ae"}}
+		p := &org.Party{Inboxes: []*org.Inbox{{Email: "billing@example.ae"}}}
+		importAEPartyEndpoint(in, p)
+		require.Len(t, p.Endpoints, 1)
+		assert.Equal(t, cbc.URI("mailto:billing@example.ae"), p.Endpoints[0].URI)
+		assert.Empty(t, p.Inboxes)
+	})
+
+	t.Run("parties without an electronic address are left alone", func(t *testing.T) {
+		p := &org.Party{}
+		importAEPartyEndpoint(&goblubl.Party{}, p)
+		assert.Empty(t, p.Endpoints)
+		assert.NotPanics(t, func() {
+			importAEPartyEndpoint(nil, p)
+			importAEPartyEndpoint(&goblubl.Party{}, nil)
 		})
 	})
 }

@@ -4,8 +4,10 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "0acba08a26a9042df724424835499955e1fb55311ec48169f01ad036cbd6cf72"
-		}
+			"val": "89abd84d782bc7a63a572424071b51d24fc9b6b5633f7ba094e5de0c9fcdc51f"
+		},
+		"from": "iso6523-actorid-upis::0235:112345678900003",
+		"to": "iso6523-actorid-upis::0235:112345679000003"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
@@ -51,10 +53,9 @@
 					}
 				}
 			],
-			"inboxes": [
+			"endpoints": [
 				{
-					"scheme": "0235",
-					"code": "112345678900003"
+					"uri": "iso6523-actorid-upis::0235:112345678900003"
 				}
 			],
 			"addresses": [
@@ -103,10 +104,9 @@
 					}
 				}
 			],
-			"inboxes": [
+			"endpoints": [
 				{
-					"scheme": "0235",
-					"code": "112345679000003"
+					"uri": "iso6523-actorid-upis::0235:112345679000003"
 				}
 			],
 			"addresses": [

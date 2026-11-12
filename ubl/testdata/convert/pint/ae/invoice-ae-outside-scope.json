@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "a64ee8d359ca2961aace3256846f379110e6b7a4e2cbd40a1953e94cc1d009b0"
+			"val": "50af39bff25a551aa0dd1765cf11219ca6bfe5981b56d5190a7ff98a77eac43d"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -117,7 +117,6 @@
 						"cat": "VAT",
 						"key": "outside-scope",
 						"ext": {
-							"cef-vatex": "VATEX-EU-O",
 							"untdid-tax-category": "O"
 						}
 					}
@@ -160,7 +159,6 @@
 							{
 								"key": "outside-scope",
 								"ext": {
-									"cef-vatex": "VATEX-EU-O",
 									"untdid-tax-category": "O"
 								},
 								"base": "1000.00",

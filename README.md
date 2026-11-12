@@ -131,7 +131,8 @@ tags, and the credit note reason, billing frequency, line exemption
 reasons and item goods types back as their extensions, and the item
 types and service accounting codes back as item keys and identities, and
 the `N` category back as the `margin-scheme` key, and the delivery terms back
-as the `icc-incoterms-2020` extension.
+as the `icc-incoterms-2020` extension, and the seller and buyer electronic
+addresses as endpoints.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,

@@ -4,8 +4,10 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "8ecfd77c9c801b91ac7a8065224d03c08891ab36a77b3a4419b77aff4e493d29"
-		}
+			"val": "9d5f7e184ece141543a8c205f363b5aafd431716944e0962914e7a3e4dc94d5a"
+		},
+		"from": "iso6523-actorid-upis::0235:1357902468",
+		"to": "iso6523-actorid-upis::0235:1345678901"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
@@ -40,10 +42,9 @@
 					"description": "Trade License issuing Authority"
 				}
 			],
-			"inboxes": [
+			"endpoints": [
 				{
-					"scheme": "0235",
-					"code": "1357902468"
+					"uri": "iso6523-actorid-upis::0235:1357902468"
 				}
 			],
 			"addresses": [
@@ -69,10 +70,9 @@
 					"description": "Trade License issuing Authority"
 				}
 			],
-			"inboxes": [
+			"endpoints": [
 				{
-					"scheme": "0235",
-					"code": "1345678901"
+					"uri": "iso6523-actorid-upis::0235:1345678901"
 				}
 			],
 			"addresses": [

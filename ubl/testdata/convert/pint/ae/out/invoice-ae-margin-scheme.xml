@@ -115,7 +115,7 @@
       <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
       <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-        <cbc:Amount currencyID="AED">0</cbc:Amount>
+        <cbc:Amount currencyID="AED">0.00</cbc:Amount>
         <cbc:BaseAmount currencyID="AED">10.00</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>

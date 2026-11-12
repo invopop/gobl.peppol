@@ -91,7 +91,6 @@
     <cac:TaxCategory>
       <cbc:ID>E</cbc:ID>
       <cbc:Percent>0</cbc:Percent>
-      <cbc:TaxExemptionReasonCode>VATEX-EU-132-1I</cbc:TaxExemptionReasonCode>
       <cac:TaxScheme>
         <cbc:ID>VAT</cbc:ID>
       </cac:TaxScheme>
@@ -149,7 +148,7 @@
       <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
       <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-        <cbc:Amount currencyID="AED">0</cbc:Amount>
+        <cbc:Amount currencyID="AED">0.00</cbc:Amount>
         <cbc:BaseAmount currencyID="AED">10.00</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>
@@ -180,7 +179,7 @@
       <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
       <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-        <cbc:Amount currencyID="AED">0</cbc:Amount>
+        <cbc:Amount currencyID="AED">0.00</cbc:Amount>
         <cbc:BaseAmount currencyID="AED">200.00</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>
@@ -208,7 +207,7 @@
       <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
       <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-        <cbc:Amount currencyID="AED">0</cbc:Amount>
+        <cbc:Amount currencyID="AED">0.00</cbc:Amount>
         <cbc:BaseAmount currencyID="AED">300.00</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>

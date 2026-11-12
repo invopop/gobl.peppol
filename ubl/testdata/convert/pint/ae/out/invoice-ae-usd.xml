@@ -111,7 +111,6 @@
       <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
       <cac:TaxCategory>
         <cbc:ID>E</cbc:ID>
-        <cbc:TaxExemptionReasonCode>VATEX-EU-132-1I</cbc:TaxExemptionReasonCode>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
@@ -123,7 +122,6 @@
       <cac:TaxCategory>
         <cbc:ID>AE</cbc:ID>
         <cbc:Percent>5</cbc:Percent>
-        <cbc:TaxExemptionReasonCode>VATEX-EU-AE</cbc:TaxExemptionReasonCode>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
@@ -166,7 +164,7 @@
       <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
       <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-        <cbc:Amount currencyID="USD">0</cbc:Amount>
+        <cbc:Amount currencyID="USD">0.00</cbc:Amount>
         <cbc:BaseAmount currencyID="USD">10.00</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>
@@ -201,7 +199,7 @@
       <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
       <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-        <cbc:Amount currencyID="USD">0</cbc:Amount>
+        <cbc:Amount currencyID="USD">0.00</cbc:Amount>
         <cbc:BaseAmount currencyID="USD">250.00</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>
@@ -238,7 +236,7 @@
       <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
       <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-        <cbc:Amount currencyID="USD">0</cbc:Amount>
+        <cbc:Amount currencyID="USD">0.00</cbc:Amount>
         <cbc:BaseAmount currencyID="USD">120.00</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>
@@ -274,7 +272,7 @@
       <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
       <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-        <cbc:Amount currencyID="USD">0</cbc:Amount>
+        <cbc:Amount currencyID="USD">0.00</cbc:Amount>
         <cbc:BaseAmount currencyID="USD">33.33</cbc:BaseAmount>
       </cac:AllowanceCharge>
     </cac:Price>

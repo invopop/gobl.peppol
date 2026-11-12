@@ -1,6 +1,7 @@
 package ubl_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
@@ -138,6 +139,36 @@ func TestDetectAndImportAE(t *testing.T) {
 	require.True(t, ok)
 	assert.Contains(t, inv.GetAddons(), pint.V1)
 	assert.Equal(t, l10n.TaxCountryCode("AE"), inv.GetRegime())
+}
+
+// invalidImportsAE are the official PINT AE examples that pass the PINT AE
+// Schematron but don't import as valid GOBL documents, and why.
+var invalidImportsAE = map[string]string{
+	"deemed-supply.xml":          "placeholder email addresses, and no payment terms, which EN 16931 requires (BR-CO-25)",
+	"margin-scheme.xml":          "placeholder email addresses",
+	"reverse-charge.xml":         "placeholder email addresses",
+	"supply-free-trade-zone.xml": "placeholder email addresses",
+}
+
+// TestImportAEValid checks that the official PINT AE examples import as valid
+// GOBL documents.
+func TestImportAEValid(t *testing.T) {
+	examples, err := filepath.Glob(filepath.Join("testdata", "parse", "pint", "ae", "*.xml"))
+	require.NoError(t, err)
+	require.NotEmpty(t, examples)
+	for _, example := range examples {
+		name := filepath.Base(example)
+		t.Run(name, func(t *testing.T) {
+			env := parseXMLInvoice(t, filepath.Join("pint", "ae", name))
+			require.NoError(t, env.Calculate())
+			err := env.Validate()
+			if reason, ok := invalidImportsAE[name]; ok {
+				assert.Error(t, err, "listed as invalid: %s", reason)
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
 }
 
 // TestExportAE checks that a UAE invoice is exported with the PINT AE
