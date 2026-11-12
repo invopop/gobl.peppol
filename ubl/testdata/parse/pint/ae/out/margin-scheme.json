@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "c7f5e00709da5880cdc4651f00c01804c62238aebcb073a24a39361c8e65cb2d"
+			"val": "0acba08a26a9042df724424835499955e1fb55311ec48169f01ad036cbd6cf72"
 		}
 	},
 	"doc": {
@@ -76,7 +76,10 @@
 				{
 					"num": "Contact Number"
 				}
-			]
+			],
+			"registration": {
+				"other": "Merchant"
+			}
 		},
 		"customer": {
 			"name": "Buyer Legal Name",
