@@ -88,6 +88,9 @@
         <cbc:RegistrationName>Buyer Warehouse</cbc:RegistrationName>
       </cac:PartyLegalEntity>
     </cac:DeliveryParty>
+    <cac:DeliveryTerms>
+      <cbc:ID>CIF</cbc:ID>
+    </cac:DeliveryTerms>
   </cac:Delivery>
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>

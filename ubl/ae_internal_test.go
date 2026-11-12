@@ -742,6 +742,58 @@ func TestAELineItems(t *testing.T) {
 	})
 }
 
+func TestAEIncoterms(t *testing.T) {
+	incoterms := &org.Identity{Label: pint.IdentityLabelIncoterms, Code: "CIF"}
+	gln := &org.Identity{Code: "5790000436101", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: "0088"})}
+	withLocation := func(id string) *goblubl.Invoice {
+		return &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryLocation: &goblubl.Location{ID: &goblubl.IDType{Value: id}}}}}
+	}
+
+	t.Run("writes the Incoterms as the delivery terms", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{Identities: []*org.Identity{incoterms}}})
+		require.Len(t, out.Delivery, 1)
+		require.NotNil(t, out.Delivery[0].DeliveryTerms)
+		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms.ID)
+	})
+
+	t.Run("keeps the Incoterms out of the delivery location ID", func(t *testing.T) {
+		out := withLocation("CIF")
+		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{Identities: []*org.Identity{incoterms, gln}}})
+		id := out.Delivery[0].DeliveryLocation.ID
+		require.NotNil(t, id)
+		assert.Equal(t, "5790000436101", id.Value)
+		assert.Equal(t, "0088", *id.SchemeID)
+
+		out = withLocation("CIF")
+		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{Identities: []*org.Identity{incoterms}}})
+		assert.Nil(t, out.Delivery[0].DeliveryLocation.ID)
+	})
+
+	t.Run("nothing without Incoterms", func(t *testing.T) {
+		out := withLocation("5790000436101")
+		exportAEIncoterms(out, &bill.Invoice{Delivery: &bill.DeliveryDetails{Identities: []*org.Identity{gln}}})
+		assert.Nil(t, out.Delivery[0].DeliveryTerms)
+		assert.Equal(t, "5790000436101", out.Delivery[0].DeliveryLocation.ID.Value)
+		exportAEIncoterms(out, &bill.Invoice{})
+		assert.Nil(t, out.Delivery[0].DeliveryTerms)
+	})
+
+	t.Run("reads the Incoterms back", func(t *testing.T) {
+		in := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: &goblubl.DeliveryTerms{ID: " CIF "}}}}
+		inv := new(bill.Invoice)
+		importAEIncoterms(in, inv)
+		require.NotNil(t, inv.Delivery)
+		require.Len(t, inv.Delivery.Identities, 1)
+		assert.Equal(t, pint.IdentityLabelIncoterms, inv.Delivery.Identities[0].Label)
+		assert.Equal(t, cbc.Code("CIF"), inv.Delivery.Identities[0].Code)
+
+		inv = new(bill.Invoice)
+		importAEIncoterms(new(goblubl.Invoice), inv)
+		assert.Nil(t, inv.Delivery)
+	})
+}
+
 func TestExportAELineAmounts(t *testing.T) {
 	line := func(category string) *goblubl.InvoiceLine {
 		return &goblubl.InvoiceLine{Item: &goblubl.Item{
