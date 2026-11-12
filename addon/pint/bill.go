@@ -435,6 +435,40 @@ func billLineRules() *rules.Set {
 					),
 				),
 			),
+			rules.Field("item",
+				rules.When(
+					is.Func("goods", itemKeyIs(org.ItemKeyGoods)),
+					rules.Field("identities",
+						rules.Assert("07", "goods item needs an HS item classification (IBR-184-AE)",
+							is.Func("has HS", identitiesHaveLabel(IdentityLabelHS)),
+						),
+					),
+				),
+				rules.When(
+					is.Func("services", itemKeyIs(org.ItemKeyServices)),
+					rules.Field("identities",
+						rules.Assert("08", "services item needs a service accounting code (IBR-185-AE)",
+							is.Func("has SAC", identitiesHaveLabel(IdentityLabelSAC)),
+						),
+					),
+				),
+				rules.When(
+					is.Func("goods and services", itemKeyIs(ItemKeyGoodsServices)),
+					rules.Field("identities",
+						rules.Assert("09", "goods and services item needs an HS item classification and a service accounting code (IBR-186-AE)",
+							is.Func("has HS and SAC", identitiesHaveLabel(IdentityLabelHS, IdentityLabelSAC)),
+						),
+					),
+				),
+				// gobl.ubl writes identities with a label and no scheme ID as item
+				// classifications, with the label as their list. FormatAE writes the
+				// SAC ones as service accounting codes instead (IBR-189-AE).
+				rules.Field("identities",
+					rules.Assert("10", "item classifications must use the HS list (IBR-188-AE)",
+						is.Func("classifications are HS", identitiesClassifiedAsHS),
+					),
+				),
+			),
 		),
 	)
 }
@@ -1016,4 +1050,57 @@ func identitiesHaveGTIN(val any) bool {
 		return false
 	}
 	return GTINIdentity(ids) != nil
+}
+
+// itemKeyIs returns a predicate that reports whether an item has the key.
+func itemKeyIs(key cbc.Key) func(any) bool {
+	return func(val any) bool {
+		it, ok := val.(*org.Item)
+		return ok && it != nil && it.Key == key
+	}
+}
+
+// identitiesHaveLabel returns a predicate that reports whether an item has
+// identities with all the labels.
+func identitiesHaveLabel(labels ...string) func(any) bool {
+	return func(val any) bool {
+		ids, ok := val.([]*org.Identity)
+		if !ok {
+			return false
+		}
+		for _, label := range labels {
+			if !identitiesHaveLabelOf(ids, label) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+func identitiesHaveLabelOf(ids []*org.Identity, label string) bool {
+	for _, id := range ids {
+		if id != nil && id.Label == label {
+			return true
+		}
+	}
+	return false
+}
+
+// identitiesClassifiedAsHS reports whether the identities gobl.ubl writes as
+// item classifications, those with a label and no scheme ID, are all HS ones,
+// apart from the service accounting codes.
+func identitiesClassifiedAsHS(val any) bool {
+	ids, ok := val.([]*org.Identity)
+	if !ok {
+		return false
+	}
+	for _, id := range ids {
+		if id == nil || id.Label == "" || id.Ext.Has(iso.ExtKeySchemeID) {
+			continue
+		}
+		if id.Label != IdentityLabelHS && id.Label != IdentityLabelSAC {
+			return false
+		}
+	}
+	return true
 }

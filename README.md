@@ -118,12 +118,15 @@ the disclosed agent's principal as the buyer and seller parties, and the
 credit note reason as `cac:DiscrepancyResponse`, the billing frequency in
 `cac:InvoicePeriod`, the UAE VAT exemption reason of exempt lines, and each
 item's type of goods or services subject to the reverse charge as its
-`cbc:NatureCode`, with its GTIN as the standard identifier. On import, it reads
+`cbc:NatureCode`, with its GTIN as the standard identifier. Items keyed
+`goods`, `services` or `goods-services` get the item type `G`, `S` or `B`, and
+identities labelled `SAC` are written as service accounting codes. On import, it reads
 the out-of-scope type codes 480 and 81 back as the `outside-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as
 identity keys and fields, the transaction type back as its extension and
 tags, and the credit note reason, billing frequency, line exemption
-reasons and item goods types back as their extensions.
+reasons and item goods types back as their extensions, and the item
+types and service accounting codes back as item keys and identities.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,

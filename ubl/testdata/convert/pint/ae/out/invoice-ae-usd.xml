@@ -146,6 +146,13 @@
     <cac:Item>
       <cbc:Description>Item Description</cbc:Description>
       <cbc:Name>Item Name</cbc:Name>
+      <cac:AdditionalItemIdentification>
+        <cbc:ID schemeID="SAC">998713</cbc:ID>
+      </cac:AdditionalItemIdentification>
+      <cac:CommodityClassification>
+        <cbc:CommodityCode>B</cbc:CommodityCode>
+        <cbc:ItemClassificationCode listID="HS">8471</cbc:ItemClassificationCode>
+      </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>S</cbc:ID>
         <cbc:Percent>5</cbc:Percent>
@@ -177,6 +184,10 @@
     <cac:Item>
       <cbc:Description>Zero rated supply</cbc:Description>
       <cbc:Name>Export goods</cbc:Name>
+      <cac:CommodityClassification>
+        <cbc:CommodityCode>G</cbc:CommodityCode>
+        <cbc:ItemClassificationCode listID="HS">8471</cbc:ItemClassificationCode>
+      </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>Z</cbc:ID>
         <cbc:Percent>0</cbc:Percent>
@@ -208,6 +219,12 @@
     <cac:Item>
       <cbc:Description>Exempt supply</cbc:Description>
       <cbc:Name>Financial service</cbc:Name>
+      <cac:AdditionalItemIdentification>
+        <cbc:ID schemeID="SAC">997113</cbc:ID>
+      </cac:AdditionalItemIdentification>
+      <cac:CommodityClassification>
+        <cbc:CommodityCode>S</cbc:CommodityCode>
+      </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>E</cbc:ID>
         <cbc:TaxExemptionReasonCode>DL8.46.3</cbc:TaxExemptionReasonCode>
@@ -241,6 +258,8 @@
       </cac:StandardItemIdentification>
       <cac:CommodityClassification>
         <cbc:NatureCode>DL8.48.8.2</cbc:NatureCode>
+        <cbc:CommodityCode>G</cbc:CommodityCode>
+        <cbc:ItemClassificationCode listID="HS">8517</cbc:ItemClassificationCode>
       </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>AE</cbc:ID>

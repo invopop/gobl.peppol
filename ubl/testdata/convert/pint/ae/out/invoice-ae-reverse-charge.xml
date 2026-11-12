@@ -104,6 +104,8 @@
       </cac:StandardItemIdentification>
       <cac:CommodityClassification>
         <cbc:NatureCode>DL8.48.3.1</cbc:NatureCode>
+        <cbc:CommodityCode>G</cbc:CommodityCode>
+        <cbc:ItemClassificationCode listID="HS">2709</cbc:ItemClassificationCode>
       </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>AE</cbc:ID>

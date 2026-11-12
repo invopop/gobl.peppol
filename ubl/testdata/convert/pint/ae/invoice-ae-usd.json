@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "68fe470bbd55f8fa912e75a928cf3277ae212d5b66153538a883accc1c79ede2"
+			"val": "e9ea54853e92a354c970608a21f0cda350f27bd8ece85c00cfdd5ecefb8ff3d4"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -110,7 +110,18 @@
 				"i": 1,
 				"quantity": "100",
 				"item": {
+					"key": "goods-services",
 					"name": "Item Name",
+					"identities": [
+						{
+							"label": "HS",
+							"code": "8471"
+						},
+						{
+							"label": "SAC",
+							"code": "998713"
+						}
+					],
 					"description": "Item Description",
 					"price": "10.00",
 					"unit": "one"
@@ -132,7 +143,14 @@
 				"i": 2,
 				"quantity": "2",
 				"item": {
+					"key": "goods",
 					"name": "Export goods",
+					"identities": [
+						{
+							"label": "HS",
+							"code": "8471"
+						}
+					],
 					"description": "Zero rated supply",
 					"price": "250.00",
 					"unit": "one"
@@ -154,7 +172,14 @@
 				"i": 3,
 				"quantity": "1",
 				"item": {
+					"key": "services",
 					"name": "Financial service",
+					"identities": [
+						{
+							"label": "SAC",
+							"code": "997113"
+						}
+					],
 					"description": "Exempt supply",
 					"price": "120.00",
 					"unit": "one"
@@ -177,8 +202,13 @@
 				"i": 4,
 				"quantity": "3",
 				"item": {
+					"key": "goods",
 					"name": "Electronic devices",
 					"identities": [
+						{
+							"label": "HS",
+							"code": "8517"
+						},
 						{
 							"code": "4006381333931",
 							"ext": {

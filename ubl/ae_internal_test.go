@@ -644,6 +644,75 @@ func TestAELineGoods(t *testing.T) {
 	})
 }
 
+func TestAELineItems(t *testing.T) {
+	list := func(v string) *string { return &v }
+	classification := func(listID, code string) goblubl.CommodityClassification {
+		return goblubl.CommodityClassification{ItemClassificationCode: &goblubl.IDType{Value: code, ListID: list(listID)}}
+	}
+
+	t.Run("moves the service accounting codes to additional identifiers", func(t *testing.T) {
+		line := goblubl.InvoiceLine{Item: &goblubl.Item{CommodityClassification: &[]goblubl.CommodityClassification{
+			classification("HS", "8471"), classification("SAC", "998713"),
+		}}}
+		exportAELineSAC(&line)
+		require.Len(t, *line.Item.CommodityClassification, 1)
+		assert.Equal(t, "8471", (*line.Item.CommodityClassification)[0].ItemClassificationCode.Value)
+		require.Len(t, line.Item.AdditionalItemIdentification, 1)
+		id := line.Item.AdditionalItemIdentification[0].ID
+		assert.Equal(t, "SAC", *id.SchemeID)
+		assert.Equal(t, "998713", id.Value)
+	})
+
+	t.Run("no classifications left when all were SAC", func(t *testing.T) {
+		line := goblubl.InvoiceLine{Item: &goblubl.Item{CommodityClassification: &[]goblubl.CommodityClassification{
+			classification("SAC", "998713"),
+		}}}
+		exportAELineSAC(&line)
+		assert.Nil(t, line.Item.CommodityClassification)
+		assert.Len(t, line.Item.AdditionalItemIdentification, 1)
+	})
+
+	t.Run("writes the item type on the first classification", func(t *testing.T) {
+		line := goblubl.InvoiceLine{Item: &goblubl.Item{CommodityClassification: &[]goblubl.CommodityClassification{
+			classification("HS", "8471"),
+		}}}
+		exportAELineItemType(&line, &bill.Line{Item: &org.Item{Key: pint.ItemKeyGoodsServices}})
+		cc := (*line.Item.CommodityClassification)[0]
+		assert.Equal(t, "B", *cc.CommodityCode)
+		assert.Equal(t, "8471", cc.ItemClassificationCode.Value)
+	})
+
+	t.Run("nothing for items without an AE type", func(t *testing.T) {
+		line := goblubl.InvoiceLine{Item: &goblubl.Item{}}
+		exportAELineItemType(&line, &bill.Line{Item: &org.Item{Key: "other"}})
+		assert.Nil(t, line.Item.CommodityClassification)
+		exportAELineItemType(&line, nil)
+		assert.Nil(t, line.Item.CommodityClassification)
+	})
+
+	t.Run("reads the item type and service accounting codes back", func(t *testing.T) {
+		with := goblubl.InvoiceLine{Item: &goblubl.Item{
+			AdditionalItemIdentification: []goblubl.ItemIdentification{{ID: &goblubl.IDType{SchemeID: list("SAC"), Value: " 998713 "}}},
+			CommodityClassification:      &[]goblubl.CommodityClassification{{CommodityCode: list("S")}},
+		}}
+		inv := &bill.Invoice{Lines: []*bill.Line{{Item: &org.Item{}}, {Item: &org.Item{}}}}
+		importAELineItems([]goblubl.InvoiceLine{{Item: &goblubl.Item{}}, with}, inv)
+		assert.Empty(t, inv.Lines[0].Item.Key)
+		assert.Empty(t, inv.Lines[0].Item.Identities)
+		assert.Equal(t, org.ItemKeyServices, inv.Lines[1].Item.Key)
+		require.Len(t, inv.Lines[1].Item.Identities, 1)
+		assert.Equal(t, "SAC", inv.Lines[1].Item.Identities[0].Label)
+		assert.Equal(t, cbc.Code("998713"), inv.Lines[1].Item.Identities[0].Code)
+	})
+
+	t.Run("lines that don't match are skipped", func(t *testing.T) {
+		with := goblubl.InvoiceLine{Item: &goblubl.Item{CommodityClassification: &[]goblubl.CommodityClassification{{CommodityCode: list("G")}}}}
+		inv := &bill.Invoice{Lines: []*bill.Line{{Item: &org.Item{}}, {Item: &org.Item{}}}}
+		importAELineItems([]goblubl.InvoiceLine{with}, inv)
+		assert.Empty(t, inv.Lines[0].Item.Key)
+	})
+}
+
 func TestExportAELineAmounts(t *testing.T) {
 	line := func(category string) *goblubl.InvoiceLine {
 		return &goblubl.InvoiceLine{Item: &goblubl.Item{

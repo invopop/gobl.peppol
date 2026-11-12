@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "bfb3aeb7bc32584b64e3a67be5516ee365f2c95908527df4c1eaf491cc8a251d"
+			"val": "2a6a49cd4519a550e26e9b89488e71891bb461d06a39b1678936ee56a6be2e40"
 		}
 	},
 	"doc": {
@@ -126,11 +126,16 @@
 				"i": 1,
 				"quantity": "2",
 				"item": {
+					"key": "goods",
 					"name": "Item Name",
 					"identities": [
 						{
 							"label": "HS",
 							"code": "88098432"
+						},
+						{
+							"label": "SAC",
+							"code": "Service"
 						}
 					],
 					"description": "Item Description",

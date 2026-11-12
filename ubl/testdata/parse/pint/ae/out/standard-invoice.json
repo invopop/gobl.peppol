@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "5274a8aa0a6a11c3d1796d2df3372bf4c3d9458babbfb972dd970e04f6bdcab7"
+			"val": "8ecfd77c9c801b91ac7a8065224d03c08891ab36a77b3a4419b77aff4e493d29"
 		}
 	},
 	"doc": {
@@ -89,6 +89,7 @@
 				"i": 1,
 				"quantity": "100",
 				"item": {
+					"key": "goods",
 					"name": "Item Name",
 					"identities": [
 						{

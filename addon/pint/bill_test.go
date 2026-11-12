@@ -1130,3 +1130,55 @@ func TestBillGoodsTypeRulesAE(t *testing.T) {
 		assert.NotContains(t, out, faultGTIN)
 	})
 }
+
+func TestBillItemTypeRulesAE(t *testing.T) {
+	const (
+		faultGoodsHS        = "GOBL-PEPPOL-PINT-BILL-LINE-07"
+		faultServicesSAC    = "GOBL-PEPPOL-PINT-BILL-LINE-08"
+		faultGoodsServices  = "GOBL-PEPPOL-PINT-BILL-LINE-09"
+		faultClassification = "GOBL-PEPPOL-PINT-BILL-LINE-10"
+	)
+	hs := &org.Identity{Label: pint.IdentityLabelHS, Code: "8471"}
+	sac := &org.Identity{Label: pint.IdentityLabelSAC, Code: "998713"}
+	item := func(key cbc.Key, ids ...*org.Identity) *bill.Invoice {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Lines[0].Item.Key = key
+		inv.Lines[0].Item.Identities = ids
+		return inv
+	}
+
+	t.Run("goods need an HS classification (IBR-184-AE)", func(t *testing.T) {
+		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods)), faultGoodsHS)
+		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods, sac)), faultGoodsHS)
+		assert.NotContains(t, aeFaults(t, item(org.ItemKeyGoods, hs)), faultGoodsHS)
+	})
+
+	t.Run("services need a service accounting code (IBR-185-AE)", func(t *testing.T) {
+		assert.Contains(t, aeFaults(t, item(org.ItemKeyServices)), faultServicesSAC)
+		assert.Contains(t, aeFaults(t, item(org.ItemKeyServices, hs)), faultServicesSAC)
+		assert.NotContains(t, aeFaults(t, item(org.ItemKeyServices, sac)), faultServicesSAC)
+	})
+
+	t.Run("goods and services need both (IBR-186-AE)", func(t *testing.T) {
+		assert.Contains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, hs)), faultGoodsServices)
+		assert.Contains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, sac)), faultGoodsServices)
+		assert.NotContains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, hs, sac)), faultGoodsServices)
+	})
+
+	t.Run("no item type needs neither", func(t *testing.T) {
+		out := aeFaults(t, item(""))
+		assert.NotContains(t, out, faultGoodsHS)
+		assert.NotContains(t, out, faultServicesSAC)
+		assert.NotContains(t, out, faultGoodsServices)
+	})
+
+	t.Run("item classifications must be HS (IBR-188-AE)", func(t *testing.T) {
+		cpv := &org.Identity{Label: "CPV", Code: "30200000"}
+		assert.Contains(t, aeFaults(t, item("", hs, cpv)), faultClassification)
+		assert.NotContains(t, aeFaults(t, item("", hs, sac)), faultClassification)
+
+		// Identities with a scheme ID aren't classifications.
+		gtin := &org.Identity{Label: "GTIN", Code: "4006381333931", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: "0160"})}
+		assert.NotContains(t, aeFaults(t, item("", gtin)), faultClassification)
+	})
+}

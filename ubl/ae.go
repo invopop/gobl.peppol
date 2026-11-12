@@ -78,6 +78,8 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAELineExemptions(in.CreditNoteLines, inv)
 	importAELineGoods(in.InvoiceLines, inv)
 	importAELineGoods(in.CreditNoteLines, inv)
+	importAELineItems(in.InvoiceLines, inv)
+	importAELineItems(in.CreditNoteLines, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
 	return nil
@@ -252,16 +254,61 @@ func exportAELineGoods(line *goblubl.InvoiceLine, l *bill.Line) {
 	}
 	if code := l.Item.Ext.Get(pint.ExtKeyGoodsType); code != "" {
 		v := code.String()
-		if line.Item.CommodityClassification == nil || len(*line.Item.CommodityClassification) == 0 {
-			line.Item.CommodityClassification = &[]goblubl.CommodityClassification{{}}
-		}
-		(*line.Item.CommodityClassification)[0].NatureCode = &v
+		aeCommodityClassification(line.Item).NatureCode = &v
 	}
 	if id := pint.GTINIdentity(l.Item.Identities); id != nil {
 		scheme := pint.IdentitySchemeGTIN.String()
 		line.Item.StandardItemIdentification = &goblubl.ItemIdentification{
 			ID: &goblubl.IDType{SchemeID: &scheme, Value: id.Code.String()},
 		}
+	}
+}
+
+// aeCommodityClassification returns the item's first commodity
+// classification, adding one if it has none, where the PINT AE item codes go
+// alongside the item classification code, as in the official examples.
+func aeCommodityClassification(it *goblubl.Item) *goblubl.CommodityClassification {
+	if it.CommodityClassification == nil || len(*it.CommodityClassification) == 0 {
+		it.CommodityClassification = &[]goblubl.CommodityClassification{{}}
+	}
+	return &(*it.CommodityClassification)[0]
+}
+
+// exportAELineSAC moves the service accounting codes (BTAE-17), which
+// gobl.ubl writes as item classifications listed "SAC" since their
+// identities have that label, to cac:AdditionalItemIdentification with the
+// SAC scheme (IBR-189-AE).
+func exportAELineSAC(line *goblubl.InvoiceLine) {
+	if line.Item == nil || line.Item.CommodityClassification == nil {
+		return
+	}
+	var kept []goblubl.CommodityClassification
+	for _, cc := range *line.Item.CommodityClassification {
+		code := cc.ItemClassificationCode
+		if code == nil || code.ListID == nil || *code.ListID != pint.IdentityLabelSAC {
+			kept = append(kept, cc)
+			continue
+		}
+		scheme := pint.IdentityLabelSAC
+		line.Item.AdditionalItemIdentification = append(line.Item.AdditionalItemIdentification,
+			goblubl.ItemIdentification{ID: &goblubl.IDType{SchemeID: &scheme, Value: code.Value}})
+	}
+	if len(kept) == 0 {
+		line.Item.CommodityClassification = nil
+		return
+	}
+	line.Item.CommodityClassification = &kept
+}
+
+// exportAELineItemType writes the item type (BTAE-13) of the item's key as
+// its cac:CommodityClassification/cbc:CommodityCode.
+func exportAELineItemType(line *goblubl.InvoiceLine, l *bill.Line) {
+	if l == nil || l.Item == nil || line.Item == nil {
+		return
+	}
+	if typ := pint.ItemTypeAE(l.Item.Key); typ != "" {
+		v := typ.String()
+		aeCommodityClassification(line.Item).CommodityCode = &v
 	}
 }
 
@@ -282,6 +329,43 @@ func importAELineGoods(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 			}
 			if code := cbc.Code(strings.TrimSpace(*cc.NatureCode)); code != "" {
 				inv.Lines[i].Item.Ext = inv.Lines[i].Item.Ext.Set(pint.ExtKeyGoodsType, code)
+				break
+			}
+		}
+	}
+}
+
+// importAELineItems reads back what exportAELineSAC and exportAELineItemType
+// write: the service accounting codes as identities with their scheme as
+// label, and the item type as the item's key.
+func importAELineItems(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
+	if len(lines) == 0 || len(lines) != len(inv.Lines) {
+		return
+	}
+	for i, line := range lines {
+		it := inv.Lines[i].Item
+		if line.Item == nil || it == nil {
+			continue
+		}
+		for _, ai := range line.Item.AdditionalItemIdentification {
+			if ai.ID == nil || strings.TrimSpace(ai.ID.Value) == "" {
+				continue
+			}
+			id := &org.Identity{Code: cbc.Code(strings.TrimSpace(ai.ID.Value))}
+			if ai.ID.SchemeID != nil {
+				id.Label = strings.TrimSpace(*ai.ID.SchemeID)
+			}
+			it.Identities = append(it.Identities, id)
+		}
+		if line.Item.CommodityClassification == nil {
+			continue
+		}
+		for _, cc := range *line.Item.CommodityClassification {
+			if cc.CommodityCode == nil {
+				continue
+			}
+			if key := pint.ItemKeyAE(cbc.Code(strings.TrimSpace(*cc.CommodityCode))); key != "" {
+				it.Key = key
 				break
 			}
 		}
@@ -325,7 +409,9 @@ func exportAELines(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 		if len(lines) == len(inv.Lines) {
 			exportAELineAmounts(&lines[i], inv.Lines[i], inv.Currency)
 			exportAELineExemption(&lines[i], inv.Lines[i])
+			exportAELineSAC(&lines[i])
 			exportAELineGoods(&lines[i], inv.Lines[i])
+			exportAELineItemType(&lines[i], inv.Lines[i])
 		}
 	}
 }

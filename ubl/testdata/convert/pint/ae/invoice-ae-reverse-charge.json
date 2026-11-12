@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "7cc74f23a6c902c3c5897602c9d87caf13f55f11d840fbb8b14ce85dd1d5588a"
+			"val": "6c1fddcee644f42bb3747b650d52fe8f218ac152b70ef7ae26e283d757c12ca9"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -103,8 +103,13 @@
 				"i": 1,
 				"quantity": "100",
 				"item": {
+					"key": "goods",
 					"name": "Item Name",
 					"identities": [
+						{
+							"label": "HS",
+							"code": "2709"
+						},
 						{
 							"code": "4006381333931",
 							"ext": {
