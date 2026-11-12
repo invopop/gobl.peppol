@@ -31,9 +31,6 @@ var regimesAUNZ = []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax()}
 // regimesAE lists the tax regimes the PINT AE jurisdiction rules apply to.
 var regimesAE = []l10n.TaxCountryCode{l10n.AE.Tax()}
 
-// regimesAUNZAE lists the tax regimes the PINT A-NZ and PINT AE jurisdictions rules apply to.
-var regimesAUNZAE = []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax(), l10n.AE.Tax()}
-
 func init() {
 	tax.RegisterAddonDef(newV1Addon())
 	rules.RegisterWithGuard(

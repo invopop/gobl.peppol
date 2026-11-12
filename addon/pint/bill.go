@@ -655,7 +655,7 @@ func pointDateBeforeIssueDate(val any) bool {
 	if !ok || inv == nil || inv.ValueDate == nil {
 		return true
 	}
-	return inv.IssueDate.Date.DaysSince(inv.ValueDate.Date) > 0
+	return inv.IssueDate.DaysSince(inv.ValueDate.Date) > 0
 }
 
 // invoiceIsDue reports whether the invoice has an amount due for payment: the

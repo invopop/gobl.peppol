@@ -1,9 +1,13 @@
 package pint
 
 import (
+	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
+	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/pkg/here"
+	"github.com/invopop/gobl/regimes/ae"
+	"github.com/invopop/gobl/tax"
 )
 
 // PINT AE extension keys, for the BTAE fields GOBL has no place for.
@@ -36,11 +40,32 @@ const CreditNoteReasonVolumeDiscount cbc.Code = "VD"
 // in an invoice note (IBR-160-AE).
 const BillingFrequencyOthers cbc.Code = "OTH"
 
+// Usages of the PINT AE extensions: offered by the PINT addon under the AE
+// regime, on the object each one goes on.
+var (
+	usageAEInvoiceTax = &cbc.Usage{
+		Keys:    []cbc.Key{V1},
+		Codes:   []cbc.Code{ae.CountryCode},
+		Schemas: []string{bill.ShortSchemaTax},
+	}
+	usageAETaxCombo = &cbc.Usage{
+		Keys:    []cbc.Key{V1},
+		Codes:   []cbc.Code{ae.CountryCode},
+		Schemas: []string{tax.ShortSchemaCombo},
+	}
+	usageAEItem = &cbc.Usage{
+		Keys:    []cbc.Key{V1},
+		Codes:   []cbc.Code{ae.CountryCode},
+		Schemas: []string{org.ShortSchemaItem},
+	}
+)
+
 // extensions are the extensions the PINT addon defines. They are only used
 // on UAE documents.
 var extensions = []*cbc.Definition{
 	{
-		Key: ExtKeyTransactionType,
+		Key:   ExtKeyTransactionType,
+		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
 			i18n.EN: "PINT AE Transaction Type",
 		},
@@ -66,7 +91,8 @@ var extensions = []*cbc.Definition{
 		Pattern: transactionTypePattern,
 	},
 	{
-		Key: ExtKeyBeneficiaryID,
+		Key:   ExtKeyBeneficiaryID,
+		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
 			i18n.EN: "PINT AE Beneficiary ID",
 		},
@@ -78,7 +104,8 @@ var extensions = []*cbc.Definition{
 		},
 	},
 	{
-		Key: ExtKeyPrincipalID,
+		Key:   ExtKeyPrincipalID,
+		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
 			i18n.EN: "PINT AE Principal ID",
 		},
@@ -91,7 +118,8 @@ var extensions = []*cbc.Definition{
 		},
 	},
 	{
-		Key: ExtKeyCreditNoteReason,
+		Key:   ExtKeyCreditNoteReason,
+		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
 			i18n.EN: "PINT AE Credit Note Reason",
 		},
@@ -137,7 +165,8 @@ var extensions = []*cbc.Definition{
 		},
 	},
 	{
-		Key: ExtKeyBillingFrequency,
+		Key:   ExtKeyBillingFrequency,
+		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
 			i18n.EN: "PINT AE Frequency of Billing",
 		},
@@ -168,7 +197,8 @@ var extensions = []*cbc.Definition{
 		},
 	},
 	{
-		Key: ExtKeyExemption,
+		Key:   ExtKeyExemption,
+		Usage: usageAETaxCombo,
 		Name: i18n.String{
 			i18n.EN: "PINT AE VAT Exemption Reason",
 		},
@@ -188,7 +218,8 @@ var extensions = []*cbc.Definition{
 		},
 	},
 	{
-		Key: ExtKeyGoodsType,
+		Key:   ExtKeyGoodsType,
+		Usage: usageAEItem,
 		Name: i18n.String{
 			i18n.EN: "PINT AE Type of Goods or Services",
 		},
