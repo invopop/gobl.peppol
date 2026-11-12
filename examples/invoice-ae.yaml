@@ -12,7 +12,7 @@ supplier:
   name: "Supplier Legal Name"
   tax_id:
     country: "AE"
-    code: "135790246801003"
+    code: "135790246700003"
   identities:
     - key: "ae-trade-license"
       code: "112345678900003"
@@ -20,7 +20,7 @@ supplier:
   inboxes:
     - key: "peppol"
       scheme: "0235"
-      code: "1357902468"
+      code: "1357902467"
   addresses:
     - street: "Sheikh Zayed Road"
       locality: "Dubai"
@@ -31,7 +31,7 @@ customer:
   name: "Buyer Legal Name"
   tax_id:
     country: "AE"
-    code: "134567890123003"
+    code: "134567890600003"
   identities:
     - key: "ae-trade-license"
       code: "112345679000001"
@@ -39,7 +39,7 @@ customer:
   inboxes:
     - key: "peppol"
       scheme: "0235"
-      code: "1345678901"
+      code: "1345678906"
   addresses:
     - street: "Corniche Road"
       locality: "Abu Dhabi"

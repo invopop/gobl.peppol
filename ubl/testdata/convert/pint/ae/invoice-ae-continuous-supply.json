@@ -4,10 +4,10 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "8fd1920993fcd36db4c3c18a41ce7cb7cc07d01d356285c856a13ef122d6530b"
+			"val": "d1f5ceba24a3a97adb52868ea22abd7a7e15a8c1717c256a090c8286dfa5969a"
 		},
-		"from": "iso6523-actorid-upis::0235:1357902468",
-		"to": "iso6523-actorid-upis::0235:1345678901"
+		"from": "iso6523-actorid-upis::0235:1357902467",
+		"to": "iso6523-actorid-upis::0235:1345678906"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
@@ -36,7 +36,7 @@
 			"name": "Supplier Legal Name",
 			"tax_id": {
 				"country": "AE",
-				"code": "135790246801003"
+				"code": "135790246700003"
 			},
 			"identities": [
 				{
@@ -48,14 +48,14 @@
 			],
 			"endpoints": [
 				{
-					"uri": "iso6523-actorid-upis::0235:1357902468"
+					"uri": "iso6523-actorid-upis::0235:1357902467"
 				}
 			],
 			"inboxes": [
 				{
 					"key": "peppol",
 					"scheme": "0235",
-					"code": "1357902468"
+					"code": "1357902467"
 				}
 			],
 			"addresses": [
@@ -71,7 +71,7 @@
 			"name": "Buyer Legal Name",
 			"tax_id": {
 				"country": "AE",
-				"code": "134567890123003"
+				"code": "134567890600003"
 			},
 			"identities": [
 				{
@@ -83,14 +83,14 @@
 			],
 			"endpoints": [
 				{
-					"uri": "iso6523-actorid-upis::0235:1345678901"
+					"uri": "iso6523-actorid-upis::0235:1345678906"
 				}
 			],
 			"inboxes": [
 				{
 					"key": "peppol",
 					"scheme": "0235",
-					"code": "1345678901"
+					"code": "1345678906"
 				}
 			],
 			"addresses": [

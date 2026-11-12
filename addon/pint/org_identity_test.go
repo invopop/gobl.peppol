@@ -62,7 +62,7 @@ func TestNormalizeIdentityScopes(t *testing.T) {
 		norm.Normalize(inv, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(regime))
 		return scopes(inv.Supplier), scopes(inv.Customer)
 	}
-	tin := func() *org.Identity { return &org.Identity{Key: ae.IdentityKeyTIN, Code: "1234567890"} }
+	tin := func() *org.Identity { return &org.Identity{Key: ae.IdentityKeyTIN, Code: "1234567897"} }
 	eid := func() *org.Identity { return &org.Identity{Key: ae.IdentityKeyEmiratesID, Code: "784199012345671"} }
 	passport := func() *org.Identity {
 		return &org.Identity{Key: org.IdentityKeyPassport, Code: "P1234567890", Country: "IN"}

@@ -144,43 +144,45 @@ func TestDetectAndImportAE(t *testing.T) {
 	assert.Equal(t, l10n.TaxCountryCode("AE"), inv.GetRegime())
 }
 
-// invalidImportsAE are the official PINT AE examples that pass the PINT AE
-// Schematron but don't import as valid GOBL documents, with the faults they
-// give: placeholder email addresses, and, on the deemed supply, no payment
-// terms, which EN 16931 requires (BR-CO-25).
-var invalidImportsAE = map[string][]string{
-	"deemed-supply.xml":          {"GOBL-EU-EN16931-BILL-INVOICE-07", "GOBL-ORG-EMAIL-02"},
-	"margin-scheme.xml":          {"GOBL-ORG-EMAIL-02"},
-	"reverse-charge.xml":         {"GOBL-ORG-EMAIL-02"},
-	"supply-free-trade-zone.xml": {"GOBL-ORG-EMAIL-02"},
+// importFaultsAE are the faults the official PINT AE examples give once
+// imported. They pass the PINT AE Schematron, but their data is made up: the
+// TRNs and TINs fail the check digit the Federal Tax Authority defines, some
+// email addresses are placeholders, and the deemed supply has no payment
+// terms, which EN 16931 requires (BR-CO-25). Any other fault is a defect in
+// the import.
+var importFaultsAE = map[string][]string{
+	"allowance-exempt.xml":       {"GOBL-AE-TAX-IDENTITY-01"},
+	"buyer-pas-identifier.xml":   {"GOBL-AE-TAX-IDENTITY-01"},
+	"deemed-supply.xml":          {"GOBL-AE-TAX-IDENTITY-01", "GOBL-EU-EN16931-BILL-INVOICE-07", "GOBL-ORG-EMAIL-02"},
+	"margin-scheme.xml":          {"GOBL-AE-TAX-IDENTITY-01", "GOBL-ORG-EMAIL-02"},
+	"reverse-charge.xml":         {"GOBL-AE-TAX-IDENTITY-01", "GOBL-ORG-EMAIL-02"},
+	"seller-pas-identifier.xml":  {"GOBL-AE-TAX-IDENTITY-01"},
+	"seller-tin-identifier.xml":  {"GOBL-AE-ORG-IDENTITY-01", "GOBL-AE-TAX-IDENTITY-01"},
+	"standard-invoice.xml":       {"GOBL-AE-TAX-IDENTITY-01"},
+	"supply-free-trade-zone.xml": {"GOBL-AE-TAX-IDENTITY-01", "GOBL-ORG-EMAIL-02"},
 }
 
 // faultCodePattern matches the fault codes in a validation error.
 var faultCodePattern = regexp.MustCompile(`\[(GOBL-[A-Z0-9-]+)\]`)
 
-// TestImportAEValid checks that the official PINT AE examples import as valid
-// GOBL documents.
-func TestImportAEValid(t *testing.T) {
+// TestImportAEFaults checks that the official PINT AE examples import with
+// no faults beyond the ones their made-up data gives.
+func TestImportAEFaults(t *testing.T) {
 	examples, err := filepath.Glob(filepath.Join("testdata", "parse", "pint", "ae", "*.xml"))
 	require.NoError(t, err)
-	require.NotEmpty(t, examples)
+	require.Len(t, examples, len(importFaultsAE))
 	for _, example := range examples {
 		name := filepath.Base(example)
 		t.Run(name, func(t *testing.T) {
 			env := parseXMLInvoice(t, filepath.Join("pint", "ae", name))
 			require.NoError(t, env.Calculate())
 			err := env.Validate()
-			want, ok := invalidImportsAE[name]
-			if !ok {
-				assert.NoError(t, err)
-				return
-			}
 			require.Error(t, err)
 			var got []string
 			for _, m := range faultCodePattern.FindAllStringSubmatch(err.Error(), -1) {
 				got = append(got, m[1])
 			}
-			assert.ElementsMatch(t, want, got)
+			assert.ElementsMatch(t, importFaultsAE[name], got)
 		})
 	}
 }
@@ -193,7 +195,7 @@ func TestImportAESellerTIN(t *testing.T) {
 	inv, ok := env.Extract().(*bill.Invoice)
 	require.True(t, ok)
 	inv.Supplier.TaxID = &tax.Identity{Country: "AE"}
-	inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{Key: ae.IdentityKeyTIN, Code: "1357902468"})
+	inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{Key: ae.IdentityKeyTIN, Code: "1357902467"})
 	require.NoError(t, env.Calculate())
 	require.NoError(t, env.Validate())
 
@@ -211,7 +213,7 @@ func TestImportAESellerTIN(t *testing.T) {
 	}
 	require.NotNil(t, tin)
 	assert.Equal(t, org.IdentityScopeTax, tin.Scope)
-	assert.Equal(t, cbc.Code("1357902468"), tin.Code)
+	assert.Equal(t, cbc.Code("1357902467"), tin.Code)
 }
 
 // TestExportAE checks that a UAE invoice is exported with the PINT AE

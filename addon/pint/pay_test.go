@@ -102,7 +102,7 @@ func TestPayInstructionsRulesAE(t *testing.T) {
 
 	t.Run("credit transfer with account number is accepted", func(t *testing.T) {
 		instr := instructionsWithMeansCode("30")
-		instr.CreditTransfer = []*pay.CreditTransfer{{Number: "1234567890"}}
+		instr.CreditTransfer = []*pay.CreditTransfer{{Number: "1234567897"}}
 		assert.NoError(t, validate(instr))
 	})
 

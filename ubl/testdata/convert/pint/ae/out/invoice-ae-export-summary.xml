@@ -18,7 +18,7 @@
   </cac:OrderReference>
   <cac:AccountingSupplierParty>
     <cac:Party>
-      <cbc:EndpointID schemeID="0235">1357902468</cbc:EndpointID>
+      <cbc:EndpointID schemeID="0235">1357902467</cbc:EndpointID>
       <cac:PartyName>
         <cbc:Name>Supplier Legal Name</cbc:Name>
       </cac:PartyName>
@@ -31,7 +31,7 @@
         </cac:Country>
       </cac:PostalAddress>
       <cac:PartyTaxScheme>
-        <cbc:CompanyID>135790246801003</cbc:CompanyID>
+        <cbc:CompanyID>135790246700003</cbc:CompanyID>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
@@ -44,7 +44,7 @@
   </cac:AccountingSupplierParty>
   <cac:AccountingCustomerParty>
     <cac:Party>
-      <cbc:EndpointID schemeID="0235">1345678901</cbc:EndpointID>
+      <cbc:EndpointID schemeID="0235">1345678906</cbc:EndpointID>
       <cac:PartyName>
         <cbc:Name>Buyer Legal Name</cbc:Name>
       </cac:PartyName>
@@ -57,7 +57,7 @@
         </cac:Country>
       </cac:PostalAddress>
       <cac:PartyTaxScheme>
-        <cbc:CompanyID>134567890123003</cbc:CompanyID>
+        <cbc:CompanyID>134567890600003</cbc:CompanyID>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>

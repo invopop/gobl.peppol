@@ -7,8 +7,9 @@ import (
 )
 
 // taxIdentityRules enforces the UAE TRN format on every UAE tax identity of a
-// UAE document (IBR-132-AE). The AE regime only checks for 15 digits; PINT AE
-// also requires a leading 1 and a trailing 03.
+// UAE document (IBR-132-AE). The AE regime checks the 15 digits and the
+// TIN they start with; PINT AE also requires the trailing 03 of a VAT
+// registration.
 func taxIdentityRules() *rules.Set {
 	return rules.For(new(tax.Identity),
 		rules.When(

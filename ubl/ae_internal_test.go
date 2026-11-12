@@ -179,9 +179,9 @@ func TestExportAEPartyTaxID(t *testing.T) {
 	}
 
 	t.Run("writes a UAE TRN without its prefix", func(t *testing.T) {
-		out := party("AE100000000000003")
-		exportAEPartyTaxID(out, &tax.Identity{Country: "AE", Code: "100000000000003"})
-		assert.Equal(t, "100000000000003", out.PartyTaxScheme[0].CompanyID.Value)
+		out := party("AE100000001600003")
+		exportAEPartyTaxID(out, &tax.Identity{Country: "AE", Code: "100000001600003"})
+		assert.Equal(t, "100000001600003", out.PartyTaxScheme[0].CompanyID.Value)
 	})
 
 	t.Run("keeps the prefix of other countries' VAT numbers", func(t *testing.T) {
@@ -191,15 +191,15 @@ func TestExportAEPartyTaxID(t *testing.T) {
 	})
 
 	t.Run("leaves other tax registrations alone", func(t *testing.T) {
-		out := party("1234567890")
-		exportAEPartyTaxID(out, &tax.Identity{Country: "AE", Code: "100000000000003"})
-		assert.Equal(t, "1234567890", out.PartyTaxScheme[0].CompanyID.Value)
+		out := party("1234567897")
+		exportAEPartyTaxID(out, &tax.Identity{Country: "AE", Code: "100000001600003"})
+		assert.Equal(t, "1234567897", out.PartyTaxScheme[0].CompanyID.Value)
 	})
 
 	t.Run("parties without a tax ID are skipped", func(t *testing.T) {
-		out := party("AE100000000000003")
+		out := party("AE100000001600003")
 		exportAEPartyTaxID(out, nil)
-		assert.Equal(t, "AE100000000000003", out.PartyTaxScheme[0].CompanyID.Value)
+		assert.Equal(t, "AE100000001600003", out.PartyTaxScheme[0].CompanyID.Value)
 	})
 }
 
@@ -262,7 +262,7 @@ func TestExportAEPartyIdentities(t *testing.T) {
 
 	t.Run("the first legal identity is described, after a tax one", func(t *testing.T) {
 		cid := export(&org.Party{Name: "Party", Identities: []*org.Identity{
-			{Key: ae.IdentityKeyTIN, Scope: org.IdentityScopeTax, Code: "1234567890"},
+			{Key: ae.IdentityKeyTIN, Scope: org.IdentityScopeTax, Code: "1234567897"},
 			legal(ae.IdentityKeyEmiratesID, "784199012345671"),
 			legal(ae.IdentityKeyCabinetDecision, "CD-1"),
 		}}).PartyLegalEntity.CompanyID
@@ -273,20 +273,20 @@ func TestExportAEPartyIdentities(t *testing.T) {
 	t.Run("TIN is written under the TIN scheme, next to the VAT TRN", func(t *testing.T) {
 		out := export(&org.Party{
 			Name:  "Seller",
-			TaxID: &tax.Identity{Country: "AE", Code: "100000000000003"},
+			TaxID: &tax.Identity{Country: "AE", Code: "100000001600003"},
 			Identities: []*org.Identity{
-				{Key: ae.IdentityKeyTIN, Scope: org.IdentityScopeTax, Code: "1234567890"},
+				{Key: ae.IdentityKeyTIN, Scope: org.IdentityScopeTax, Code: "1234567897"},
 			},
 		})
 		require.Len(t, out.PartyTaxScheme, 2)
 		assert.Equal(t, "VAT", out.PartyTaxScheme[0].TaxScheme.ID.Value)
-		assert.Equal(t, "1234567890", out.PartyTaxScheme[1].CompanyID.Value)
+		assert.Equal(t, "1234567897", out.PartyTaxScheme[1].CompanyID.Value)
 		assert.Equal(t, "TIN", out.PartyTaxScheme[1].TaxScheme.ID.Value)
 	})
 
 	t.Run("other tax identities keep the scheme gobl.ubl gives them", func(t *testing.T) {
 		out := export(&org.Party{Name: "Seller", Identities: []*org.Identity{
-			{Scope: org.IdentityScopeTax, Code: "1234567890"},
+			{Scope: org.IdentityScopeTax, Code: "1234567897"},
 		}})
 		require.Len(t, out.PartyTaxScheme, 1)
 		assert.Equal(t, goblubl.TaxSchemeTaxRegistration, out.PartyTaxScheme[0].TaxScheme.ID.Value)
@@ -357,13 +357,13 @@ func TestImportAEPartyIdentities(t *testing.T) {
 	t.Run("supplier non-VAT tax registration is the TIN", func(t *testing.T) {
 		in := companyID("TL", "Authority")
 		in.PartyTaxScheme = []goblubl.PartyTaxScheme{
-			{CompanyID: &goblubl.IDType{Value: "198765432102003"}, TaxScheme: &goblubl.TaxScheme{ID: goblubl.IDType{Value: "VAT"}}},
-			{CompanyID: &goblubl.IDType{Value: "1234567890"}, TaxScheme: &goblubl.TaxScheme{ID: goblubl.IDType{Value: "TIN"}}},
+			{CompanyID: &goblubl.IDType{Value: "198765432200003"}, TaxScheme: &goblubl.TaxScheme{ID: goblubl.IDType{Value: "VAT"}}},
+			{CompanyID: &goblubl.IDType{Value: "1234567897"}, TaxScheme: &goblubl.TaxScheme{ID: goblubl.IDType{Value: "TIN"}}},
 		}
 		p := imported(in, true)
 		require.Len(t, p.Identities, 2)
 		assert.Equal(t, ae.IdentityKeyTIN, p.Identities[1].Key)
-		assert.Equal(t, cbc.Code("1234567890"), p.Identities[1].Code)
+		assert.Equal(t, cbc.Code("1234567897"), p.Identities[1].Code)
 
 		p = imported(in, false)
 		assert.Empty(t, p.Identities[1].Key, "only the seller has a TIN")
@@ -379,14 +379,14 @@ func TestImportAEPartyIdentities(t *testing.T) {
 
 func TestImportAEPartyEndpoint(t *testing.T) {
 	t.Run("the electronic address replaces the inbox gobl.ubl imports", func(t *testing.T) {
-		in := &goblubl.Party{EndpointID: &goblubl.EndpointID{SchemeID: "0235", Value: "1357902468"}}
+		in := &goblubl.Party{EndpointID: &goblubl.EndpointID{SchemeID: "0235", Value: "1357902467"}}
 		p := &org.Party{Inboxes: []*org.Inbox{
-			{Scheme: "0235", Code: "1357902468"},
+			{Scheme: "0235", Code: "1357902467"},
 			{Key: "other", Code: "ABC"},
 		}}
 		importAEPartyEndpoint(in, p)
 		require.Len(t, p.Endpoints, 1)
-		assert.Equal(t, cbc.URI("iso6523-actorid-upis::0235:1357902468"), p.Endpoints[0].URI)
+		assert.Equal(t, cbc.URI("iso6523-actorid-upis::0235:1357902467"), p.Endpoints[0].URI)
 		require.Len(t, p.Inboxes, 1)
 		assert.Equal(t, cbc.Code("ABC"), p.Inboxes[0].Code)
 	})

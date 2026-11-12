@@ -19,13 +19,13 @@ func TestTaxIdentityRulesAE(t *testing.T) {
 	validate := func(id *tax.Identity) error { return validateIn(id, l10n.AE.Tax()) }
 
 	t.Run("valid TRN is accepted (IBR-132-AE)", func(t *testing.T) {
-		assert.NoError(t, validate(&tax.Identity{Country: "AE", Code: "100000000000003"}))
+		assert.NoError(t, validate(&tax.Identity{Country: "AE", Code: "100000001600003"}))
 	})
 
 	t.Run("malformed TRNs are rejected (IBR-132-AE)", func(t *testing.T) {
 		for name, code := range map[string]cbc.Code{
 			"does not start with 1": "200000000000003",
-			"does not end with 03":  "100000000000004",
+			"does not end with 03":  "100000001600004",
 			"too short":             "10000000000003",
 			"too long":              "1000000000000003",
 		} {
