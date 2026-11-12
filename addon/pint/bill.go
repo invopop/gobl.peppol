@@ -186,12 +186,12 @@ func billInvoiceRules() *rules.Set {
 			rules.Field("ordering",
 				rules.Field("seller",
 					rules.Assert("22", "tax representative region must be an emirate code when the country is AE (IBR-128-AE)",
-						is.Func("first address region is an emirate", partyAddressHasEmirate),
+						is.Func("postal address region is an emirate", partyPostalAddressHasEmirate),
 					),
 				),
 				rules.Field("issuer",
 					rules.Assert("23", "issuer region must be an emirate code when the country is AE (IBR-128-AE)",
-						is.Func("first address region is an emirate", partyAddressHasEmirate),
+						is.Func("postal address region is an emirate", partyPostalAddressHasEmirate),
 					),
 				),
 			),
@@ -522,7 +522,7 @@ func billLineRules() *rules.Set {
 			),
 			rules.Field("seller",
 				rules.Assert("11", "line seller region must be an emirate code when the country is AE (IBR-128-AE)",
-					is.Func("first address region is an emirate", partyAddressHasEmirate),
+					is.Func("postal address region is an emirate", partyPostalAddressHasEmirate),
 				),
 			),
 		),
@@ -775,10 +775,28 @@ func partyAddressIsComplete(val any) bool {
 
 // partyAddressHasEmirate reports whether the party's first address, when in
 // the UAE, has an emirate code as its region (IBR-128-AE). Addresses in other
-// countries pass.
+// countries pass, and so does a party without addresses: it is for the
+// supplier and customer, whose addresses EN 16931 requires (BR-8, BR-10).
 func partyAddressHasEmirate(val any) bool {
-	a := partyFirstAddress(val)
-	return a == nil || a.Country != l10n.AE.ISO() || cbc.Code(a.Region).In(emirateCodes...)
+	return partyFirstAddress(val) == nil || partyPostalAddressHasEmirate(val)
+}
+
+// partyPostalAddressHasEmirate reports whether the cac:PostalAddress gobl.ubl
+// writes for the party, when in the UAE, has an emirate code as its region
+// (IBR-128-AE). gobl.ubl writes the country of the tax ID over the address's
+// own, and writes an address with only that country for a party without
+// addresses, which fails the rule.
+func partyPostalAddressHasEmirate(val any) bool {
+	p, ok := val.(*org.Party)
+	if !ok || p == nil {
+		return true
+	}
+	a := partyFirstAddress(p)
+	inAE := a != nil && a.Country == l10n.AE.ISO()
+	if p.TaxID != nil && p.TaxID.Code != "" {
+		inAE = p.TaxID.Country.Code() == l10n.AE
+	}
+	return !inAE || (a != nil && cbc.Code(a.Region).In(emirateCodes...))
 }
 
 // partyEndpointID returns the scheme and code of the party's electronic
@@ -1156,9 +1174,11 @@ func identitiesHaveLabel(labels ...string) func(any) bool {
 	}
 }
 
+// identitiesHaveLabelOf reports whether one of the identities gobl.ubl writes
+// as item classifications, those with a label and no scheme ID, has the label.
 func identitiesHaveLabelOf(ids []*org.Identity, label string) bool {
 	for _, id := range ids {
-		if id != nil && id.Label == label {
+		if id != nil && id.Label == label && !id.Ext.Has(iso.ExtKeySchemeID) {
 			return true
 		}
 	}

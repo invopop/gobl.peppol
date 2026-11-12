@@ -2,6 +2,7 @@ package ubl_test
 
 import (
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
@@ -11,6 +12,8 @@ import (
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/convert"
 	"github.com/invopop/gobl/l10n"
+	"github.com/invopop/gobl/org"
+	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -142,13 +145,18 @@ func TestDetectAndImportAE(t *testing.T) {
 }
 
 // invalidImportsAE are the official PINT AE examples that pass the PINT AE
-// Schematron but don't import as valid GOBL documents, and why.
-var invalidImportsAE = map[string]string{
-	"deemed-supply.xml":          "placeholder email addresses, and no payment terms, which EN 16931 requires (BR-CO-25)",
-	"margin-scheme.xml":          "placeholder email addresses",
-	"reverse-charge.xml":         "placeholder email addresses",
-	"supply-free-trade-zone.xml": "placeholder email addresses",
+// Schematron but don't import as valid GOBL documents, with the faults they
+// give: placeholder email addresses, and, on the deemed supply, no payment
+// terms, which EN 16931 requires (BR-CO-25).
+var invalidImportsAE = map[string][]string{
+	"deemed-supply.xml":          {"GOBL-EU-EN16931-BILL-INVOICE-07", "GOBL-ORG-EMAIL-02"},
+	"margin-scheme.xml":          {"GOBL-ORG-EMAIL-02"},
+	"reverse-charge.xml":         {"GOBL-ORG-EMAIL-02"},
+	"supply-free-trade-zone.xml": {"GOBL-ORG-EMAIL-02"},
 }
+
+// faultCodePattern matches the fault codes in a validation error.
+var faultCodePattern = regexp.MustCompile(`\[(GOBL-[A-Z0-9-]+)\]`)
 
 // TestImportAEValid checks that the official PINT AE examples import as valid
 // GOBL documents.
@@ -162,13 +170,48 @@ func TestImportAEValid(t *testing.T) {
 			env := parseXMLInvoice(t, filepath.Join("pint", "ae", name))
 			require.NoError(t, env.Calculate())
 			err := env.Validate()
-			if reason, ok := invalidImportsAE[name]; ok {
-				assert.Error(t, err, "listed as invalid: %s", reason)
+			want, ok := invalidImportsAE[name]
+			if !ok {
+				assert.NoError(t, err)
 				return
 			}
-			assert.NoError(t, err)
+			require.Error(t, err)
+			var got []string
+			for _, m := range faultCodePattern.FindAllStringSubmatch(err.Error(), -1) {
+				got = append(got, m[1])
+			}
+			assert.ElementsMatch(t, want, got)
 		})
 	}
+}
+
+// TestImportAESellerTIN checks that a seller with a TIN and no TRN, as out of
+// scope documents allow, keeps the TIN as a tax registration when imported,
+// instead of getting it as its tax ID.
+func TestImportAESellerTIN(t *testing.T) {
+	env := loadTestEnvelope(t, "pint/ae/invoice-ae-outside-scope.json")
+	inv, ok := env.Extract().(*bill.Invoice)
+	require.True(t, ok)
+	inv.Supplier.TaxID = &tax.Identity{Country: "AE"}
+	inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{Key: ae.IdentityKeyTIN, Code: "1357902468"})
+	require.NoError(t, env.Calculate())
+	require.NoError(t, env.Validate())
+
+	doc, err := ubl.ExportInvoice(env, ubl.WithFormat(peppolubl.FormatAE))
+	require.NoError(t, err)
+	out, err := ubl.Import(doc)
+	require.NoError(t, err)
+	supplier := out.Extract().(*bill.Invoice).Supplier
+	assert.Nil(t, supplier.TaxID)
+	var tin *org.Identity
+	for _, id := range supplier.Identities {
+		if id.Key == ae.IdentityKeyTIN {
+			tin = id
+		}
+	}
+	require.NotNil(t, tin)
+	assert.Equal(t, org.IdentityScopeTax, tin.Scope)
+	assert.Equal(t, cbc.Code("1357902468"), tin.Code)
 }
 
 // TestExportAE checks that a UAE invoice is exported with the PINT AE

@@ -46,6 +46,18 @@ func TestExportAEUUID(t *testing.T) {
 	assert.Equal(t, "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2", out.UUID)
 }
 
+func TestImportAEUUID(t *testing.T) {
+	inv := new(bill.Invoice)
+	importAEUUID(&goblubl.Invoice{UUID: " 0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2 "}, inv)
+	assert.Equal(t, "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2", inv.UUID.String())
+
+	for _, bad := range []string{"", "not-a-uuid"} {
+		inv = new(bill.Invoice)
+		importAEUUID(&goblubl.Invoice{UUID: bad}, inv)
+		assert.True(t, inv.UUID.IsZero(), bad)
+	}
+}
+
 func TestExportAEPrice(t *testing.T) {
 	t.Run("adds the base quantity and a zero discount on the net price", func(t *testing.T) {
 		line := &goblubl.InvoiceLine{
@@ -827,6 +839,19 @@ func TestAEIncoterms(t *testing.T) {
 		importAEIncoterms(in, inv)
 		require.NotNil(t, inv.Delivery)
 		assert.Equal(t, cbc.Code("CIF"), inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2020))
+
+		// DAT is only in the 2010 edition.
+		in = &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: "DAT"}}}}}
+		inv = new(bill.Invoice)
+		importAEIncoterms(in, inv)
+		assert.Equal(t, cbc.Code("DAT"), inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2010))
+		assert.Empty(t, inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2020))
+
+		// A code in neither edition is kept under the current one.
+		in = &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: "XYZ"}}}}}
+		inv = new(bill.Invoice)
+		importAEIncoterms(in, inv)
+		assert.Equal(t, cbc.Code("XYZ"), inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2020))
 
 		inv = new(bill.Invoice)
 		importAEIncoterms(new(goblubl.Invoice), inv)

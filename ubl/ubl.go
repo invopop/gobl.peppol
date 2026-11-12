@@ -158,7 +158,10 @@ var FormatAE = goblubl.Format{
 		SpecificationAESelfBilling,
 	},
 	ExportFuncs: []goblubl.ExportFunc{exportAE},
-	ImportFuncs: []goblubl.ImportFunc{importPINT, importAE},
+	// importPINT is left out: it makes a tax registration that isn't VAT the
+	// tax ID, which is right for GST, but in PINT AE that one is the seller's
+	// TIN. gobl.ubl already reads the VAT one as the tax ID.
+	ImportFuncs: []goblubl.ImportFunc{importAE},
 	Match:       matchCustomization("urn:peppol:pint:billing-1@ae-1", "urn:peppol:pint:selfbilling-1@ae-1"),
 }
 

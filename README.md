@@ -124,7 +124,8 @@ identities labelled `SAC` are written as service accounting codes. Lines
 with the AE regime's `margin-scheme` VAT key get the `N` category at 5%, with
 no VAT amount, and the delivery's ICC Incoterms (`icc-incoterms-2020` or
 `-2010`) are written as the delivery terms. On import, it reads
-the out-of-scope type codes 480 and 81 back as the `outside-scope` tag, and
+the invoice UUID, the out-of-scope type codes 480 and 81 back as the
+`outside-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as
 identity keys and fields, the transaction type back as its extension and
 tags, and the credit note reason, billing frequency, line exemption

@@ -51,7 +51,7 @@ func init() {
 		norm.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			norm.For(normalizeTransactionType),
-			norm.For(normalizePartyIdentityScopes),
+			norm.For(normalizeIdentityScopes),
 			norm.For(normalizeTaxComboAE),
 		),
 	)
@@ -87,10 +87,10 @@ func newV1Addon() *tax.AddonDef {
 				UAE trade licences carry their issuing authority in the description,
 				and passports their issuing country.
 
-				UAE identities without a scope get the one PINT AE reads them from:
-				"tax" for the TIN, and "legal" for the first trade licence, Emirates
-				ID, passport or Cabinet Decision of a party that has no legal
-				identity yet.
+				The supplier's and customer's UAE identities without a scope get the
+				one PINT AE reads them from: "legal" for the first trade licence,
+				Emirates ID, passport or Cabinet Decision of a party that has no legal
+				identity yet, and "tax" for the supplier's TIN.
 
 				UAE invoices get the PINT AE transaction type from their tags:
 				"free-trade-zone", "deemed-supply", "margin-scheme", "summary",

@@ -18,6 +18,7 @@ import (
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/tax"
+	"github.com/invopop/gobl/uuid"
 )
 
 // UNTDID 5305 VAT category codes the AE format writes rates and amounts for.
@@ -41,9 +42,7 @@ const aeStandardRate = "5"
 // taxSchemeTIN is the tax scheme PINT AE writes the seller TIN under.
 const taxSchemeTIN = "TIN"
 
-// exportAE applies the Peppol PINT AE rules to an exported invoice. Each step
-// only uses data GOBL already has; the AE amounts and the BTAE extensions are
-// added by later steps.
+// exportAE applies the Peppol PINT AE rules to an exported invoice.
 func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error {
 	out, ok := doc.(*goblubl.Invoice)
 	inv, ok2 := env.Extract().(*bill.Invoice)
@@ -76,6 +75,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	if !ok || !ok2 {
 		return nil
 	}
+	importAEUUID(in, inv)
 	importAEOutsideScope(in, inv)
 	importAEMarginScheme(inv)
 	importAETransactionType(in, inv)
@@ -163,6 +163,14 @@ func exportAETransactionType(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 	if id := inv.Tax.GetExt(pint.ExtKeyPrincipalID); id != "" {
 		out.SellerSupplierParty = &goblubl.SupplierParty{Party: identifiedParty(id)}
+	}
+}
+
+// importAEUUID reads the invoice's UUID back from cbc:UUID (BTAE-07). A value
+// that is not a UUID is left out.
+func importAEUUID(in *goblubl.Invoice, inv *bill.Invoice) {
+	if id, err := uuid.Parse(strings.TrimSpace(in.UUID)); err == nil {
+		inv.UUID = id
 	}
 }
 
@@ -457,7 +465,7 @@ func exportAEIncoterms(out *goblubl.Invoice, inv *bill.Invoice) {
 
 // importAEIncoterms reads the delivery terms back as the ICC Incoterms 2020
 // extension, the current edition, as PINT AE doesn't say which one a code is
-// from.
+// from. A code only the 2010 edition has is read as that one.
 func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
 	if len(in.Delivery) == 0 || in.Delivery[0] == nil || len(in.Delivery[0].DeliveryTerms) == 0 {
 		return
@@ -469,7 +477,17 @@ func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Delivery == nil {
 		inv.Delivery = new(bill.DeliveryDetails)
 	}
-	inv.Delivery.Ext = inv.Delivery.Ext.Set(icc.ExtKeyIncoterms2020, code)
+	key := icc.ExtKeyIncoterms2020
+	if !extensionHasCode(key, code) && extensionHasCode(icc.ExtKeyIncoterms2010, code) {
+		key = icc.ExtKeyIncoterms2010
+	}
+	inv.Delivery.Ext = inv.Delivery.Ext.Set(key, code)
+}
+
+// extensionHasCode reports whether the extension lists the code.
+func extensionHasCode(key cbc.Key, code cbc.Code) bool {
+	def := tax.ExtensionForKey(key)
+	return def != nil && def.HasCode(code)
 }
 
 // exportAELines completes the UBL lines, which gobl.ubl writes in the same

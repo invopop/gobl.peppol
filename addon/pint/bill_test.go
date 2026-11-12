@@ -600,8 +600,35 @@ func TestBillAddressRulesAE(t *testing.T) {
 
 	t.Run("foreign address region is not checked (IBR-128-AE)", func(t *testing.T) {
 		inv := standard()
+		inv.Customer.TaxID = &tax.Identity{Country: "DE", Code: "111111125"}
 		inv.Customer.Addresses = []*org.Address{{Street: "Hauptstr. 1", Locality: "Berlin", Region: "Berlin", Country: "DE"}}
 		assert.NotContains(t, aeFaults(t, inv), faultCustomerEmirate)
+	})
+
+	t.Run("the tax ID country counts, as it is the one written (IBR-128-AE)", func(t *testing.T) {
+		trn := &tax.Identity{Country: "AE", Code: "100000000000203"}
+		oman := []*org.Address{{Street: "Street 1", Locality: "Muscat", Region: "Muscat", Country: "OM"}}
+
+		inv := standard()
+		inv.Ordering = &bill.Ordering{
+			Seller: &org.Party{Name: "Tax Rep", TaxID: trn, Addresses: oman},
+			Issuer: &org.Party{Name: "Issuer", TaxID: trn},
+		}
+		out := aeFaults(t, inv)
+		assert.Contains(t, out, faultTaxRepEmirate)
+		assert.Contains(t, out, faultIssuerEmirate, "an address with only the country is written")
+
+		inv = standard()
+		inv.Lines[0].Seller = &org.Party{
+			Name:      "Maker",
+			TaxID:     &tax.Identity{Country: "DE", Code: "111111125"},
+			Addresses: aeAddress("Dubai"),
+		}
+		assert.NotContains(t, aeFaults(t, inv), faultSellerEmirate)
+
+		inv = standard()
+		inv.Ordering = &bill.Ordering{Issuer: &org.Party{Name: "Issuer"}}
+		assert.NotContains(t, aeFaults(t, inv), faultIssuerEmirate, "no tax ID and no address")
 	})
 }
 
@@ -760,15 +787,25 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		inv.Supplier.Identities = append(inv.Supplier.Identities,
 			&org.Identity{Key: ae.IdentityKeyTIN, Code: "1234567890"})
 		inv.Customer.Identities = append(inv.Customer.Identities,
-			&org.Identity{Key: ae.IdentityKeyTIN, Code: "1345678901"})
+			&org.Identity{Scope: org.IdentityScopeTax, Code: "1345678901"})
 		assert.Contains(t, aeFaults(t, inv), faultCustomerTaxCount)
+	})
+
+	t.Run("customer TIN without a scope is a plain identity (IBR-179-AE, IBR-133-AE)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Customer.Identities = append(inv.Customer.Identities,
+			&org.Identity{Key: ae.IdentityKeyTIN, Code: "1345678901"})
+		out := aeFaults(t, inv)
+		assert.Empty(t, inv.Customer.Identities[1].Scope)
+		assert.NotContains(t, out, faultCustomerTaxCount)
+		assert.NotContains(t, out, faultCustomerTaxSupplier)
 	})
 
 	t.Run("customer tax identity needs a supplier TIN (IBR-133-AE)", func(t *testing.T) {
 		inv := aeIdentityDocument()
 		inv.Customer.TaxID = nil
 		inv.Customer.Identities = append(inv.Customer.Identities,
-			&org.Identity{Key: ae.IdentityKeyTIN, Code: "1345678901"})
+			&org.Identity{Scope: org.IdentityScopeTax, Code: "1345678901"})
 		assert.Contains(t, aeFaults(t, inv), faultCustomerTaxSupplier)
 
 		inv.Supplier.Identities = append(inv.Supplier.Identities,
@@ -1195,6 +1232,10 @@ func TestBillItemTypeRulesAE(t *testing.T) {
 		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods)), faultGoodsHS)
 		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods, sac)), faultGoodsHS)
 		assert.NotContains(t, aeFaults(t, item(org.ItemKeyGoods, hs)), faultGoodsHS)
+
+		// An identity with a scheme ID isn't written as a classification.
+		withScheme := &org.Identity{Label: pint.IdentityLabelHS, Code: "8471", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: "0088"})}
+		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods, withScheme)), faultGoodsHS)
 	})
 
 	t.Run("services need a service accounting code (IBR-185-AE)", func(t *testing.T) {

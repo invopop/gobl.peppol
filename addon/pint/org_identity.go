@@ -3,6 +3,7 @@ package pint
 import (
 	"regexp"
 
+	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/org"
@@ -66,14 +67,25 @@ func IdentityKeyAE(typ cbc.Code) cbc.Key {
 	return ""
 }
 
-// normalizePartyIdentityScopes gives a party's UAE identities the scope
-// gobl.ubl needs to write them where PINT AE reads them: tax for the TIN,
-// written as a cac:PartyTaxScheme, and legal for the trade licence, Emirates
-// ID, passport and Cabinet Decision, written as
-// cac:PartyLegalEntity/cbc:CompanyID. Only an identity without a scope gets
-// one, and only when no other identity of the party has it, as EN 16931
-// allows one identity per scope (BT-30, BT-47, BT-31, BT-48).
-func normalizePartyIdentityScopes(p *org.Party) {
+// normalizeIdentityScopes gives the UAE identities of the supplier and
+// customer the scope gobl.ubl needs to write them where PINT AE reads them:
+// legal for the trade licence, Emirates ID, passport and Cabinet Decision,
+// written as cac:PartyLegalEntity/cbc:CompanyID, and tax for the supplier's
+// TIN, written as a cac:PartyTaxScheme. PINT AE has no TIN tax registration
+// for the customer, whose TIN stays a plain identity.
+func normalizeIdentityScopes(inv *bill.Invoice) {
+	if inv == nil {
+		return
+	}
+	setIdentityScopes(inv.Supplier, org.IdentityScopeLegal, org.IdentityScopeTax)
+	setIdentityScopes(inv.Customer, org.IdentityScopeLegal)
+}
+
+// setIdentityScopes gives the party's identities without a scope the one
+// their key has in PINT AE, when it is one of the given scopes and no other
+// identity of the party has it, as EN 16931 allows one identity per scope
+// (BT-30, BT-47, BT-31, BT-48).
+func setIdentityScopes(p *org.Party, scopes ...cbc.Key) {
 	if p == nil {
 		return
 	}
@@ -87,7 +99,7 @@ func normalizePartyIdentityScopes(p *org.Party) {
 		if id == nil || id.Scope != "" {
 			continue
 		}
-		if scope := identityScopeAE(id.Key); scope != "" && !taken[scope] {
+		if scope := identityScopeAE(id.Key); scope.In(scopes...) && !taken[scope] {
 			id.Scope = scope
 			taken[scope] = true
 		}
