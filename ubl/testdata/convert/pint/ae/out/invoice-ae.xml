@@ -6,12 +6,17 @@
   <cbc:ID>AE-001</cbc:ID>
   <cbc:UUID>0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2</cbc:UUID>
   <cbc:IssueDate>2025-01-30</cbc:IssueDate>
+  <cbc:IssueTime>17:31:00</cbc:IssueTime>
   <cbc:DueDate>2025-02-06</cbc:DueDate>
   <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
   <cbc:DocumentCurrencyCode>AED</cbc:DocumentCurrencyCode>
   <cac:OrderReference>
     <cbc:ID>NA</cbc:ID>
   </cac:OrderReference>
+  <cac:ContractDocumentReference>
+    <cbc:ID>CT-2025-014</cbc:ID>
+    <cbc:DocumentDescription>AED 200000</cbc:DocumentDescription>
+  </cac:ContractDocumentReference>
   <cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="0235">1357902467</cbc:EndpointID>
@@ -20,8 +25,12 @@
       </cac:PartyName>
       <cac:PostalAddress>
         <cbc:StreetName>Sheikh Zayed Road</cbc:StreetName>
+        <cbc:AdditionalStreetName>Trade Centre</cbc:AdditionalStreetName>
         <cbc:CityName>Dubai</cbc:CityName>
         <cbc:CountrySubentity>DXB</cbc:CountrySubentity>
+        <cac:AddressLine>
+          <cbc:Line>Tower 2, Office 1405</cbc:Line>
+        </cac:AddressLine>
         <cac:Country>
           <cbc:IdentificationCode>AE</cbc:IdentificationCode>
         </cac:Country>
@@ -65,14 +74,37 @@
     </cac:Party>
   </cac:AccountingCustomerParty>
   <cac:PaymentMeans>
+    <cbc:ID>1</cbc:ID>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
+    <cbc:PaymentID schemeID="ABA">INV-REM-0042</cbc:PaymentID>
     <cac:PayeeFinancialAccount>
-      <cbc:ID>AE070331234567890123456</cbc:ID>
+      <cbc:ID schemeID="IBAN">AE070331234567890123456</cbc:ID>
       <cbc:Name>Emirates NBD</cbc:Name>
+      <cac:FinancialInstitutionBranch>
+        <cbc:ID>EBILAEAD</cbc:ID>
+        <cac:Address>
+          <cbc:StreetName>Baniyas Road</cbc:StreetName>
+          <cbc:AdditionalStreetName>Deira</cbc:AdditionalStreetName>
+          <cbc:CityName>Dubai</cbc:CityName>
+          <cbc:PostalZone>777</cbc:PostalZone>
+          <cac:AddressLine>
+            <cbc:Line>Main Branch</cbc:Line>
+          </cac:AddressLine>
+          <cac:Country>
+            <cbc:IdentificationCode>AE</cbc:IdentificationCode>
+          </cac:Country>
+        </cac:Address>
+      </cac:FinancialInstitutionBranch>
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:PaymentMeansID>1</cbc:PaymentMeansID>
+    <cbc:Amount currencyID="AED">1050.00</cbc:Amount>
+    <cbc:InstallmentDueDate>2025-02-06</cbc:InstallmentDueDate>
+  </cac:PaymentTerms>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="AED">50.00</cbc:TaxAmount>
+    <cbc:TaxIncludedIndicator>false</cbc:TaxIncludedIndicator>
     <cac:TaxSubtotal>
       <cbc:TaxableAmount currencyID="AED">1000.00</cbc:TaxableAmount>
       <cbc:TaxAmount currencyID="AED">50.00</cbc:TaxAmount>
@@ -95,6 +127,19 @@
     <cbc:ID>1</cbc:ID>
     <cbc:InvoicedQuantity unitCode="C62">100</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="AED">1000.00</cbc:LineExtensionAmount>
+    <cbc:AccountingCost>CS-024</cbc:AccountingCost>
+    <cac:OrderLineReference>
+      <cbc:LineID>NA</cbc:LineID>
+      <cac:OrderReference>
+        <cbc:ID>PO-2025-118</cbc:ID>
+      </cac:OrderReference>
+    </cac:OrderLineReference>
+    <cac:DespatchLineReference>
+      <cbc:LineID>NA</cbc:LineID>
+      <cac:DocumentReference>
+        <cbc:ID>DA-2025-031</cbc:ID>
+      </cac:DocumentReference>
+    </cac:DespatchLineReference>
     <cac:Item>
       <cbc:Description>Item Description</cbc:Description>
       <cbc:Name>Item Name</cbc:Name>

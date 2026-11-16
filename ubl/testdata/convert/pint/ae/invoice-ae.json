@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "0b91eaea84879790f911f34a1b0114903a0385b08cb3ab3c4246ad1013199467"
+			"val": "4f32717773093a08859eef8d28e6943ae35954b73442128d36133ab3c82b0f93"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -21,6 +21,7 @@
 		"series": "AE",
 		"code": "001",
 		"issue_date": "2025-01-30",
+		"issue_time": "17:31:00",
 		"currency": "AED",
 		"tax": {
 			"ext": {
@@ -57,6 +58,8 @@
 			"addresses": [
 				{
 					"street": "Sheikh Zayed Road",
+					"street_extra": "Trade Centre",
+					"street_third": "Tower 2, Office 1405",
 					"locality": "Dubai",
 					"region": "DXB",
 					"country": "AE"
@@ -102,6 +105,7 @@
 			{
 				"i": 1,
 				"quantity": "100",
+				"cost": "CS-024",
 				"item": {
 					"name": "Item Name",
 					"description": "Item Description",
@@ -119,9 +123,23 @@
 						}
 					}
 				],
-				"total": "1000.00"
+				"total": "1000.00",
+				"ext": {
+					"peppol-pint-ae-despatch-advice": "DA-2025-031",
+					"peppol-pint-ae-purchase-order": "PO-2025-118"
+				}
 			}
 		],
+		"ordering": {
+			"contracts": [
+				{
+					"code": "CT-2025-014",
+					"ext": {
+						"peppol-pint-ae-contract-value": "AED 200000"
+					}
+				}
+			]
+		},
 		"payment": {
 			"terms": {
 				"key": "due-date",
@@ -135,13 +153,24 @@
 			},
 			"instructions": {
 				"key": "credit-transfer",
+				"ref": "INV-REM-0042",
 				"credit_transfer": [
 					{
 						"iban": "AE070331234567890123456",
-						"name": "Emirates NBD"
+						"bic": "EBILAEAD",
+						"name": "Emirates NBD",
+						"branch": {
+							"street": "Baniyas Road",
+							"street_extra": "Deira",
+							"street_third": "Main Branch",
+							"locality": "Dubai",
+							"code": "777",
+							"country": "AE"
+						}
 					}
 				],
 				"ext": {
+					"peppol-pint-ae-remittance-scheme": "ABA",
 					"untdid-payment-means": "30"
 				}
 			}

@@ -123,7 +123,23 @@ item's type of goods or services subject to the reverse charge as its
 identities labelled `SAC` are written as service accounting codes. Lines
 with the AE regime's `margin-scheme` VAT key get the `N` category at 5%, with
 no VAT amount, and the delivery's ICC Incoterms (`icc-incoterms-2020` or
-`-2010`) are written as the delivery terms. On import, it reads
+`-2010`) are written as the delivery terms.
+
+It also writes the PINT fields gobl.ubl leaves out: the issue time; the
+customs reference number (`peppol-pint-ae-customs-reference`) as
+`cac:StatementDocumentReference`; each contract's value
+(`peppol-pint-ae-contract-value`); the `IBAN` scheme of the payee account
+and the address of its branch; the scheme of the remittance reference
+(`peppol-pint-ae-remittance-scheme`); the first due date's amount and date
+as the payment terms, which refer to the payment instructions by the ID `1`;
+each line's purchase order (`peppol-pint-ae-purchase-order`) and despatch
+advice (`peppol-pint-ae-despatch-advice`), with `NA` as the line of either
+when there is none; `cbc:TaxIncludedIndicator` as `false`;
+the UAE VAT exemption reason of exempt discounts and charges; the tax note
+of a line's VAT category as its exemption reason text; each item's batch
+number (`peppol-pint-ae-batch-number`) as its lot; and the scheme version
+(`peppol-pint-ae-scheme-version`) of the item's classification and service
+accounting codes. On import, it reads
 the invoice UUID, the out-of-scope type codes 480 and 81 back as the
 `outside-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as
@@ -133,7 +149,10 @@ reasons and item goods types back as their extensions, and the item
 types and service accounting codes back as item keys and identities, and
 the `N` category back as the `margin-scheme` key, and the delivery terms back
 as the `icc-incoterms-2020` extension, and the seller and buyer electronic
-addresses as endpoints.
+addresses as endpoints, and the customs reference, discount and charge
+exemption reasons, line exemption reason texts, batch numbers, scheme
+versions, contract values, remittance reference schemes and line purchase
+orders and despatch advices back as their extensions and tax notes.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "c1db9b2b5408c9cd5003607a40aa9064f8646d1b93142c3160a5b377f2d200e4"
+			"val": "30dccb1572e21e3ffb318e67dc6b88365d2d44b95c63016891ade597d552d792"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -29,6 +29,7 @@
 		"currency": "AED",
 		"tax": {
 			"ext": {
+				"peppol-pint-ae-customs-reference": "EXP010101234",
 				"peppol-pint-ae-transaction-type": "00010011",
 				"untdid-document-type": "380"
 			}
@@ -111,7 +112,10 @@
 					"name": "Item Name",
 					"description": "Item Description",
 					"price": "10.00",
-					"unit": "one"
+					"unit": "one",
+					"ext": {
+						"peppol-pint-ae-batch-number": "Lot 1"
+					}
 				},
 				"sum": "1000.00",
 				"taxes": [

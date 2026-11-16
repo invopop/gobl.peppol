@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "7cfd4d6b98f5f8ea0aa7f2ca217d9da989ccc452cb2a1e36da5f8951b1736c48"
+			"val": "cb58009cd95794150a1bcab16d35d9dd80f36424eef9a5db32c0dc57ad876d89"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -115,11 +115,17 @@
 					"identities": [
 						{
 							"label": "HS",
-							"code": "8471"
+							"code": "8471",
+							"ext": {
+								"peppol-pint-ae-scheme-version": "1.0"
+							}
 						},
 						{
 							"label": "SAC",
-							"code": "998713"
+							"code": "998713",
+							"ext": {
+								"peppol-pint-ae-scheme-version": "1.0"
+							}
 						}
 					],
 					"description": "Item Description",

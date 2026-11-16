@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "2ac7756b37527bdb78d4162d8299a74c4a3f5139ef22446415cab69975670eb6"
+			"val": "5ecdc65beee6ae2bfab266e14e5a17eb7b6f2230ec9fa774d641b63b057e26f1"
 		}
 	},
 	"doc": {
@@ -417,6 +417,7 @@
 					{
 						"street": "Delivery street 2",
 						"street_extra": "Building 56",
+						"street_third": "Gate 15",
 						"locality": "Stockholm",
 						"region": "Södermalm",
 						"code": "21234",

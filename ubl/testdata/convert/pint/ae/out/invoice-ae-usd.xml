@@ -71,12 +71,18 @@
     </cac:Party>
   </cac:AccountingCustomerParty>
   <cac:PaymentMeans>
+    <cbc:ID>1</cbc:ID>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
     <cac:PayeeFinancialAccount>
-      <cbc:ID>AE070331234567890123456</cbc:ID>
+      <cbc:ID schemeID="IBAN">AE070331234567890123456</cbc:ID>
       <cbc:Name>Emirates NBD</cbc:Name>
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:PaymentMeansID>1</cbc:PaymentMeansID>
+    <cbc:Amount currencyID="USD">1769.99</cbc:Amount>
+    <cbc:InstallmentDueDate>2025-02-06</cbc:InstallmentDueDate>
+  </cac:PaymentTerms>
   <cac:TaxExchangeRate>
     <cbc:SourceCurrencyCode>USD</cbc:SourceCurrencyCode>
     <cbc:TargetCurrencyCode>AED</cbc:TargetCurrencyCode>
@@ -84,6 +90,7 @@
   </cac:TaxExchangeRate>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="USD">50.00</cbc:TaxAmount>
+    <cbc:TaxIncludedIndicator>false</cbc:TaxIncludedIndicator>
     <cac:TaxSubtotal>
       <cbc:TaxableAmount currencyID="USD">1000.00</cbc:TaxableAmount>
       <cbc:TaxAmount currencyID="USD">50.00</cbc:TaxAmount>
@@ -145,11 +152,11 @@
       <cbc:Description>Item Description</cbc:Description>
       <cbc:Name>Item Name</cbc:Name>
       <cac:AdditionalItemIdentification>
-        <cbc:ID schemeID="SAC">998713</cbc:ID>
+        <cbc:ID schemeID="SAC" schemeVersionID="1.0">998713</cbc:ID>
       </cac:AdditionalItemIdentification>
       <cac:CommodityClassification>
         <cbc:CommodityCode>B</cbc:CommodityCode>
-        <cbc:ItemClassificationCode listID="HS">8471</cbc:ItemClassificationCode>
+        <cbc:ItemClassificationCode listID="HS" listVersionID="1.0">8471</cbc:ItemClassificationCode>
       </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>S</cbc:ID>

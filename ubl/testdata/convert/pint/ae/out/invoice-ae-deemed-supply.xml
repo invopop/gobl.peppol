@@ -68,6 +68,7 @@
   </cac:PaymentTerms>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="AED">50.00</cbc:TaxAmount>
+    <cbc:TaxIncludedIndicator>false</cbc:TaxIncludedIndicator>
     <cac:TaxSubtotal>
       <cbc:TaxableAmount currencyID="AED">1000.00</cbc:TaxableAmount>
       <cbc:TaxAmount currencyID="AED">50.00</cbc:TaxAmount>

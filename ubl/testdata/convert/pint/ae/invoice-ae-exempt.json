@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "23e53f589a01745b5f143024c155aab5cfffe3d7dde315db14d9e2010d087f8f"
+			"val": "f0ababc9a1fd7c623843f86a3080c78e604f19ac09e7f897f635bd4200537aa7"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -26,7 +26,17 @@
 			"ext": {
 				"peppol-pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "380"
-			}
+			},
+			"notes": [
+				{
+					"cat": "VAT",
+					"key": "exempt",
+					"text": "Exempt supplies under Article 46 of the VAT Decree-Law",
+					"ext": {
+						"untdid-tax-category": "E"
+					}
+				}
+			]
 		},
 		"supplier": {
 			"name": "Supplier Legal Name",
@@ -176,6 +186,7 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
+							"peppol-pint-ae-exemption": "DL8.46.1",
 							"untdid-tax-category": "E"
 						}
 					}
@@ -251,7 +262,7 @@
 									"peppol-pint-ae-exemption": "DL8.46.1",
 									"untdid-tax-category": "E"
 								},
-								"base": "200.00",
+								"base": "180.00",
 								"amount": "0.00"
 							},
 							{
@@ -261,14 +272,6 @@
 									"untdid-tax-category": "E"
 								},
 								"base": "300.00",
-								"amount": "0.00"
-							},
-							{
-								"key": "exempt",
-								"ext": {
-									"untdid-tax-category": "E"
-								},
-								"base": "-20.00",
 								"amount": "0.00"
 							}
 						],
