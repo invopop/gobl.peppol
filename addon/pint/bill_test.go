@@ -838,6 +838,44 @@ func TestBillIdentityRulesAE(t *testing.T) {
 	})
 }
 
+func TestNormalizeRounding(t *testing.T) {
+	t.Run("AE invoices get the currency rule", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		require.NoError(t, inv.Calculate())
+		assert.Equal(t, tax.RoundingRuleCurrency, inv.Tax.Rounding)
+	})
+
+	t.Run("a rule set on the invoice is kept", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Tax = &bill.Tax{Rounding: tax.RoundingRulePrecise}
+		require.NoError(t, inv.Calculate())
+		assert.Equal(t, tax.RoundingRulePrecise, inv.Tax.Rounding)
+	})
+
+	t.Run("lines and VAT breakdown add up", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		line := inv.Lines[0]
+		line.Quantity = num.MakeAmount(3335, 4)
+		line.Item.Price = num.NewAmount(1000, 2)
+		inv.Lines = nil
+		for i := 0; i < 12; i++ {
+			l := *line
+			inv.Lines = append(inv.Lines, &l)
+		}
+		require.NoError(t, inv.Calculate())
+		assert.Equal(t, "40.08", inv.Totals.Sum.String())
+		assert.Equal(t, "40.08", inv.Totals.Taxes.Categories[0].Rates[0].Base.String())
+	})
+
+	t.Run("other regimes keep the default", func(t *testing.T) {
+		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)
+		require.NoError(t, inv.Calculate())
+		if inv.Tax != nil {
+			assert.Empty(t, inv.Tax.Rounding)
+		}
+	})
+}
+
 func TestBillTransactionTypeRulesAE(t *testing.T) {
 	const (
 		faultPaymentInstructions = "GOBL-PEPPOL-PINT-BILL-INVOICE-26"

@@ -687,6 +687,23 @@ func partyTaxIDIsNotVAT(p *org.Party) bool {
 	return scheme != "" && scheme != tax.CategoryVAT
 }
 
+// normalizeRounding gives UAE invoices without a rounding rule the currency
+// one. PINT sends each line amount rounded to the currency, and each VAT
+// breakdown must equal the sum of its lines (ALIGNED-IBRP-S-08 and the other
+// breakdown rules). With the default precise rule, the breakdown is the sum
+// of the unrounded lines, which can differ by a few cents.
+func normalizeRounding(inv *bill.Invoice) {
+	if inv == nil {
+		return
+	}
+	if inv.Tax == nil {
+		inv.Tax = new(bill.Tax)
+	}
+	if inv.Tax.Rounding == "" {
+		inv.Tax.Rounding = tax.RoundingRuleCurrency
+	}
+}
+
 // invoiceHasInvoicePeriod reports whether the invoice has what is written as
 // cac:InvoicePeriod: an ordering period or a billing frequency. IBR-138-AE's
 // text asks for the invoicing period, but its test only checks the element

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "18c6f843194b5be40eff98de27a2043d1206ead85d68b9e1cf608a33c4dab19e"
+			"val": "fe39c4389ff3c50db52fc45ac4444a44a8ff0642f9d32fdb3799c01b76d1bb5a"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -26,6 +26,7 @@
 		"issue_date": "2025-01-30",
 		"currency": "AED",
 		"tax": {
+			"rounding": "currency",
 			"ext": {
 				"peppol-pint-ae-transaction-type": "01000000",
 				"untdid-document-type": "380"

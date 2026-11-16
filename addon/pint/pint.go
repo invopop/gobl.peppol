@@ -53,6 +53,7 @@ func init() {
 		norm.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			norm.For(normalizeTransactionType),
+			norm.For(normalizeRounding),
 			norm.For(normalizeIdentityScopes),
 			norm.For(normalizeTaxComboAE),
 		),
