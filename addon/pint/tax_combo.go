@@ -142,3 +142,34 @@ func taxComboIsZero(val any) bool {
 	tc, ok := val.(*tax.Combo)
 	return ok && tc != nil && tc.Key == tax.KeyZero
 }
+
+// taxCategoryCodesOutsideScope are the VAT category codes allowed on 480 and
+// 81 documents: exempt (E), zero rated (Z) and not subject to VAT (O)
+// (IBR-122-AE).
+var taxCategoryCodesOutsideScope = []cbc.Code{
+	en16931.TaxCategoryExempt,
+	en16931.TaxCategoryZero,
+	en16931.TaxCategoryOutsideScope,
+}
+
+// comboIsVAT reports whether a tax combo is VAT.
+func comboIsVAT(val any) bool {
+	c, ok := val.(*tax.Combo)
+	return ok && c != nil && c.Category == tax.CategoryVAT
+}
+
+// comboIsExemptVAT reports whether a tax combo is VAT with the exempt
+// category code E.
+func comboIsExemptVAT(val any) bool {
+	c, ok := val.(*tax.Combo)
+	return ok && c != nil && c.Category == tax.CategoryVAT &&
+		c.Ext.Get(untdid.ExtKeyTaxCategory) == en16931.TaxCategoryExempt
+}
+
+// comboIsMarginScheme reports whether a tax combo is VAT under the profit
+// margin scheme.
+func comboIsMarginScheme(val any) bool {
+	c, ok := val.(*tax.Combo)
+	return ok && c != nil && c.Category == tax.CategoryVAT &&
+		c.Ext.Get(untdid.ExtKeyTaxCategory) == TaxCategoryMarginScheme
+}

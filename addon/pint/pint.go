@@ -38,6 +38,8 @@ func init() {
 		rules.GOBL.Add(Namespace),
 		is.InContext(tax.AddonIn(V1)),
 		billInvoiceRules(),
+		billDiscountRules(),
+		billChargeRules(),
 		billLineRules(),
 		taxComboRules(),
 		taxCategoryTotalRules(),

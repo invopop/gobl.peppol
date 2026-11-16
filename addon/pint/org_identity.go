@@ -36,6 +36,15 @@ const (
 	identityTypeCommercialLicense cbc.Code = "CL"
 )
 
+// identityKeysAE are the identity keys of the PINT AE legal registration
+// identifier types.
+var identityKeysAE = []cbc.Key{
+	ae.IdentityKeyTradeLicense,
+	ae.IdentityKeyEmiratesID,
+	org.IdentityKeyPassport,
+	ae.IdentityKeyCabinetDecision,
+}
+
 // IdentityTypeAE returns the PINT AE legal registration identifier type for an
 // identity key, or an empty code if the key has none.
 func IdentityTypeAE(key cbc.Key) cbc.Code {
@@ -131,4 +140,18 @@ func GTINIdentity(ids []*org.Identity) *org.Identity {
 		}
 	}
 	return nil
+}
+
+// identityHasLegalScope reports whether an identity has the legal scope.
+// EN 16931 allows one per party (GOBL-EU-EN16931-ORG-PARTY-02), the one
+// gobl.ubl writes as cac:PartyLegalEntity/cbc:CompanyID.
+func identityHasLegalScope(val any) bool {
+	id, ok := val.(*org.Identity)
+	return ok && id != nil && id.Scope == org.IdentityScopeLegal
+}
+
+// identityHasTaxScope reports whether an identity has the tax scope.
+func identityHasTaxScope(val any) bool {
+	id, ok := val.(*org.Identity)
+	return ok && id != nil && id.Scope == org.IdentityScopeTax
 }

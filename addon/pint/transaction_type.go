@@ -1,8 +1,6 @@
 package pint
 
 import (
-	"regexp"
-
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
@@ -34,8 +32,6 @@ const (
 // transactionTypePattern is the format of the transaction type: 8 flags of
 // 0 or 1 (IBR-154-AE).
 const transactionTypePattern = `^[01]{8}$`
-
-var transactionTypeRegexp = regexp.MustCompile(transactionTypePattern)
 
 // TransactionType is a parsed PINT AE invoice transaction type (BTAE-02).
 type TransactionType struct {

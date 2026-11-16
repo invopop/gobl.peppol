@@ -564,7 +564,7 @@ func aeLineVAT(line *goblubl.InvoiceLine, l *bill.Line) (num.Amount, bool) {
 // to the tax currency (IBR-153-AE), and the total with VAT in AED (BTAE-20,
 // IBR-175-AE). gobl.ubl already writes the tax currency AED and the VAT total
 // in AED (ibt-006, ibt-111) when there is a rate. The PINT addon requires the
-// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-05) with at most 6 decimals (-06).
+// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-22) with at most 6 decimals (-23).
 func exportAEExchangeRate(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Currency == currency.AED {
 		return

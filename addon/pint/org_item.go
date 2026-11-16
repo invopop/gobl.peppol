@@ -1,6 +1,7 @@
 package pint
 
 import (
+	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/org"
 )
@@ -51,4 +52,62 @@ func ItemKeyAE(typ cbc.Code) cbc.Key {
 		return ItemKeyGoodsServices
 	}
 	return ""
+}
+
+// itemKeyIs returns a predicate that reports whether an item has the key.
+func itemKeyIs(key cbc.Key) func(any) bool {
+	return func(val any) bool {
+		it, ok := val.(*org.Item)
+		return ok && it != nil && it.Key == key
+	}
+}
+
+// identitiesHaveLabel returns a predicate that reports whether an item has
+// identities with all the labels.
+func identitiesHaveLabel(labels ...string) func(any) bool {
+	return func(val any) bool {
+		ids, ok := val.([]*org.Identity)
+		if !ok {
+			return false
+		}
+		for _, label := range labels {
+			if !identitiesHaveLabelOf(ids, label) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+// identitiesHaveLabelOf reports whether one of the identities gobl.ubl writes
+// as item classifications, those with a label and no scheme ID, has the label.
+func identitiesHaveLabelOf(ids []*org.Identity, label string) bool {
+	for _, id := range ids {
+		if id != nil && id.Label == label && !id.Ext.Has(iso.ExtKeySchemeID) {
+			return true
+		}
+	}
+	return false
+}
+
+// identitiesClassifiedWithHS reports whether the identities gobl.ubl writes
+// as item classifications, those with a label and no scheme ID, include an HS
+// one. Items without classifications pass, and the service accounting codes
+// don't count as one.
+func identitiesClassifiedWithHS(val any) bool {
+	ids, ok := val.([]*org.Identity)
+	if !ok {
+		return false
+	}
+	classified := false
+	for _, id := range ids {
+		if id == nil || id.Label == "" || id.Label == IdentityLabelSAC || id.Ext.Has(iso.ExtKeySchemeID) {
+			continue
+		}
+		if id.Label == IdentityLabelHS {
+			return true
+		}
+		classified = true
+	}
+	return !classified
 }
