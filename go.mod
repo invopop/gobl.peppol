@@ -3,9 +3,9 @@ module github.com/invopop/gobl.peppol
 go 1.25.0
 
 require (
-	github.com/invopop/gobl v0.512.1-0.20261116163947-711d4de67e97
+	github.com/invopop/gobl v0.512.1-0.20261116170644-71ee2d6037a7
 	github.com/invopop/gobl.cii v0.84.0
-	github.com/invopop/gobl.ubl v0.101.1-0.20261116164458-86041da87409
+	github.com/invopop/gobl.ubl v0.101.1-0.20261116170757-9838ba00853e
 	github.com/invopop/phorm v0.1.5
 	github.com/stretchr/testify v1.11.1
 )
