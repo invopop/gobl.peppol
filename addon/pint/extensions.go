@@ -5,6 +5,7 @@ import (
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
 	"github.com/invopop/gobl/org"
+	"github.com/invopop/gobl/pay"
 	"github.com/invopop/gobl/pkg/here"
 	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/tax"
@@ -30,6 +31,26 @@ const (
 	// ExtKeyGoodsType is the type of goods or services subject to the reverse
 	// charge mechanism, on the item (BTAE-09).
 	ExtKeyGoodsType cbc.Key = "peppol-pint-ae-goods-type"
+	// ExtKeyCustomsReference is the customs reference number of an export or
+	// import (BTAE-21).
+	ExtKeyCustomsReference cbc.Key = "peppol-pint-ae-customs-reference"
+	// ExtKeyBatchNumber is the production batch or lot the items come from,
+	// on the item (BTAE-24).
+	ExtKeyBatchNumber cbc.Key = "peppol-pint-ae-batch-number"
+	// ExtKeySchemeVersion is the version of the scheme an item identity's code
+	// is from, such as an HS or SAC code (IBT-158-2, BTAE-17-2).
+	ExtKeySchemeVersion cbc.Key = "peppol-pint-ae-scheme-version"
+	// ExtKeyContractValue is the value of a contract, on its reference
+	// (BTAE-05).
+	ExtKeyContractValue cbc.Key = "peppol-pint-ae-contract-value"
+	// ExtKeyPurchaseOrder is the purchase order a line belongs to (IBT-183).
+	ExtKeyPurchaseOrder cbc.Key = "peppol-pint-ae-purchase-order"
+	// ExtKeyDespatchAdvice is the despatch advice a line was sent with
+	// (IBT-184).
+	ExtKeyDespatchAdvice cbc.Key = "peppol-pint-ae-despatch-advice"
+	// ExtKeyRemittanceScheme is the scheme of the payment instructions'
+	// remittance reference, such as "ABA" (IBT-083-1).
+	ExtKeyRemittanceScheme cbc.Key = "peppol-pint-ae-remittance-scheme"
 )
 
 // CreditNoteReasonVolumeDiscount is the credit note reason for a volume
@@ -57,6 +78,26 @@ var (
 		Keys:    []cbc.Key{V1},
 		Codes:   []cbc.Code{ae.CountryCode},
 		Schemas: []string{org.ShortSchemaItem},
+	}
+	usageAEIdentity = &cbc.Usage{
+		Keys:    []cbc.Key{V1},
+		Codes:   []cbc.Code{ae.CountryCode},
+		Schemas: []string{org.ShortSchemaIdentity},
+	}
+	usageAEDocumentRef = &cbc.Usage{
+		Keys:    []cbc.Key{V1},
+		Codes:   []cbc.Code{ae.CountryCode},
+		Schemas: []string{org.ShortSchemaDocumentRef},
+	}
+	usageAELine = &cbc.Usage{
+		Keys:    []cbc.Key{V1},
+		Codes:   []cbc.Code{ae.CountryCode},
+		Schemas: []string{bill.ShortSchemaLine},
+	}
+	usageAEInstructions = &cbc.Usage{
+		Keys:    []cbc.Key{V1},
+		Codes:   []cbc.Code{ae.CountryCode},
+		Schemas: []string{pay.ShortSchemaInstructions},
 	}
 )
 
@@ -242,6 +283,96 @@ var extensions = []*cbc.Definition{
 			{Code: "DL8.48.3.1", Name: i18n.String{i18n.EN: "Crude or refined oil"}},
 			{Code: "DL8.48.3.2", Name: i18n.String{i18n.EN: "Unprocessed or processed natural gas"}},
 			{Code: "DL8.48.3.3", Name: i18n.String{i18n.EN: "Pure hydrocarbons"}},
+		},
+	},
+	{
+		Key:   ExtKeyCustomsReference,
+		Usage: usageAEInvoiceTax,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Customs Reference Number",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Customs reference number of an export or import transaction
+				(BTAE-21).
+			`),
+		},
+	},
+	{
+		Key:   ExtKeyBatchNumber,
+		Usage: usageAEItem,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Batch Number",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Production batch or lot the items come from (BTAE-24).
+			`),
+		},
+	},
+	{
+		Key:   ExtKeySchemeVersion,
+		Usage: usageAEIdentity,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Scheme Version",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Version of the scheme the code of an item identity is from, for the
+				item classifications and service accounting codes of an item
+				(IBT-158-2, BTAE-17-2).
+			`),
+		},
+	},
+	{
+		Key:   ExtKeyContractValue,
+		Usage: usageAEDocumentRef,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Contract Value",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Value of a contract, on its reference in the invoice's ordering
+				details, such as "AED 200000" (BTAE-05).
+			`),
+		},
+	},
+	{
+		Key:   ExtKeyPurchaseOrder,
+		Usage: usageAELine,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Line Purchase Order Reference",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Identifier of the purchase order a line belongs to, issued by the
+				buyer (IBT-183). The line's "order" is the line of that order.
+			`),
+		},
+	},
+	{
+		Key:   ExtKeyDespatchAdvice,
+		Usage: usageAELine,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Line Despatch Advice Reference",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Identifier of the despatch advice a line was sent with (IBT-184).
+			`),
+		},
+	},
+	{
+		Key:   ExtKeyRemittanceScheme,
+		Usage: usageAEInstructions,
+		Name: i18n.String{
+			i18n.EN: "PINT AE Remittance Reference Scheme",
+		},
+		Desc: i18n.String{
+			i18n.EN: here.Doc(`
+				Scheme of the payment instructions' reference, the remittance
+				information, such as "ABA" (IBT-083-1).
+			`),
 		},
 	},
 }
