@@ -1289,7 +1289,7 @@ func mergeAETaxSubtotals(subtotals []goblubl.TaxSubtotal) []goblubl.TaxSubtotal 
 func indexAETaxSubtotal(list []goblubl.TaxSubtotal, c goblubl.TaxCategory) int {
 	for i, st := range list {
 		if sameID(st.TaxCategory.ID, c.ID) &&
-			sameString(st.TaxCategory.Percent, c.Percent) &&
+			samePercent(st.TaxCategory.Percent, c.Percent) &&
 			sameScheme(st.TaxCategory.TaxScheme, c.TaxScheme) {
 			return i
 		}
@@ -1302,6 +1302,21 @@ func sameID(a, b *goblubl.IDType) bool {
 		return a == b
 	}
 	return a.Value == b.Value
+}
+
+// samePercent compares two rates by value, so that "0" and "0.0" are the
+// same rate and their breakdowns are merged (ALIGNED-IBRP-Z-01 and the other
+// one-breakdown-per-category rules).
+func samePercent(a, b *string) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	x, errA := num.AmountFromString(*a)
+	y, errB := num.AmountFromString(*b)
+	if errA != nil || errB != nil {
+		return *a == *b
+	}
+	return x.Equals(y)
 }
 
 func sameString(a, b *string) bool {

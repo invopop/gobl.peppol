@@ -159,6 +159,15 @@ func TestMergeAETaxSubtotals(t *testing.T) {
 		out := mergeAETaxSubtotals([]goblubl.TaxSubtotal{standard, zero})
 		assert.Len(t, out, 2)
 	})
+
+	t.Run("merges rates written differently (ALIGNED-IBRP-Z-01)", func(t *testing.T) {
+		zero := func(base, pc string) goblubl.TaxSubtotal {
+			return goblubl.TaxSubtotal{TaxableAmount: aedAmount(base), TaxAmount: aedAmount("0.00"), TaxCategory: aeCategory("Z", strPtr(pc))}
+		}
+		out := mergeAETaxSubtotals([]goblubl.TaxSubtotal{zero("10.00", "0"), zero("20.00", "0.0")})
+		require.Len(t, out, 1)
+		assert.Equal(t, "30.00", out[0].TaxableAmount.Value)
+	})
 }
 
 func TestExportAETaxTotal(t *testing.T) {
