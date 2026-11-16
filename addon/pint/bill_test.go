@@ -818,6 +818,24 @@ func TestBillIdentityRulesAE(t *testing.T) {
 			&org.Identity{Type: ae.IdentityTypeTIN, Code: "1234567897"})
 		assert.NotContains(t, aeFaults(t, inv), faultCustomerTaxSupplier)
 	})
+
+	t.Run("customer tax ID under GST needs a supplier TIN (IBR-133-AE)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		// The scheme is set here as these tests don't register the AU regime,
+		// which gives AU tax IDs the GST scheme.
+		inv.Customer.TaxID = &tax.Identity{Country: "AU", Code: "51824753556", Scheme: tax.CategoryGST}
+		assert.Contains(t, aeFaults(t, inv), faultCustomerTaxSupplier)
+
+		inv.Supplier.Identities = append(inv.Supplier.Identities,
+			&org.Identity{Type: ae.IdentityTypeTIN, Code: "1234567897"})
+		assert.NotContains(t, aeFaults(t, inv), faultCustomerTaxSupplier)
+	})
+
+	t.Run("customer tax ID under VAT needs no supplier TIN", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Customer.TaxID = &tax.Identity{Country: "DE", Code: "111111125"}
+		assert.NotContains(t, aeFaults(t, inv), faultCustomerTaxSupplier)
+	})
 }
 
 func TestBillTransactionTypeRulesAE(t *testing.T) {

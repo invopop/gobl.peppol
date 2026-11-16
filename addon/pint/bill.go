@@ -151,8 +151,8 @@ func billInvoiceRules() *rules.Set {
 					is.Func("at most one tax registration", partyHasAtMostOneTaxRegistration),
 				),
 			),
-			rules.Assert("19", "customer tax scope identities require a supplier TIN (IBR-133-AE)",
-				is.Func("customer tax scope identities with supplier TIN", customerTaxIdentitiesHaveSupplierTIN),
+			rules.Assert("19", "customer tax registrations other than VAT require a supplier TIN (IBR-133-AE)",
+				is.Func("customer non-VAT tax registrations with supplier TIN", customerNonVATTaxRegistrationsHaveSupplierTIN),
 			),
 
 			// AE tax representative and issuer
@@ -658,19 +658,33 @@ func invoiceHasDueDate(val any) bool {
 	return false
 }
 
-// customerTaxIdentitiesHaveSupplierTIN reports whether the supplier has a tax
-// scope identity, the TIN (IBT-032), whenever the customer has one. gobl.ubl
-// writes a customer tax scope identity under a tax scheme other than VAT,
-// which PINT AE only allows when the seller has a TIN (IBR-133-AE).
-func customerTaxIdentitiesHaveSupplierTIN(val any) bool {
+// customerNonVATTaxRegistrationsHaveSupplierTIN reports whether the supplier
+// has a tax scope identity, the TIN (IBT-032), whenever the customer has a tax
+// registration that gobl.ubl writes under a tax scheme other than VAT: a tax
+// scope identity, or a tax ID from a regime with another scheme, such as GST
+// in Australia. PINT AE only allows those when the seller has a TIN
+// (IBR-133-AE). The official exports example sends a foreign buyer's tax
+// number as its electronic address and legal identifier instead.
+func customerNonVATTaxRegistrationsHaveSupplierTIN(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {
 		return false
 	}
-	if inv.Customer == nil || partyTaxIdentityCount(inv.Customer) == 0 {
+	c := inv.Customer
+	if c == nil || (partyTaxIdentityCount(c) == 0 && !partyTaxIDIsNotVAT(c)) {
 		return true
 	}
 	return inv.Supplier != nil && partyTaxIdentityCount(inv.Supplier) > 0
+}
+
+// partyTaxIDIsNotVAT reports whether the party has a tax ID code whose scheme
+// is not VAT. gobl.ubl writes a tax ID without a scheme under VAT.
+func partyTaxIDIsNotVAT(p *org.Party) bool {
+	if p.TaxID == nil || p.TaxID.Code == "" {
+		return false
+	}
+	scheme := p.TaxID.GetScheme()
+	return scheme != "" && scheme != tax.CategoryVAT
 }
 
 // invoiceHasInvoicePeriod reports whether the invoice has what is written as
