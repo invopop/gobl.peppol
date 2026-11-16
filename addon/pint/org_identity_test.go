@@ -16,31 +16,38 @@ import (
 )
 
 func TestIdentityTypeAE(t *testing.T) {
-	tests := map[cbc.Key]cbc.Code{
-		ae.IdentityKeyTradeLicense:    pint.IdentityTypeTradeLicense,
-		ae.IdentityKeyEmiratesID:      pint.IdentityTypeEmiratesID,
-		org.IdentityKeyPassport:       pint.IdentityTypePassport,
-		ae.IdentityKeyCabinetDecision: pint.IdentityTypeCabinetDecision,
-		ae.IdentityKeyTIN:             "",
-		cbc.KeyEmpty:                  "",
+	tests := []struct {
+		id   *org.Identity
+		want cbc.Code
+	}{
+		{&org.Identity{Type: ae.IdentityTypeTradeLicense}, "TL"},
+		{&org.Identity{Type: ae.IdentityTypeEmiratesID}, "EID"},
+		{&org.Identity{Key: org.IdentityKeyPassport}, pint.IdentityTypePassport},
+		{&org.Identity{Type: ae.IdentityTypeCabinetDecision}, "CD"},
+		{&org.Identity{Type: ae.IdentityTypeTIN}, ""},
+		{&org.Identity{}, ""},
+		{nil, ""},
 	}
-	for key, want := range tests {
-		assert.Equal(t, want, pint.IdentityTypeAE(key), key)
+	for _, tt := range tests {
+		assert.Equal(t, tt.want, pint.IdentityTypeAE(tt.id), tt.id)
 	}
 }
 
-func TestIdentityKeyAE(t *testing.T) {
-	tests := map[cbc.Code]cbc.Key{
-		"TL":  ae.IdentityKeyTradeLicense,
-		"CL":  ae.IdentityKeyTradeLicense,
-		"EID": ae.IdentityKeyEmiratesID,
-		"PAS": org.IdentityKeyPassport,
-		"CD":  ae.IdentityKeyCabinetDecision,
-		"XYZ": "",
-		"":    "",
+func TestSetIdentityTypeAE(t *testing.T) {
+	tests := map[cbc.Code]org.Identity{
+		"TL":  {Type: ae.IdentityTypeTradeLicense},
+		"CL":  {Type: ae.IdentityTypeTradeLicense},
+		"EID": {Type: ae.IdentityTypeEmiratesID},
+		"PAS": {Key: org.IdentityKeyPassport},
+		"CD":  {Type: ae.IdentityTypeCabinetDecision},
+		"XYZ": {},
+		"":    {},
 	}
 	for typ, want := range tests {
-		assert.Equal(t, want, pint.IdentityKeyAE(typ), typ)
+		id := new(org.Identity)
+		known := want.Key != "" || want.Type != ""
+		assert.Equal(t, known, pint.SetIdentityTypeAE(id, typ), typ)
+		assert.Equal(t, want, *id, typ)
 	}
 }
 
@@ -62,8 +69,8 @@ func TestNormalizeIdentityScopes(t *testing.T) {
 		norm.Normalize(inv, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(regime))
 		return scopes(inv.Supplier), scopes(inv.Customer)
 	}
-	tin := func() *org.Identity { return &org.Identity{Key: ae.IdentityKeyTIN, Code: "1234567897"} }
-	eid := func() *org.Identity { return &org.Identity{Key: ae.IdentityKeyEmiratesID, Code: "784199012345671"} }
+	tin := func() *org.Identity { return &org.Identity{Type: ae.IdentityTypeTIN, Code: "1234567897"} }
+	eid := func() *org.Identity { return &org.Identity{Type: ae.IdentityTypeEmiratesID, Code: "784199012345671"} }
 	passport := func() *org.Identity {
 		return &org.Identity{Key: org.IdentityKeyPassport, Code: "P1234567890", Country: "IN"}
 	}
@@ -82,11 +89,11 @@ func TestNormalizeIdentityScopes(t *testing.T) {
 		assert.Equal(t, []cbc.Key{org.IdentityScopeTax, org.IdentityScopeLegal}, supplier)
 		assert.Equal(t, []cbc.Key{"", org.IdentityScopeLegal}, customer, "PINT AE has no customer TIN registration")
 
-		for _, key := range []cbc.Key{ae.IdentityKeyTradeLicense, ae.IdentityKeyEmiratesID, ae.IdentityKeyCabinetDecision} {
-			id := func() *org.Identity { return &org.Identity{Key: key, Code: "784199012345671"} }
+		for _, typ := range []cbc.Code{ae.IdentityTypeTradeLicense, ae.IdentityTypeEmiratesID, ae.IdentityTypeCabinetDecision} {
+			id := func() *org.Identity { return &org.Identity{Type: typ, Code: "784199012345671"} }
 			supplier, customer = normalize(l10n.AE.Tax(), list(id))
-			assert.Equal(t, []cbc.Key{org.IdentityScopeLegal}, supplier, key)
-			assert.Equal(t, []cbc.Key{org.IdentityScopeLegal}, customer, key)
+			assert.Equal(t, []cbc.Key{org.IdentityScopeLegal}, supplier, typ)
+			assert.Equal(t, []cbc.Key{org.IdentityScopeLegal}, customer, typ)
 		}
 	})
 

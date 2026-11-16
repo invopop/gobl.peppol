@@ -702,7 +702,7 @@ func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 	if id == nil {
 		return
 	}
-	typ := pint.IdentityTypeAE(id.Key)
+	typ := pint.IdentityTypeAE(id)
 	if typ == "" {
 		return
 	}
@@ -715,7 +715,7 @@ func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 			name := id.Country.String()
 			cid.SchemeAgencyName = &name
 		}
-	case pint.IdentityTypeTradeLicense:
+	case ae.IdentityTypeTradeLicense:
 		if id.Description != "" {
 			name := id.Description
 			cid.SchemeAgencyName = &name
@@ -724,9 +724,10 @@ func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 }
 
 // importAEPartyIdentities reads back what exportAEPartyIdentities writes:
-// the legal identity's key from @schemeAgencyID, with @schemeAgencyName as
-// the passport's country or the trade licence's description, and, for the
-// supplier, the TIN key on the tax registration that is not VAT, as PINT AE
+// the legal identity's key or type from @schemeAgencyID, with
+// @schemeAgencyName as the passport's country or the trade licence's
+// description, and, for the supplier, the TIN type on the tax registration
+// that is not VAT, as PINT AE
 // defines IBT-032 as the seller TIN.
 func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 	if in == nil || p == nil {
@@ -745,7 +746,7 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 	if supplier {
 		for _, id := range p.Identities {
 			if id != nil && id.Scope == org.IdentityScopeTax && id.Key == "" && id.Type == "" {
-				id.Key = ae.IdentityKeyTIN
+				id.Type = ae.IdentityTypeTIN
 			}
 		}
 	}
@@ -770,22 +771,20 @@ func importAEPartyEndpoint(in *goblubl.Party, p *org.Party) {
 	p.Endpoints = append(p.Endpoints, &org.Endpoint{URI: uri})
 }
 
-// importAELegalIdentity sets the identity's key and, from @schemeAgencyName,
-// its issuing country or description.
+// importAELegalIdentity sets the identity's key or type and, from
+// @schemeAgencyName, its issuing country or description.
 func importAELegalIdentity(id *org.Identity, cid *goblubl.IDType) {
-	key := pint.IdentityKeyAE(cbc.Code(strings.TrimSpace(*cid.SchemeAgencyID)))
-	if key == "" {
+	if !pint.SetIdentityTypeAE(id, cbc.Code(strings.TrimSpace(*cid.SchemeAgencyID))) {
 		return
 	}
-	id.Key = key
 	if cid.SchemeAgencyName == nil {
 		return
 	}
 	name := strings.TrimSpace(*cid.SchemeAgencyName)
-	switch key {
-	case org.IdentityKeyPassport:
+	switch {
+	case id.Key == org.IdentityKeyPassport:
 		id.Country = l10n.ISOCountryCode(name)
-	case ae.IdentityKeyTradeLicense:
+	case id.Type == ae.IdentityTypeTradeLicense:
 		id.Description = name
 	}
 }
@@ -802,7 +801,7 @@ func importAELegalIdentity(id *org.Identity, cid *goblubl.IDType) {
 // It is not the TIN of UNCL 1153, which is a transport instruction number.
 func exportAETINScheme(out *goblubl.Party, p *org.Party) {
 	for _, id := range p.Identities {
-		if id == nil || id.Key != ae.IdentityKeyTIN || id.Scope != org.IdentityScopeTax {
+		if id == nil || id.Type != ae.IdentityTypeTIN || id.Scope != org.IdentityScopeTax {
 			continue
 		}
 		for i := range out.PartyTaxScheme {

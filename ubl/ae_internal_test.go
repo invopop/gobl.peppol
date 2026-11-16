@@ -211,12 +211,15 @@ func TestExportAEPartyIdentities(t *testing.T) {
 		exportAEPartyIdentities(out, p)
 		return out
 	}
-	legal := func(key cbc.Key, code string) *org.Identity {
-		return &org.Identity{Key: key, Scope: org.IdentityScopeLegal, Code: cbc.Code(code)}
+	legal := func(typ cbc.Code, code string) *org.Identity {
+		return &org.Identity{Type: typ, Scope: org.IdentityScopeLegal, Code: cbc.Code(code)}
+	}
+	passport := func(code string) *org.Identity {
+		return &org.Identity{Key: org.IdentityKeyPassport, Scope: org.IdentityScopeLegal, Code: cbc.Code(code)}
 	}
 
 	t.Run("trade licence gets TL and its authority", func(t *testing.T) {
-		id := legal(ae.IdentityKeyTradeLicense, "112345678900003")
+		id := legal(ae.IdentityTypeTradeLicense, "112345678900003")
 		id.Description = "Trade License issuing Authority"
 		cid := export(&org.Party{Name: "Seller", Identities: []*org.Identity{id}}).PartyLegalEntity.CompanyID
 		assert.Equal(t, "112345678900003", cid.Value)
@@ -225,7 +228,7 @@ func TestExportAEPartyIdentities(t *testing.T) {
 	})
 
 	t.Run("passport gets PAS and its issuing country", func(t *testing.T) {
-		id := legal(org.IdentityKeyPassport, "P1234567890")
+		id := passport("P1234567890")
 		id.Country = "IN"
 		cid := export(&org.Party{Name: "Buyer", Identities: []*org.Identity{id}}).PartyLegalEntity.CompanyID
 		assert.Equal(t, "PAS", *cid.SchemeAgencyID)
@@ -233,20 +236,17 @@ func TestExportAEPartyIdentities(t *testing.T) {
 	})
 
 	t.Run("Emirates ID and Cabinet Decision get their type only", func(t *testing.T) {
-		for key, typ := range map[cbc.Key]string{
-			ae.IdentityKeyEmiratesID:      "EID",
-			ae.IdentityKeyCabinetDecision: "CD",
-		} {
-			id := legal(key, "784199012345671")
+		for _, typ := range []cbc.Code{ae.IdentityTypeEmiratesID, ae.IdentityTypeCabinetDecision} {
+			id := legal(typ, "784199012345671")
 			id.Description = "not an authority"
 			cid := export(&org.Party{Name: "Party", Identities: []*org.Identity{id}}).PartyLegalEntity.CompanyID
-			assert.Equal(t, typ, *cid.SchemeAgencyID, key)
-			assert.Nil(t, cid.SchemeAgencyName, key)
+			assert.Equal(t, typ.String(), *cid.SchemeAgencyID, typ)
+			assert.Nil(t, cid.SchemeAgencyName, typ)
 		}
 	})
 
 	t.Run("passport ignores the description", func(t *testing.T) {
-		id := legal(org.IdentityKeyPassport, "P1234567890")
+		id := passport("P1234567890")
 		id.Description = "not a country"
 		cid := export(&org.Party{Name: "Buyer", Identities: []*org.Identity{id}}).PartyLegalEntity.CompanyID
 		assert.Nil(t, cid.SchemeAgencyName)
@@ -262,9 +262,9 @@ func TestExportAEPartyIdentities(t *testing.T) {
 
 	t.Run("the first legal identity is described, after a tax one", func(t *testing.T) {
 		cid := export(&org.Party{Name: "Party", Identities: []*org.Identity{
-			{Key: ae.IdentityKeyTIN, Scope: org.IdentityScopeTax, Code: "1234567897"},
-			legal(ae.IdentityKeyEmiratesID, "784199012345671"),
-			legal(ae.IdentityKeyCabinetDecision, "CD-1"),
+			{Type: ae.IdentityTypeTIN, Scope: org.IdentityScopeTax, Code: "1234567897"},
+			legal(ae.IdentityTypeEmiratesID, "784199012345671"),
+			legal(ae.IdentityTypeCabinetDecision, "CD-1"),
 		}}).PartyLegalEntity.CompanyID
 		assert.Equal(t, "784199012345671", cid.Value)
 		assert.Equal(t, "EID", *cid.SchemeAgencyID)
@@ -275,7 +275,7 @@ func TestExportAEPartyIdentities(t *testing.T) {
 			Name:  "Seller",
 			TaxID: &tax.Identity{Country: "AE", Code: "100000001600003"},
 			Identities: []*org.Identity{
-				{Key: ae.IdentityKeyTIN, Scope: org.IdentityScopeTax, Code: "1234567897"},
+				{Type: ae.IdentityTypeTIN, Scope: org.IdentityScopeTax, Code: "1234567897"},
 			},
 		})
 		require.Len(t, out.PartyTaxScheme, 2)
@@ -321,13 +321,13 @@ func TestImportAEPartyIdentities(t *testing.T) {
 
 	t.Run("trade licence with its authority", func(t *testing.T) {
 		id := imported(companyID("TL", "Trade License issuing Authority"), false).Identities[0]
-		assert.Equal(t, ae.IdentityKeyTradeLicense, id.Key)
+		assert.Equal(t, ae.IdentityTypeTradeLicense, id.Type)
 		assert.Equal(t, "Trade License issuing Authority", id.Description)
 	})
 
 	t.Run("CL is read as a trade licence", func(t *testing.T) {
 		id := imported(companyID("CL", "Dubai Economy and Tourism"), false).Identities[0]
-		assert.Equal(t, ae.IdentityKeyTradeLicense, id.Key)
+		assert.Equal(t, ae.IdentityTypeTradeLicense, id.Type)
 		assert.Equal(t, "Dubai Economy and Tourism", id.Description)
 	})
 
@@ -339,9 +339,9 @@ func TestImportAEPartyIdentities(t *testing.T) {
 	})
 
 	t.Run("Emirates ID and Cabinet Decision, without an authority", func(t *testing.T) {
-		for typ, key := range map[string]cbc.Key{"EID": ae.IdentityKeyEmiratesID, "CD": ae.IdentityKeyCabinetDecision} {
-			id := imported(companyID(typ, "Some Authority"), false).Identities[0]
-			assert.Equal(t, key, id.Key, typ)
+		for _, typ := range []cbc.Code{ae.IdentityTypeEmiratesID, ae.IdentityTypeCabinetDecision} {
+			id := imported(companyID(typ.String(), "Some Authority"), false).Identities[0]
+			assert.Equal(t, typ, id.Type, typ)
 			assert.Empty(t, id.Description, typ)
 		}
 	})
@@ -350,6 +350,7 @@ func TestImportAEPartyIdentities(t *testing.T) {
 		for _, typ := range []string{"XYZ", ""} {
 			id := imported(companyID(typ, "Some Authority"), false).Identities[0]
 			assert.Empty(t, id.Key, typ)
+			assert.Empty(t, id.Type, typ)
 			assert.Empty(t, id.Description, typ)
 		}
 	})
@@ -362,11 +363,11 @@ func TestImportAEPartyIdentities(t *testing.T) {
 		}
 		p := imported(in, true)
 		require.Len(t, p.Identities, 2)
-		assert.Equal(t, ae.IdentityKeyTIN, p.Identities[1].Key)
+		assert.Equal(t, ae.IdentityTypeTIN, p.Identities[1].Type)
 		assert.Equal(t, cbc.Code("1234567897"), p.Identities[1].Code)
 
 		p = imported(in, false)
-		assert.Empty(t, p.Identities[1].Key, "only the seller has a TIN")
+		assert.Empty(t, p.Identities[1].Type, "only the seller has a TIN")
 	})
 
 	t.Run("nil parties are skipped", func(t *testing.T) {

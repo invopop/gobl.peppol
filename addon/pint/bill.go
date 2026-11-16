@@ -69,7 +69,7 @@ func billInvoiceRules() *rules.Set {
 						rules.When(
 							is.Func("legal scope", identityHasLegalScope),
 							rules.Assert("08", "supplier legal identity must be a trade license, Emirates ID, passport or Cabinet Decision with a UAE Peppol endpoint (IBR-173-AE, IBR-181-AE)",
-								org.IdentityKeyIn(identityKeysAE...),
+								is.Or(org.IdentityKeyIn(org.IdentityKeyPassport), org.IdentityTypeIn(identityTypesAE...)),
 							),
 						),
 					)),
@@ -82,7 +82,7 @@ func billInvoiceRules() *rules.Set {
 						),
 					),
 					rules.When(
-						org.IdentityKeyIn(ae.IdentityKeyTradeLicense),
+						org.IdentityTypeIn(ae.IdentityTypeTradeLicense),
 						rules.Field("description",
 							rules.Assert("10", "supplier trade license must have the issuing authority in the description (IBR-172-AE)", is.Present),
 						),
@@ -119,7 +119,7 @@ func billInvoiceRules() *rules.Set {
 						rules.When(
 							is.Func("legal scope", identityHasLegalScope),
 							rules.Assert("14", "customer legal identity must be a trade license, Emirates ID, passport or Cabinet Decision with a UAE Peppol endpoint (IBR-180-AE, IBR-183-AE)",
-								org.IdentityKeyIn(identityKeysAE...),
+								is.Or(org.IdentityKeyIn(org.IdentityKeyPassport), org.IdentityTypeIn(identityTypesAE...)),
 							),
 						),
 					)),
@@ -132,7 +132,7 @@ func billInvoiceRules() *rules.Set {
 						),
 					),
 					rules.When(
-						org.IdentityKeyIn(ae.IdentityKeyTradeLicense),
+						org.IdentityTypeIn(ae.IdentityTypeTradeLicense),
 						rules.Field("description",
 							rules.Assert("16", "customer trade license must have the issuing authority in the description (IBR-101-AE)", is.Present),
 						),

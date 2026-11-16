@@ -640,7 +640,7 @@ func uaeEndpoints(code string) []*org.Endpoint {
 }
 
 func tradeLicense(code string) *org.Identity {
-	return &org.Identity{Key: ae.IdentityKeyTradeLicense, Code: cbc.Code(code), Description: "Dubai Economy and Tourism"}
+	return &org.Identity{Type: ae.IdentityTypeTradeLicense, Code: cbc.Code(code), Description: "Dubai Economy and Tourism"}
 }
 
 // aeIdentityDocument returns a valid UAE invoice whose parties have UAE Peppol
@@ -716,9 +716,9 @@ func TestBillIdentityRulesAE(t *testing.T) {
 
 	t.Run("each PINT AE type is accepted (IBR-173-AE, IBR-183-AE)", func(t *testing.T) {
 		for _, id := range []*org.Identity{
-			{Key: ae.IdentityKeyEmiratesID, Code: "784199012345671"},
+			{Type: ae.IdentityTypeEmiratesID, Code: "784199012345671"},
 			{Key: org.IdentityKeyPassport, Code: "P1234567890", Country: "IN"},
-			{Key: ae.IdentityKeyCabinetDecision, Code: "CD-12-2020"},
+			{Type: ae.IdentityTypeCabinetDecision, Code: "CD-12-2020"},
 		} {
 			inv := aeIdentityDocument()
 			inv.Supplier.Identities = []*org.Identity{id}
@@ -758,7 +758,7 @@ func TestBillIdentityRulesAE(t *testing.T) {
 	t.Run("supplier TIN is accepted, before or after the legal identity (IBR-148-AE)", func(t *testing.T) {
 		inv := aeIdentityDocument()
 		inv.Supplier.Identities = append([]*org.Identity{
-			{Key: ae.IdentityKeyTIN, Code: "1234567897"},
+			{Type: ae.IdentityTypeTIN, Code: "1234567897"},
 		}, inv.Supplier.Identities...)
 		assert.Empty(t, aeFaults(t, inv))
 	})
@@ -791,7 +791,7 @@ func TestBillIdentityRulesAE(t *testing.T) {
 	t.Run("customer has at most one tax registration (IBR-179-AE)", func(t *testing.T) {
 		inv := aeIdentityDocument()
 		inv.Supplier.Identities = append(inv.Supplier.Identities,
-			&org.Identity{Key: ae.IdentityKeyTIN, Code: "1234567897"})
+			&org.Identity{Type: ae.IdentityTypeTIN, Code: "1234567897"})
 		inv.Customer.Identities = append(inv.Customer.Identities,
 			&org.Identity{Scope: org.IdentityScopeTax, Code: "1345678906"})
 		assert.Contains(t, aeFaults(t, inv), faultCustomerTaxCount)
@@ -800,7 +800,7 @@ func TestBillIdentityRulesAE(t *testing.T) {
 	t.Run("customer TIN without a scope is a plain identity (IBR-179-AE, IBR-133-AE)", func(t *testing.T) {
 		inv := aeIdentityDocument()
 		inv.Customer.Identities = append(inv.Customer.Identities,
-			&org.Identity{Key: ae.IdentityKeyTIN, Code: "1345678906"})
+			&org.Identity{Type: ae.IdentityTypeTIN, Code: "1345678906"})
 		out := aeFaults(t, inv)
 		assert.Empty(t, inv.Customer.Identities[1].Scope)
 		assert.NotContains(t, out, faultCustomerTaxCount)
@@ -815,7 +815,7 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		assert.Contains(t, aeFaults(t, inv), faultCustomerTaxSupplier)
 
 		inv.Supplier.Identities = append(inv.Supplier.Identities,
-			&org.Identity{Key: ae.IdentityKeyTIN, Code: "1234567897"})
+			&org.Identity{Type: ae.IdentityTypeTIN, Code: "1234567897"})
 		assert.NotContains(t, aeFaults(t, inv), faultCustomerTaxSupplier)
 	})
 }

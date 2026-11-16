@@ -14,7 +14,7 @@ supplier:
     country: "AE"
     code: "135790246700003"
   identities:
-    - key: "ae-trade-license"
+    - type: "TL"
       code: "112345678900003"
       description: "Trade License issuing Authority"
   inboxes:
@@ -33,7 +33,7 @@ customer:
     country: "AE"
     code: "134567890600003"
   identities:
-    - key: "ae-trade-license"
+    - type: "TL"
       code: "112345679000001"
       description: "Trade License issuing Authority"
   inboxes:

@@ -11,24 +11,19 @@ import (
 )
 
 // tinRegexp matches a UAE TIN as PINT AE expects it: 10 digits starting with
-// 1 (IBR-148-AE). The AE regime checks the identities with the TIN key, check
+// 1 (IBR-148-AE). The AE regime checks the identities of the TIN type, check
 // digit included; this one covers any tax scope identity, as the Schematron
 // tests the value written. UAE Peppol endpoints (0235) are TINs too, so it
 // also tells whether an endpoint is one (IBR-135-AE).
 var tinRegexp = regexp.MustCompile(`^1\d{9}$`)
 
 // PINT AE legal registration identifier types, written as @schemeAgencyID on
-// the seller and buyer cbc:CompanyID (BTAE-15, BTAE-16). The Ministry of
-// Finance lists the same four types of commercial registration number.
+// the seller and buyer cbc:CompanyID (BTAE-15, BTAE-16). The trade licence
+// (TL), Emirates ID (EID) and Cabinet Decision (CD) are the AE regime's
+// identity types of the same codes; the passport is GOBL's passport key.
 const (
-	// IdentityTypeTradeLicense is a commercial or trade licence.
-	IdentityTypeTradeLicense cbc.Code = "TL"
-	// IdentityTypeEmiratesID is an Emirates ID.
-	IdentityTypeEmiratesID cbc.Code = "EID"
 	// IdentityTypePassport is a passport.
 	IdentityTypePassport cbc.Code = "PAS"
-	// IdentityTypeCabinetDecision is a Cabinet Decision.
-	IdentityTypeCabinetDecision cbc.Code = "CD"
 	// identityTypeCommercialLicense is only accepted by IBR-183-AE's test, for
 	// the buyer. No other source lists it; its rule text names
 	// "Commercial/Trade license", so it is read as a trade licence and never
@@ -36,45 +31,42 @@ const (
 	identityTypeCommercialLicense cbc.Code = "CL"
 )
 
-// identityKeysAE are the identity keys of the PINT AE legal registration
-// identifier types.
-var identityKeysAE = []cbc.Key{
-	ae.IdentityKeyTradeLicense,
-	ae.IdentityKeyEmiratesID,
-	org.IdentityKeyPassport,
-	ae.IdentityKeyCabinetDecision,
+// identityTypesAE are the AE regime's identity types that are PINT AE legal
+// registration identifier types.
+var identityTypesAE = []cbc.Code{
+	ae.IdentityTypeTradeLicense,
+	ae.IdentityTypeEmiratesID,
+	ae.IdentityTypeCabinetDecision,
 }
 
-// IdentityTypeAE returns the PINT AE legal registration identifier type for an
-// identity key, or an empty code if the key has none.
-func IdentityTypeAE(key cbc.Key) cbc.Code {
-	switch key {
-	case ae.IdentityKeyTradeLicense:
-		return IdentityTypeTradeLicense
-	case ae.IdentityKeyEmiratesID:
-		return IdentityTypeEmiratesID
-	case org.IdentityKeyPassport:
+// IdentityTypeAE returns the PINT AE legal registration identifier type of an
+// identity, or an empty code if it has none.
+func IdentityTypeAE(id *org.Identity) cbc.Code {
+	switch {
+	case id == nil:
+		return ""
+	case id.Key == org.IdentityKeyPassport:
 		return IdentityTypePassport
-	case ae.IdentityKeyCabinetDecision:
-		return IdentityTypeCabinetDecision
+	case id.Type.In(identityTypesAE...):
+		return id.Type
 	}
 	return ""
 }
 
-// IdentityKeyAE returns the identity key for a PINT AE legal registration
-// identifier type, or an empty key if the type is unknown.
-func IdentityKeyAE(typ cbc.Code) cbc.Key {
-	switch typ {
-	case IdentityTypeTradeLicense, identityTypeCommercialLicense:
-		return ae.IdentityKeyTradeLicense
-	case IdentityTypeEmiratesID:
-		return ae.IdentityKeyEmiratesID
-	case IdentityTypePassport:
-		return org.IdentityKeyPassport
-	case IdentityTypeCabinetDecision:
-		return ae.IdentityKeyCabinetDecision
+// SetIdentityTypeAE sets the identity's key or type from a PINT AE legal
+// registration identifier type, and reports whether the type is known.
+func SetIdentityTypeAE(id *org.Identity, typ cbc.Code) bool {
+	switch {
+	case typ == IdentityTypePassport:
+		id.Key = org.IdentityKeyPassport
+	case typ == identityTypeCommercialLicense:
+		id.Type = ae.IdentityTypeTradeLicense
+	case typ.In(identityTypesAE...):
+		id.Type = typ
+	default:
+		return false
 	}
-	return ""
+	return true
 }
 
 // normalizeIdentityScopes gives the UAE identities of the supplier and
@@ -92,7 +84,7 @@ func normalizeIdentityScopes(inv *bill.Invoice) {
 }
 
 // setIdentityScopes gives the party's identities without a scope the one
-// their key has in PINT AE, when it is one of the given scopes and no other
+// they have in PINT AE, when it is one of the given scopes and no other
 // identity of the party has it, as EN 16931 allows one identity per scope
 // (BT-30, BT-47, BT-31, BT-48).
 func setIdentityScopes(p *org.Party, scopes ...cbc.Key) {
@@ -109,20 +101,20 @@ func setIdentityScopes(p *org.Party, scopes ...cbc.Key) {
 		if id == nil || id.Scope != "" {
 			continue
 		}
-		if scope := identityScopeAE(id.Key); scope.In(scopes...) && !taken[scope] {
+		if scope := identityScopeAE(id); scope.In(scopes...) && !taken[scope] {
 			id.Scope = scope
 			taken[scope] = true
 		}
 	}
 }
 
-// identityScopeAE returns the scope PINT AE reads an identity key from, or an
+// identityScopeAE returns the scope PINT AE reads an identity from, or an
 // empty key if it has none.
-func identityScopeAE(key cbc.Key) cbc.Key {
-	if key == ae.IdentityKeyTIN {
+func identityScopeAE(id *org.Identity) cbc.Key {
+	if id.Type == ae.IdentityTypeTIN {
 		return org.IdentityScopeTax
 	}
-	if IdentityTypeAE(key) != "" {
+	if IdentityTypeAE(id) != "" {
 		return org.IdentityScopeLegal
 	}
 	return ""

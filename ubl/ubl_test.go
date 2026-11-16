@@ -151,15 +151,15 @@ func TestDetectAndImportAE(t *testing.T) {
 // terms, which EN 16931 requires (BR-CO-25). Any other fault is a defect in
 // the import.
 var importFaultsAE = map[string][]string{
-	"allowance-exempt.xml":       {"GOBL-AE-TAX-IDENTITY-01"},
-	"buyer-pas-identifier.xml":   {"GOBL-AE-TAX-IDENTITY-01"},
-	"deemed-supply.xml":          {"GOBL-AE-TAX-IDENTITY-01", "GOBL-EU-EN16931-BILL-INVOICE-07", "GOBL-ORG-EMAIL-02"},
-	"margin-scheme.xml":          {"GOBL-AE-TAX-IDENTITY-01", "GOBL-ORG-EMAIL-02"},
-	"reverse-charge.xml":         {"GOBL-AE-TAX-IDENTITY-01", "GOBL-ORG-EMAIL-02"},
-	"seller-pas-identifier.xml":  {"GOBL-AE-TAX-IDENTITY-01"},
-	"seller-tin-identifier.xml":  {"GOBL-AE-ORG-IDENTITY-01", "GOBL-AE-TAX-IDENTITY-01"},
-	"standard-invoice.xml":       {"GOBL-AE-TAX-IDENTITY-01"},
-	"supply-free-trade-zone.xml": {"GOBL-AE-TAX-IDENTITY-01", "GOBL-ORG-EMAIL-02"},
+	"allowance-exempt.xml":       {"GOBL-AE-TAX-IDENTITY-02"},
+	"buyer-pas-identifier.xml":   {"GOBL-AE-TAX-IDENTITY-02"},
+	"deemed-supply.xml":          {"GOBL-AE-TAX-IDENTITY-02", "GOBL-EU-EN16931-BILL-INVOICE-07", "GOBL-ORG-EMAIL-02"},
+	"margin-scheme.xml":          {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"reverse-charge.xml":         {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"seller-pas-identifier.xml":  {"GOBL-AE-TAX-IDENTITY-02"},
+	"seller-tin-identifier.xml":  {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"standard-invoice.xml":       {"GOBL-AE-TAX-IDENTITY-02"},
+	"supply-free-trade-zone.xml": {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
 }
 
 // faultCodePattern matches the fault codes in a validation error.
@@ -195,7 +195,7 @@ func TestImportAESellerTIN(t *testing.T) {
 	inv, ok := env.Extract().(*bill.Invoice)
 	require.True(t, ok)
 	inv.Supplier.TaxID = &tax.Identity{Country: "AE"}
-	inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{Key: ae.IdentityKeyTIN, Code: "1357902467"})
+	inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{Type: ae.IdentityTypeTIN, Code: "1357902467"})
 	require.NoError(t, env.Calculate())
 	require.NoError(t, env.Validate())
 
@@ -207,7 +207,7 @@ func TestImportAESellerTIN(t *testing.T) {
 	assert.Nil(t, supplier.TaxID)
 	var tin *org.Identity
 	for _, id := range supplier.Identities {
-		if id.Key == ae.IdentityKeyTIN {
+		if id.Type == ae.IdentityTypeTIN {
 			tin = id
 		}
 	}

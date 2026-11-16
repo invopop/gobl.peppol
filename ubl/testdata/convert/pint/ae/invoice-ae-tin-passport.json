@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "d2f0b707ea1f49f909469171b4b98ea1fc4fc8588efa982bc8d54498318d20f3"
+			"val": "459f5560212a0ba47252606e4ed8a9d1fc7a12161388dd6f33e54797d2cbd8f2"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -37,12 +37,12 @@
 			"identities": [
 				{
 					"scope": "tax",
-					"key": "ae-tin",
+					"type": "TIN",
 					"code": "1234567897"
 				},
 				{
 					"scope": "legal",
-					"key": "ae-trade-license",
+					"type": "TL",
 					"code": "112345678900003",
 					"description": "Trade License issuing Authority"
 				}
