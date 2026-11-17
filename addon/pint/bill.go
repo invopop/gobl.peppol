@@ -36,6 +36,11 @@ func billInvoiceRules() *rules.Set {
 		),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
+			// PINT has no BR-CO-25. PINT AE asks for payment instructions
+			// (IBR-191-AE, rules 25 and 26) and a due date (IBR-127-AE, rule 27)
+			// instead, except on credit notes and deemed supplies.
+			rules.Ignore("GOBL-EU-EN16931-BILL-INVOICE-06"),
+			rules.Ignore("GOBL-EU-EN16931-BILL-INVOICE-07"),
 			// EN 16931 wants an EU VATEX code or an exemption note for every E, O
 			// and AE breakdown (BR-E-10, BR-O-10, BR-AE-10). PINT AE has no such
 			// rule: it only asks for the UAE exemption reason on exempt lines

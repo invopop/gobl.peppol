@@ -146,15 +146,14 @@ func TestDetectAndImportAE(t *testing.T) {
 
 // importFaultsAE are the faults the official PINT AE examples give once
 // imported. They pass the PINT AE Schematron, but their data is made up: the
-// TRNs and TINs fail the check digit the Federal Tax Authority defines, some
-// email addresses are placeholders, and the deemed supply has no payment
-// terms, which EN 16931 requires (BR-CO-25). Any other fault is a defect in
-// the import. margin-scheme-credit-note.xml is the official margin scheme
+// TRNs and TINs fail the check digit the Federal Tax Authority defines, and
+// some email addresses are placeholders. Any other fault is a defect in the
+// import. margin-scheme-credit-note.xml is the official margin scheme
 // example turned into a credit note, as there is no official one.
 var importFaultsAE = map[string][]string{
 	"allowance-exempt.xml":          {"GOBL-AE-TAX-IDENTITY-02"},
 	"buyer-pas-identifier.xml":      {"GOBL-AE-TAX-IDENTITY-02"},
-	"deemed-supply.xml":             {"GOBL-AE-TAX-IDENTITY-02", "GOBL-EU-EN16931-BILL-INVOICE-07", "GOBL-ORG-EMAIL-02"},
+	"deemed-supply.xml":             {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
 	"margin-scheme.xml":             {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
 	"margin-scheme-credit-note.xml": {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
 	"reverse-charge.xml":            {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},

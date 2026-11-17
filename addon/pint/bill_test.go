@@ -927,6 +927,13 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 		assert.NotContains(t, out, faultPaymentInstructions)
 		assert.NotContains(t, out, faultDueDate)
 
+		// PINT has no BR-CO-25, so neither payment nor terms are required.
+		inv = aeDocument(bill.InvoiceTypeStandard, pint.TagDeemedSupply)
+		inv.Payment.Terms = nil
+		assert.Empty(t, aeFaults(t, inv))
+		inv.Payment = nil
+		assert.Empty(t, aeFaults(t, inv))
+
 		inv = aeDocument(bill.InvoiceTypeStandard)
 		inv.Payment = &bill.PaymentDetails{Terms: &pay.Terms{Notes: "No consideration"}}
 		out = aeFaults(t, inv)
