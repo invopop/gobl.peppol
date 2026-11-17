@@ -6,18 +6,18 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// taxIdentityRules enforces the UAE TRN format on every UAE tax identity of a
-// UAE document (IBR-132-AE). The AE regime checks the 15 digits and the
-// TIN they start with; PINT AE also requires the trailing 03 of a VAT
-// registration.
+// taxIdentityRules requires the trailing 03 of a VAT registration on every
+// UAE tax identity of a UAE document (IBR-132-AE). The rest of IBR-132-AE's
+// format, 15 digits starting with 1, is checked by the AE regime, together
+// with the check digit of the TIN they start with.
 func taxIdentityRules() *rules.Set {
 	return rules.For(new(tax.Identity),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			rules.When(tax.IdentityIn("AE"),
 				rules.Field("code",
-					rules.AssertIfPresent("01", "UAE TRN must be 15 digits, start with 1 and end with 03 (IBR-132-AE)",
-						is.Matches(`^1\d{12}03$`)),
+					rules.AssertIfPresent("01", "UAE TRN must end with 03 (IBR-132-AE)",
+						is.Matches(`03$`)),
 				),
 			),
 		),
