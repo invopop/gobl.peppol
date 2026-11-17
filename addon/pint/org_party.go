@@ -19,6 +19,10 @@ var emirateCodes = []cbc.Code{
 // endpoints, which the PINT AE legal registration rules depend on.
 const endpointSchemeUAE cbc.Code = "0235"
 
+// endpointSchemeMailto is the URI scheme of email endpoints, which gobl.ubl
+// writes as cbc:EndpointID.
+const endpointSchemeMailto = "mailto"
+
 // partyHasIdentifier reports whether the party can be identified through a tax
 // identity code or at least one organisation identity.
 func partyHasIdentifier(val any) bool {
@@ -148,6 +152,28 @@ func partyEndpointID(p *org.Party) (cbc.Code, string) {
 		}
 	}
 	return "", ""
+}
+
+// partyHasEndpointID reports whether gobl.ubl writes the party's electronic
+// address as cbc:EndpointID: an ISO 6523 or email endpoint, or an inbox. A
+// party without endpoints passes, as rule 04 reports it.
+func partyHasEndpointID(val any) bool {
+	p, ok := val.(*org.Party)
+	if !ok || p == nil || len(p.Endpoints) == 0 {
+		return true
+	}
+	if s, _ := partyEndpointID(p); s != "" {
+		return true
+	}
+	if e := p.Endpoint(endpointSchemeMailto); e != nil && e.URI.Opaque() != "" {
+		return true
+	}
+	for _, ib := range p.Inboxes {
+		if ib != nil && ib.Email != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // partyHasUAEEndpointWith returns a predicate that reports whether the party's

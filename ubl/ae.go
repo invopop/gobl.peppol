@@ -1058,7 +1058,7 @@ func exportAELine(line *goblubl.InvoiceLine) {
 // fixes to AED. No test checks their currency. The two official examples in
 // another currency write them in USD, but both are zero rated exports, so
 // their VAT is zero either way. Without a rate, which the PINT addon requires
-// (GOBL-PEPPOL-PINT-BILL-INVOICE-22), they stay in the document currency.
+// (GOBL-PEPPOL-PINT-BILL-INVOICE-24), they stay in the document currency.
 //
 // GOBL keeps no VAT per line, so it is the line total at the line's rate,
 // rounded to the document currency, then converted. Exempt lines get no VAT
@@ -1112,7 +1112,7 @@ func aeLineVAT(line *goblubl.InvoiceLine, l *bill.Line) (num.Amount, bool) {
 // to the tax currency (IBR-153-AE), and the total with VAT in AED (BTAE-20,
 // IBR-175-AE). gobl.ubl already writes the tax currency AED and the VAT total
 // in AED (ibt-006, ibt-111) when there is a rate. The PINT addon requires the
-// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-22) with at most 6 decimals (-23).
+// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-24) with at most 6 decimals (-25).
 func exportAEExchangeRate(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Currency == currency.AED {
 		return
