@@ -92,7 +92,7 @@
       </cac:PartyLegalEntity>
     </cac:DeliveryParty>
     <cac:DeliveryTerms>
-      <cbc:ID>CIF</cbc:ID>
+      <cbc:ID schemeID="Incoterms">CIF</cbc:ID>
     </cac:DeliveryTerms>
   </cac:Delivery>
   <cac:PaymentMeans>

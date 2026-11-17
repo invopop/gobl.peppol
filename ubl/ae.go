@@ -47,6 +47,10 @@ const taxSchemeTIN = "TIN"
 // (IBT-084-1), as the official examples do.
 const accountSchemeIBAN = "IBAN"
 
+// deliveryTermsSchemeIncoterms is the scheme of the Incoterms code (BTAE-22),
+// which the syntax binding requires and the official examples write.
+const deliveryTermsSchemeIncoterms = "Incoterms"
+
 // aePaymentMeansID identifies the invoice's payment instructions (IBT-178), so
 // that its payment terms can refer to them (IBT-187). GOBL has a single set of
 // instructions, so it needs no ID of its own.
@@ -868,7 +872,7 @@ func importAEBillingFrequency(in *goblubl.Invoice, inv *bill.Invoice) {
 
 // exportAEIncoterms writes the delivery's Incoterms rule code, from the ICC
 // Incoterms 2020 or 2010 extension, as cac:Delivery/cac:DeliveryTerms/cbc:ID
-// (BTAE-22).
+// (BTAE-22) under the Incoterms scheme.
 func exportAEIncoterms(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Delivery == nil {
 		return
@@ -883,7 +887,10 @@ func exportAEIncoterms(out *goblubl.Invoice, inv *bill.Invoice) {
 	if len(out.Delivery) == 0 {
 		out.Delivery = []*goblubl.Delivery{{}}
 	}
-	out.Delivery[0].DeliveryTerms = []goblubl.DeliveryTerms{{ID: code.String()}}
+	scheme := deliveryTermsSchemeIncoterms
+	out.Delivery[0].DeliveryTerms = []goblubl.DeliveryTerms{
+		{ID: goblubl.IDType{SchemeID: &scheme, Value: code.String()}},
+	}
 }
 
 // importAEIncoterms reads the delivery terms back as the ICC Incoterms 2020
@@ -893,7 +900,7 @@ func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
 	if len(in.Delivery) == 0 || in.Delivery[0] == nil || len(in.Delivery[0].DeliveryTerms) == 0 {
 		return
 	}
-	code := cbc.Code(strings.TrimSpace(in.Delivery[0].DeliveryTerms[0].ID))
+	code := cbc.Code(strings.TrimSpace(in.Delivery[0].DeliveryTerms[0].ID.Value))
 	if code == "" {
 		return
 	}

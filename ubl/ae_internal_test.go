@@ -827,20 +827,23 @@ func TestAEIncoterms(t *testing.T) {
 		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2020, "CIF"))
 		require.Len(t, out.Delivery, 1)
 		require.Len(t, out.Delivery[0].DeliveryTerms, 1)
-		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms[0].ID)
+		id := out.Delivery[0].DeliveryTerms[0].ID
+		assert.Equal(t, "CIF", id.Value)
+		require.NotNil(t, id.SchemeID)
+		assert.Equal(t, "Incoterms", *id.SchemeID)
 	})
 
 	t.Run("also from the 2010 edition", func(t *testing.T) {
 		out := new(goblubl.Invoice)
 		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2010, "DAT"))
-		assert.Equal(t, "DAT", out.Delivery[0].DeliveryTerms[0].ID)
+		assert.Equal(t, "DAT", out.Delivery[0].DeliveryTerms[0].ID.Value)
 	})
 
 	t.Run("on the delivery gobl.ubl wrote", func(t *testing.T) {
 		out := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryLocation: &goblubl.Location{ID: &goblubl.IDType{Value: "5790000436101"}}}}}
 		exportAEIncoterms(out, delivery(icc.ExtKeyIncoterms2020, "CIF"))
 		require.Len(t, out.Delivery, 1)
-		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms[0].ID)
+		assert.Equal(t, "CIF", out.Delivery[0].DeliveryTerms[0].ID.Value)
 		assert.Equal(t, "5790000436101", out.Delivery[0].DeliveryLocation.ID.Value)
 	})
 
@@ -853,21 +856,21 @@ func TestAEIncoterms(t *testing.T) {
 	})
 
 	t.Run("reads the Incoterms back as the 2020 edition", func(t *testing.T) {
-		in := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: " CIF "}}}}}
+		in := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: goblubl.IDType{Value: " CIF "}}}}}}
 		inv := new(bill.Invoice)
 		importAEIncoterms(in, inv)
 		require.NotNil(t, inv.Delivery)
 		assert.Equal(t, cbc.Code("CIF"), inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2020))
 
 		// DAT is only in the 2010 edition.
-		in = &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: "DAT"}}}}}
+		in = &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: goblubl.IDType{Value: "DAT"}}}}}}
 		inv = new(bill.Invoice)
 		importAEIncoterms(in, inv)
 		assert.Equal(t, cbc.Code("DAT"), inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2010))
 		assert.Empty(t, inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2020))
 
 		// A code in neither edition is kept under the current one.
-		in = &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: "XYZ"}}}}}
+		in = &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryTerms: []goblubl.DeliveryTerms{{ID: goblubl.IDType{Value: "XYZ"}}}}}}
 		inv = new(bill.Invoice)
 		importAEIncoterms(in, inv)
 		assert.Equal(t, cbc.Code("XYZ"), inv.Delivery.Ext.Get(icc.ExtKeyIncoterms2020))
