@@ -8,9 +8,9 @@ package ubl
 import (
 	"strings"
 
+	"github.com/invopop/gobl.peppol/addon/bis"
 	"github.com/invopop/gobl.peppol/addon/pint"
 	goblubl "github.com/invopop/gobl.ubl"
-	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
@@ -41,7 +41,7 @@ var FormatBIS = goblubl.Format{
 	Export:          []schema.ID{invoiceSchema, statusSchema},
 	CustomizationID: "urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0",
 	ProfileID:       "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0",
-	Addons:          []cbc.Key{en16931.V2017},
+	Addons:          []cbc.Key{bis.V3},
 	VESIDs: goblubl.VESIDMapping{
 		Invoice:    "eu.peppol.bis3:invoice:2026.5",
 		CreditNote: "eu.peppol.bis3:creditnote:2026.5",
@@ -59,7 +59,7 @@ var FormatBIS = goblubl.Format{
 var SpecificationBISSelfBilling = goblubl.Specification{
 	CustomizationID: "urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:selfbilling:3.0",
 	ProfileID:       "urn:fdc:peppol.eu:2017:poacc:selfbilling:01:1.0",
-	Addons:          []cbc.Key{en16931.V2017},
+	Addons:          []cbc.Key{bis.V3},
 	VESIDs: goblubl.VESIDMapping{
 		Invoice:    "eu.peppol.bis3:invoice-self-billing:2026.5",
 		CreditNote: "eu.peppol.bis3:creditnote-self-billing:2026.5",

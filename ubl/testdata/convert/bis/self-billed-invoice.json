@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "50e60f6679d65e40b146b99caefc666345eebbf25bbe9958048463ee3e72a8b7"
+			"val": "7c7808aefe9abd67c28b0995e539224e8e5aa88705802ff4a143e5279ff8e30e"
 		},
 		"from": "iso6523-actorid-upis::9930:282741168",
 		"to": "iso6523-actorid-upis::9930:111111125"
@@ -13,7 +13,8 @@
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "DE",
 		"$addons": [
-			"eu-en16931-v2017"
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
 		],
 		"$tags": [
 			"self-billed"

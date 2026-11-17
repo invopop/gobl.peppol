@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/invopop/gobl"
+	"github.com/invopop/gobl.peppol/addon/bis"
 	peppolubl "github.com/invopop/gobl.peppol/ubl"
 	ubl "github.com/invopop/gobl.ubl"
-	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
 	"github.com/invopop/gobl/cbc"
@@ -100,7 +100,7 @@ func TestFormatBISConvert(t *testing.T) {
 			assert.Equal(t, peppolubl.KeyBIS, res.Format.Key)
 			doc := res.Envelope.Extract().(interface{ GetAddons() []cbc.Key })
 			if tc.addons {
-				assert.Contains(t, doc.GetAddons(), en16931.V2017)
+				assert.Contains(t, doc.GetAddons(), bis.V3)
 			} else {
 				assert.Empty(t, doc.GetAddons())
 			}
@@ -377,8 +377,10 @@ func TestInvoiceResponseRoundTrip(t *testing.T) {
 		require.NotNil(t, l.Doc)
 		assert.Equal(t, bill.InvoiceTypeCreditNote, l.Doc.Type)
 		require.Len(t, l.Reasons, 1)
+		assert.Equal(t, bill.ReasonKeyPrices, l.Reasons[0].Key)
 		assert.Equal(t, "price off", l.Reasons[0].Description)
 		require.Len(t, l.Actions, 1)
+		assert.Equal(t, bill.ActionKeyReissue, l.Actions[0].Key)
 		assert.Equal(t, "redo", l.Actions[0].Description)
 	})
 }
