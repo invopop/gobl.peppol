@@ -189,6 +189,38 @@ func TestImportAEFaults(t *testing.T) {
 	}
 }
 
+// TestRoundTripAE checks that each AE convert example gives the same XML
+// after an import and a second export, so whatever FormatAE writes it also
+// reads back.
+func TestRoundTripAE(t *testing.T) {
+	examples, err := filepath.Glob(filepath.Join("testdata", "convert", "pint", "ae", "*.json"))
+	require.NoError(t, err)
+	require.NotEmpty(t, examples)
+	for _, example := range examples {
+		name := filepath.Base(example)
+		t.Run(name, func(t *testing.T) {
+			env := loadTestEnvelope(t, filepath.Join("pint", "ae", name))
+			doc, err := ubl.ExportInvoice(env, ubl.WithFormat(peppolubl.FormatAE))
+			require.NoError(t, err)
+			first, err := ubl.Encode(doc)
+			require.NoError(t, err)
+
+			in, err := ubl.Decode(first)
+			require.NoError(t, err)
+			out, err := ubl.Import(in)
+			require.NoError(t, err)
+			require.NoError(t, out.Calculate())
+			require.NoError(t, out.Validate())
+			doc, err = ubl.ExportInvoice(out, ubl.WithFormat(peppolubl.FormatAE))
+			require.NoError(t, err)
+			second, err := ubl.Encode(doc)
+			require.NoError(t, err)
+
+			assert.Equal(t, string(first), string(second))
+		})
+	}
+}
+
 // TestImportAESellerTIN checks that a seller with a TIN and no TRN, as out of
 // scope documents allow, keeps the TIN as a tax registration when imported,
 // instead of getting it as its tax ID.
