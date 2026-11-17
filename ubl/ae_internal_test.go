@@ -900,7 +900,7 @@ func TestExportAELineAmounts(t *testing.T) {
 
 	t.Run("standard rated line gets its VAT and the total with VAT", func(t *testing.T) {
 		out := line("S")
-		exportAELineAmounts(out, goblLine("10486.00", tax.KeyStandard, num.NewPercentage(5, 2)), currency.AED)
+		exportAELineAmounts(out, goblLine("10486.00", tax.KeyStandard, num.NewPercentage(5, 2)), currency.AED, nil)
 		ext := out.ItemPriceExtension
 		require.NotNil(t, ext)
 		assert.Equal(t, "11010.30", ext.Amount.Value)
@@ -911,10 +911,21 @@ func TestExportAELineAmounts(t *testing.T) {
 
 	t.Run("line VAT is rounded to the currency", func(t *testing.T) {
 		out := line("S")
-		exportAELineAmounts(out, goblLine("99.99", tax.KeyStandard, num.NewPercentage(5, 2)), currency.USD)
+		exportAELineAmounts(out, goblLine("99.99", tax.KeyStandard, num.NewPercentage(5, 2)), currency.USD, nil)
 		assert.Equal(t, "5.00", out.ItemPriceExtension.TaxTotal[0].TaxAmount.Value)
 		assert.Equal(t, "104.99", out.ItemPriceExtension.Amount.Value)
-		assert.Equal(t, "USD", *out.ItemPriceExtension.Amount.CurrencyID, "document currency, as in the examples")
+		assert.Equal(t, "USD", *out.ItemPriceExtension.Amount.CurrencyID, "no rate, so the document currency")
+	})
+
+	t.Run("other currencies are converted to AED", func(t *testing.T) {
+		out := line("S")
+		rate := &currency.ExchangeRate{From: currency.USD, To: currency.AED, Amount: num.MakeAmount(367285, 5)}
+		exportAELineAmounts(out, goblLine("99.99", tax.KeyStandard, num.NewPercentage(5, 2)), currency.USD, rate)
+		ext := out.ItemPriceExtension
+		assert.Equal(t, "AED", *ext.Amount.CurrencyID)
+		assert.Equal(t, "AED", *ext.TaxTotal[0].TaxAmount.CurrencyID)
+		assert.Equal(t, "18.36", ext.TaxTotal[0].TaxAmount.Value, "5.00 USD")
+		assert.Equal(t, "385.61", ext.Amount.Value, "99.99 USD is 367.25 AED, plus the VAT")
 	})
 
 	t.Run("zero rated and reverse charge lines get a zero VAT amount", func(t *testing.T) {
@@ -923,7 +934,7 @@ func TestExportAELineAmounts(t *testing.T) {
 			key      cbc.Key
 		}{{"Z", tax.KeyZero}, {"AE", tax.KeyReverseCharge}} {
 			out := line(c.category)
-			exportAELineAmounts(out, goblLine("200.00", c.key, nil), currency.AED)
+			exportAELineAmounts(out, goblLine("200.00", c.key, nil), currency.AED, nil)
 			ext := out.ItemPriceExtension
 			assert.Equal(t, "200.00", ext.Amount.Value, c.category)
 			require.Len(t, ext.TaxTotal, 1, c.category)
@@ -933,14 +944,14 @@ func TestExportAELineAmounts(t *testing.T) {
 
 	t.Run("exempt lines get no VAT amount", func(t *testing.T) {
 		out := line("E")
-		exportAELineAmounts(out, goblLine("120.00", tax.KeyExempt, nil), currency.AED)
+		exportAELineAmounts(out, goblLine("120.00", tax.KeyExempt, nil), currency.AED, nil)
 		assert.Equal(t, "120.00", out.ItemPriceExtension.Amount.Value)
 		assert.Empty(t, out.ItemPriceExtension.TaxTotal)
 	})
 
 	t.Run("lines without a total are left alone", func(t *testing.T) {
 		out := line("S")
-		exportAELineAmounts(out, &bill.Line{}, currency.AED)
+		exportAELineAmounts(out, &bill.Line{}, currency.AED, nil)
 		assert.Nil(t, out.ItemPriceExtension)
 	})
 }

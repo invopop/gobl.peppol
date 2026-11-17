@@ -176,9 +176,9 @@
       </cac:AllowanceCharge>
     </cac:Price>
     <cac:ItemPriceExtension>
-      <cbc:Amount currencyID="USD">1050.00</cbc:Amount>
+      <cbc:Amount currencyID="AED">3856.49</cbc:Amount>
       <cac:TaxTotal>
-        <cbc:TaxAmount currencyID="USD">50.00</cbc:TaxAmount>
+        <cbc:TaxAmount currencyID="AED">183.64</cbc:TaxAmount>
       </cac:TaxTotal>
     </cac:ItemPriceExtension>
   </cac:InvoiceLine>
@@ -211,9 +211,9 @@
       </cac:AllowanceCharge>
     </cac:Price>
     <cac:ItemPriceExtension>
-      <cbc:Amount currencyID="USD">500.00</cbc:Amount>
+      <cbc:Amount currencyID="AED">1836.43</cbc:Amount>
       <cac:TaxTotal>
-        <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
+        <cbc:TaxAmount currencyID="AED">0.00</cbc:TaxAmount>
       </cac:TaxTotal>
     </cac:ItemPriceExtension>
   </cac:InvoiceLine>
@@ -248,7 +248,7 @@
       </cac:AllowanceCharge>
     </cac:Price>
     <cac:ItemPriceExtension>
-      <cbc:Amount currencyID="USD">120.00</cbc:Amount>
+      <cbc:Amount currencyID="AED">440.74</cbc:Amount>
     </cac:ItemPriceExtension>
   </cac:InvoiceLine>
   <cac:InvoiceLine>
@@ -284,9 +284,9 @@
       </cac:AllowanceCharge>
     </cac:Price>
     <cac:ItemPriceExtension>
-      <cbc:Amount currencyID="USD">99.99</cbc:Amount>
+      <cbc:Amount currencyID="AED">367.25</cbc:Amount>
       <cac:TaxTotal>
-        <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
+        <cbc:TaxAmount currencyID="AED">0.00</cbc:TaxAmount>
       </cac:TaxTotal>
     </cac:ItemPriceExtension>
   </cac:InvoiceLine>

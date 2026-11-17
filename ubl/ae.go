@@ -931,10 +931,14 @@ func extensionHasCode(key cbc.Key, code cbc.Code) bool {
 // exportAELines completes the UBL lines, which gobl.ubl writes in the same
 // order as the invoice's lines.
 func exportAELines(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
+	var rate *currency.ExchangeRate
+	if inv.Currency != currency.AED {
+		rate = currency.MatchExchangeRate(inv.ExchangeRates, inv.Currency, currency.AED)
+	}
 	for i := range lines {
 		exportAELine(&lines[i])
 		if len(lines) == len(inv.Lines) {
-			exportAELineAmounts(&lines[i], inv.Lines[i], inv.Currency)
+			exportAELineAmounts(&lines[i], inv.Lines[i], inv.Currency, rate)
 			exportAELineExemption(&lines[i], inv.Lines[i], inv.Tax)
 			exportAELineSAC(&lines[i])
 			exportAELineGoods(&lines[i], inv.Lines[i])
@@ -972,13 +976,21 @@ func exportAELine(line *goblubl.InvoiceLine) {
 
 // exportAELineAmounts writes the line amount payable (BTAE-10) and the line VAT
 // amount (BTAE-08) in cac:ItemPriceExtension, which every line needs
-// (IBR-194-AE, IBR-104-AE). Despite their names, the official examples write
-// both in the document currency, not in AED. GOBL keeps no VAT per line, so it
-// is the line total at the line's rate, rounded to the currency. Exempt lines
-// get no VAT amount (IBR-163-AE), and zero rated, reverse charge and margin
-// scheme lines a zero one (IBR-165-AE, IBR-162-AE, as the official margin
-// scheme example).
-func exportAELineAmounts(line *goblubl.InvoiceLine, l *bill.Line, cur currency.Code) {
+// (IBR-194-AE, IBR-104-AE). Both are in AED, as their names and IBR-104-AE
+// say, so for invoices in another currency they are converted with the rate
+// to AED. The implementation guide (section 3.1.1) asks for AED whatever the
+// invoice currency, and IBR-126 leaves cac:ItemPriceExtension out of the
+// document currency check as amounts in the tax currency, which IBR-140-AE
+// fixes to AED. No test checks their currency. The two official examples in
+// another currency write them in USD, but both are zero rated exports, so
+// their VAT is zero either way. Without a rate, which the PINT addon requires
+// (GOBL-PEPPOL-PINT-BILL-INVOICE-22), they stay in the document currency.
+//
+// GOBL keeps no VAT per line, so it is the line total at the line's rate,
+// rounded to the document currency, then converted. Exempt lines get no VAT
+// amount (IBR-163-AE), and zero rated, reverse charge and margin scheme lines
+// a zero one (IBR-165-AE, IBR-162-AE, as the official margin scheme example).
+func exportAELineAmounts(line *goblubl.InvoiceLine, l *bill.Line, cur currency.Code, rate *currency.ExchangeRate) {
 	if l == nil || l.Total == nil {
 		return
 	}
@@ -986,12 +998,18 @@ func exportAELineAmounts(line *goblubl.InvoiceLine, l *bill.Line, cur currency.C
 	if def == nil {
 		return
 	}
-	total := def.Rescale(*l.Total)
-	ext := &goblubl.ItemPriceExtension{Amount: aeAmount(total, cur)}
+	out := cur
+	convert := func(a num.Amount) num.Amount { return a }
+	if rate != nil {
+		out = currency.AED
+		convert = rate.Convert
+	}
+	total := convert(def.Rescale(*l.Total))
+	ext := &goblubl.ItemPriceExtension{Amount: aeAmount(total, out)}
 	if vat, ok := aeLineVAT(line, l); ok {
-		vat = def.Rescale(vat)
-		ext.Amount = aeAmount(total.Add(vat), cur)
-		ext.TaxTotal = []goblubl.TaxTotal{{TaxAmount: aeAmount(vat, cur)}}
+		vat = convert(def.Rescale(vat))
+		ext.Amount = aeAmount(total.Add(vat), out)
+		ext.TaxTotal = []goblubl.TaxTotal{{TaxAmount: aeAmount(vat, out)}}
 	}
 	line.ItemPriceExtension = ext
 }
