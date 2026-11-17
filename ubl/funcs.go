@@ -1,12 +1,14 @@
 package ubl
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/invopop/gobl"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/org"
@@ -59,6 +61,38 @@ func importInvoiceResponse(_ *goblubl.Format, doc goblubl.Document, env *gobl.En
 		}
 	}
 	return nil
+}
+
+// importEndpoints adds the seller's (BT-34) and buyer's (BT-49) electronic
+// address as an endpoint, since Peppol documents always arrive through Peppol.
+func importEndpoints(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error {
+	inv, ok := env.Extract().(*bill.Invoice)
+	in, ok2 := doc.(*goblubl.Invoice)
+	if !ok || !ok2 {
+		return nil
+	}
+	if p := in.AccountingSupplierParty.Party; p != nil && inv.Supplier != nil {
+		setEndpoint(inv.Supplier, p.EndpointID)
+	}
+	if p := in.AccountingCustomerParty.Party; p != nil && inv.Customer != nil {
+		setEndpoint(inv.Customer, p.EndpointID)
+	}
+	return nil
+}
+
+// setEndpoint adds the party's endpoint for an EAS scheme and address, mailto
+// for EM and ISO 6523 otherwise, unless it has one for that URI scheme.
+func setEndpoint(party *org.Party, eID *goblubl.EndpointID) {
+	if eID == nil || eID.SchemeID == "" || eID.Value == "" {
+		return
+	}
+	uri := cbc.URI(fmt.Sprintf("%s::%s:%s", iso.ActorIDScheme, eID.SchemeID, eID.Value))
+	if eID.SchemeID == goblubl.SchemeIDEmail {
+		uri = cbc.URI("mailto:" + eID.Value)
+	}
+	if party.Endpoint(uri.Scheme()) == nil {
+		party.Endpoints = append(party.Endpoints, &org.Endpoint{URI: uri})
+	}
 }
 
 // importPINT applies the Peppol PINT rules to an imported invoice.

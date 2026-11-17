@@ -4,8 +4,10 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "61abbdf53cdfd276440d79631a83e958d47146839549c0f020eaa2b36faf8cce"
-		}
+			"val": "5e5e39456bd133b603414787f56c890fb03f7f37b8bcd63ad7449d45c1f73759"
+		},
+		"from": "iso6523-actorid-upis::0195:SGTST123457890SC",
+		"to": "iso6523-actorid-upis::0195:SGUEN199912345A"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
@@ -59,6 +61,11 @@
 					}
 				}
 			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0195:SGTST123457890SC"
+				}
+			],
 			"inboxes": [
 				{
 					"scheme": "0195",
@@ -107,6 +114,11 @@
 					"name": {
 						"given": "Pon Johnson"
 					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0195:SGUEN199912345A"
 				}
 			],
 			"inboxes": [

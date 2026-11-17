@@ -30,4 +30,5 @@ var FormatBIS = goblcii.Format{
 	Attachments: true,
 	VESID:       "eu.cen.en16931:cii:1.3.16",
 	ExportFuncs: []goblcii.ExportFunc{exportBISBilling},
+	ImportFuncs: []goblcii.ImportFunc{importEndpoints},
 }

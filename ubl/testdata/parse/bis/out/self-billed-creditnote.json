@@ -4,8 +4,10 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "01608446c93fc728e82a6ffbc6762b9e11198843ec7c3184329b6010f1c67e1a"
-		}
+			"val": "d0966f4d9e44f96679ab334982e63a6473c120e5490a4455f9da0a6dc5e3f214"
+		},
+		"from": "iso6523-actorid-upis::0002:FR23342",
+		"to": "iso6523-actorid-upis::0088:9482348239847239874"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
@@ -46,6 +48,11 @@
 				},
 				{
 					"code": "99887766"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0088:9482348239847239874"
 				}
 			],
 			"inboxes": [
@@ -91,6 +98,11 @@
 					"name": {
 						"given": "Lisa Johnson"
 					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0002:FR23342"
 				}
 			],
 			"inboxes": [
