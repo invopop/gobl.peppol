@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "14c06bfb428554fe2b384e85f4d9eba22850ae9cd5cfc8e334830caf3ede3a2e"
+			"val": "90574999a3a16f69c2bb67f50382d58a25f1ddac42678ec20829e60aa531c6c3"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -149,7 +149,23 @@
 						}
 					}
 				],
-				"total": "1900.00"
+				"total": "1900.00",
+				"notes": [
+					{
+						"key": "general",
+						"text": "Delivered in two batches.",
+						"ext": {
+							"untdid-text-subject": "AAI"
+						}
+					},
+					{
+						"key": "general",
+						"text": "Packed on pallets.",
+						"ext": {
+							"untdid-text-subject": "AAI"
+						}
+					}
+				]
 			},
 			{
 				"i": 2,
@@ -314,6 +330,22 @@
 			"tax": "103.95",
 			"total_with_tax": "2182.95",
 			"payable": "2182.95"
-		}
+		},
+		"notes": [
+			{
+				"key": "general",
+				"text": "Goods remain the property of the seller until paid in full.",
+				"ext": {
+					"untdid-text-subject": "AAI"
+				}
+			},
+			{
+				"key": "general",
+				"text": "Please quote the invoice number when paying.",
+				"ext": {
+					"untdid-text-subject": "AAI"
+				}
+			}
+		]
 	}
 }

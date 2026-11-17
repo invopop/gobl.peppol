@@ -65,6 +65,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	}
 	exportAEUUID(out, inv)
 	exportAEIssueTime(out, inv)
+	out.Note = aeJoinNotes(out.Note)
 	exportAETransactionType(out, inv)
 	exportAECreditNoteReason(out, inv)
 	exportAEBillingFrequency(out, inv)
@@ -945,8 +946,23 @@ func exportAELines(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 	}
 }
 
-// exportAELine completes a line's price details and VAT rate.
+// aeJoinNotes joins the notes into one, separated by a blank line, as PINT
+// allows a single note on the document and on each line (ibr-sr-51,
+// ibr-sr-34). A joined note is imported back as a single note.
+//
+// TODO: these are shared PINT rules, and EN 16931 has the line one too
+// (UBL-SR-34), so FormatPINT and FormatAUNZ need the same, and FormatBIS on
+// its lines.
+func aeJoinNotes(notes []string) []string {
+	if len(notes) < 2 {
+		return notes
+	}
+	return []string{strings.Join(notes, "\n\n")}
+}
+
+// exportAELine completes a line's notes, price details and VAT rate.
 func exportAELine(line *goblubl.InvoiceLine) {
+	line.Note = aeJoinNotes(line.Note)
 	exportAEPrice(line)
 	if line.Item != nil && line.Item.ClassifiedTaxCategory != nil {
 		c := line.Item.ClassifiedTaxCategory

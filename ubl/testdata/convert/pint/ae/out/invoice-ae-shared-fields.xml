@@ -9,6 +9,7 @@
   <cbc:IssueTime>17:31:00</cbc:IssueTime>
   <cbc:DueDate>2025-02-28</cbc:DueDate>
   <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>#AAI#Goods remain the property of the seller until paid in full.&#xA;&#xA;#AAI#Please quote the invoice number when paying.</cbc:Note>
   <cbc:TaxPointDate>2025-01-28</cbc:TaxPointDate>
   <cbc:DocumentCurrencyCode>AED</cbc:DocumentCurrencyCode>
   <cac:OrderReference>
@@ -201,6 +202,7 @@
   </cac:LegalMonetaryTotal>
   <cac:InvoiceLine>
     <cbc:ID>1</cbc:ID>
+    <cbc:Note>#AAI#Delivered in two batches.&#xA;&#xA;#AAI#Packed on pallets.</cbc:Note>
     <cbc:InvoicedQuantity unitCode="C62">10</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="AED">1900.00</cbc:LineExtensionAmount>
     <cac:AllowanceCharge>

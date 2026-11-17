@@ -985,6 +985,12 @@ func TestExportAEExchangeRate(t *testing.T) {
 	})
 }
 
+func TestAEJoinNotes(t *testing.T) {
+	assert.Nil(t, aeJoinNotes(nil))
+	assert.Equal(t, []string{"First"}, aeJoinNotes([]string{"First"}))
+	assert.Equal(t, []string{"First\n\nSecond"}, aeJoinNotes([]string{"First", "Second"}))
+}
+
 func TestExportAEIssueTime(t *testing.T) {
 	out := new(goblubl.Invoice)
 	exportAEIssueTime(out, &bill.Invoice{})

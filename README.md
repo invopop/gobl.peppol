@@ -122,7 +122,9 @@ item's type of goods or services subject to the reverse charge as its
 `goods`, `services` or `goods-services` get the item type `G`, `S` or `B`, and
 identities labelled `SAC` are written as service accounting codes. The
 delivery's ICC Incoterms (`icc-incoterms-2020` or `-2010`) are written as the
-delivery terms.
+delivery terms. Several notes on the document, or on a line, are joined into
+one separated by a blank line, as PINT allows a single note on each
+(ibr-sr-51, ibr-sr-34), and are imported back as a single note.
 
 **Profit margin scheme.** A UAE supply under the profit margin scheme takes the AE regime's
 `margin-scheme` tag, with the `exempt` VAT key on every line:
