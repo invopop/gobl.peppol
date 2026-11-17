@@ -86,6 +86,7 @@
       <cac:TaxCategory>
         <cbc:ID>N</cbc:ID>
         <cbc:Percent>5</cbc:Percent>
+        <cbc:TaxExemptionReason>VAT charged under the Profit Margin Scheme</cbc:TaxExemptionReason>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
@@ -112,6 +113,7 @@
       <cac:ClassifiedTaxCategory>
         <cbc:ID>N</cbc:ID>
         <cbc:Percent>5</cbc:Percent>
+        <cbc:TaxExemptionReason>VAT charged under the Profit Margin Scheme</cbc:TaxExemptionReason>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>

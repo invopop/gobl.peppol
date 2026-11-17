@@ -5,12 +5,12 @@ import (
 
 	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/addons/eu/en16931"
+	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/norm"
 	"github.com/invopop/gobl/num"
-	aeregime "github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
@@ -63,14 +63,56 @@ func TestTaxComboNormalization(t *testing.T) {
 		assert.Equal(t, "S", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
 	})
 
-	t.Run("margin scheme maps to N only on UAE documents", func(t *testing.T) {
-		c := &tax.Combo{Category: tax.CategoryVAT, Key: aeregime.TaxKeyMarginScheme}
-		norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(l10n.AE.Tax()))
-		assert.Equal(t, "N", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
+	t.Run("exempt lines map to N only on UAE margin scheme invoices", func(t *testing.T) {
+		normalized := func(regime l10n.TaxCountryCode) *bill.Invoice {
+			inv := &bill.Invoice{
+				Tags:  tax.WithTags(pint.TagMarginScheme),
+				Lines: []*bill.Line{{Taxes: tax.Set{{Category: tax.CategoryVAT, Key: tax.KeyExempt}}}},
+				Tax: &bill.Tax{Notes: []*tax.Note{{
+					Category: tax.CategoryVAT,
+					Key:      pint.TagMarginScheme,
+					Text:     "VAT charged under the Profit Margin Scheme",
+				}}},
+			}
+			norm.Normalize(inv, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(regime))
+			return inv
+		}
 
-		c = &tax.Combo{Category: tax.CategoryVAT, Key: aeregime.TaxKeyMarginScheme}
-		norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(l10n.SG.Tax()))
-		assert.NotEqual(t, "N", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
+		inv := normalized(l10n.AE.Tax())
+		assert.Equal(t, "N", inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory).String())
+		assert.Equal(t, "N", inv.Tax.Notes[0].Ext.Get(untdid.ExtKeyTaxCategory).String())
+
+		inv = normalized(l10n.SG.Tax())
+		assert.Equal(t, "E", inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory).String())
+		assert.Empty(t, inv.Tax.Notes[0].Ext)
+	})
+}
+
+func TestMarginSchemeNoteNormalizationAE(t *testing.T) {
+	normalize := func(n *tax.Note) {
+		norm.Normalize(n, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(l10n.AE.Tax()))
+	}
+
+	t.Run("the statement gets the N category", func(t *testing.T) {
+		n := &tax.Note{Category: tax.CategoryVAT, Key: pint.TagMarginScheme, Text: "VAT charged under the Profit Margin Scheme"}
+		normalize(n)
+		assert.Equal(t, "N", n.Ext.Get(untdid.ExtKeyTaxCategory).String())
+	})
+
+	t.Run("an N note without a key gets the margin scheme key", func(t *testing.T) {
+		n := &tax.Note{
+			Category: tax.CategoryVAT,
+			Text:     "VAT charged under the Profit Margin Scheme",
+			Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: "N"}),
+		}
+		normalize(n)
+		assert.Equal(t, pint.TagMarginScheme, n.Key)
+	})
+
+	t.Run("other notes are left alone", func(t *testing.T) {
+		n := &tax.Note{Category: tax.CategoryVAT, Key: tax.KeyReverseCharge, Text: "Reverse Charge"}
+		normalize(n)
+		assert.Equal(t, "AE", n.Ext.Get(untdid.ExtKeyTaxCategory).String())
 	})
 }
 
@@ -133,7 +175,7 @@ func TestTaxComboRulesAE(t *testing.T) {
 		}
 		assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(5, 2)), ae))
 		assert.NoError(t, validateIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(0, 2)), ae))
-		assert.NoError(t, validateIn(vatCombo(aeregime.TaxKeyMarginScheme, "N", nil), ae))
+		assert.NoError(t, validateIn(vatCombo(tax.KeyExempt, "N", nil), ae))
 	})
 
 	t.Run("margin scheme category is rejected outside AE", func(t *testing.T) {

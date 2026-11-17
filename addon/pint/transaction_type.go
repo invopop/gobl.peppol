@@ -4,6 +4,7 @@ import (
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
+	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/tax"
 )
 
@@ -16,7 +17,8 @@ const (
 	// consideration.
 	TagDeemedSupply cbc.Key = "deemed-supply"
 	// TagMarginScheme marks a supply of goods under the profit margin scheme.
-	TagMarginScheme cbc.Key = "margin-scheme"
+	// The UAE regime defines it, with the statement the invoice must carry.
+	TagMarginScheme = ae.TagMarginScheme
 	// TagSummary marks a summary invoice: more than one supply to the same
 	// person in the same calendar month.
 	TagSummary cbc.Key = "summary"
@@ -143,11 +145,6 @@ var transactionTypeTags = []*cbc.Definition{
 		Key:  TagDeemedSupply,
 		Name: i18n.String{i18n.EN: "Deemed Supply"},
 		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services without consideration."},
-	},
-	{
-		Key:  TagMarginScheme,
-		Name: i18n.String{i18n.EN: "Profit Margin Scheme"},
-		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods under the profit margin scheme."},
 	},
 	{
 		Key:  TagSummary,

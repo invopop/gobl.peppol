@@ -120,10 +120,24 @@ credit note reason as `cac:DiscrepancyResponse`, the billing frequency in
 item's type of goods or services subject to the reverse charge as its
 `cbc:NatureCode`, with its GTIN as the standard identifier. Items keyed
 `goods`, `services` or `goods-services` get the item type `G`, `S` or `B`, and
-identities labelled `SAC` are written as service accounting codes. Lines
-with the AE regime's `margin-scheme` VAT key get the `N` category at 5%, with
-no VAT amount, and the delivery's ICC Incoterms (`icc-incoterms-2020` or
-`-2010`) are written as the delivery terms.
+identities labelled `SAC` are written as service accounting codes. The
+delivery's ICC Incoterms (`icc-incoterms-2020` or `-2010`) are written as the
+delivery terms.
+
+**Profit margin scheme.** A UAE supply under the profit margin scheme takes the AE regime's
+`margin-scheme` tag, with the `exempt` VAT key on every line:
+
+- Issue one invoice per margin scheme sale, with no other VAT treatments and
+  no document-level discounts or charges (IBR-116-AE).
+- The lines go out in the `N` category at 5%, with no VAT amount.
+- The statement that VAT is charged under the scheme, which the regime's
+  scenario adds as a VAT note, goes out as the VAT exemption reason text of
+  the `N` breakdown and lines.
+- The margin VAT is reported in the VAT return, not on the invoice.
+
+Without the tag, `exempt` lines are a normal exempt supply (`E`). Anyone
+reading GOBL data must identify margin scheme lines by the tag together with
+the `exempt` key, never by the key alone.
 
 It also writes the PINT fields gobl.ubl leaves out: the issue time; the
 customs reference number (`peppol-pint-ae-customs-reference`) as
@@ -147,7 +161,8 @@ identity keys and fields, the transaction type back as its extension and
 tags, and the credit note reason, billing frequency, line exemption
 reasons and item goods types back as their extensions, and the item
 types and service accounting codes back as item keys and identities, and
-the `N` category back as the `margin-scheme` key, and the delivery terms back
+the `N` category back as the `exempt` key with the `margin-scheme` tag, and
+the delivery terms back
 as the `icc-incoterms-2020` extension, and the seller and buyer electronic
 addresses as endpoints, and the customs reference, discount and charge
 exemption reasons, line exemption reason texts, batch numbers, scheme

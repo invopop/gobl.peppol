@@ -1197,48 +1197,115 @@ func TestBillExemptionRulesAE(t *testing.T) {
 
 func TestBillMarginSchemeRulesAE(t *testing.T) {
 	const (
-		faultDiscount   = "GOBL-PEPPOL-PINT-BILL-DISCOUNT-02"
-		faultCharge     = "GOBL-PEPPOL-PINT-BILL-CHARGE-02"
-		faultOnlyMargin = "GOBL-PEPPOL-PINT-BILL-INVOICE-41"
+		faultDiscount      = "GOBL-PEPPOL-PINT-BILL-DISCOUNT-02"
+		faultCharge        = "GOBL-PEPPOL-PINT-BILL-CHARGE-02"
+		faultLineExemption = "GOBL-PEPPOL-PINT-BILL-LINE-03"
+		faultOnlyMargin    = "GOBL-PEPPOL-PINT-BILL-INVOICE-41"
 	)
 	margin := func(tags ...cbc.Key) *bill.Invoice {
 		inv := aeDocument(bill.InvoiceTypeStandard, tags...)
-		inv.Lines[0].Taxes = tax.Set{lineCombo(ae.TaxKeyMarginScheme)}
+		inv.Lines[0].Taxes = tax.Set{lineCombo(tax.KeyExempt)}
 		return inv
 	}
+	statements := func(inv *bill.Invoice) []*tax.Note {
+		var notes []*tax.Note
+		for _, n := range inv.Tax.Notes {
+			if n.Key == pint.TagMarginScheme {
+				notes = append(notes, n)
+			}
+		}
+		return notes
+	}
+	marginCombo := func() *tax.Combo {
+		return &tax.Combo{
+			Category: tax.CategoryVAT,
+			Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: pint.TaxCategoryMarginScheme}),
+		}
+	}
 
-	t.Run("margin scheme lines are N without VAT", func(t *testing.T) {
+	t.Run("exempt lines are N without VAT", func(t *testing.T) {
 		inv := margin(pint.TagMarginScheme)
 		assert.Empty(t, aeFaults(t, inv))
 		c := inv.Lines[0].Taxes[0]
 		assert.Equal(t, pint.TaxCategoryMarginScheme, c.Ext.Get(untdid.ExtKeyTaxCategory))
 		assert.Nil(t, c.Percent)
 		assert.True(t, inv.Totals.Tax.IsZero())
+		assert.Equal(t, inv.Totals.Sum.String(), inv.Totals.Payable.String())
+		assert.Equal(t, cbc.Code("00100000"), inv.Tax.GetExt(pint.ExtKeyTransactionType))
+	})
+
+	t.Run("adds one statement linked to N", func(t *testing.T) {
+		inv := margin(pint.TagMarginScheme)
+		require.NoError(t, inv.Calculate())
+		notes := statements(inv)
+		require.Len(t, notes, 1)
+		assert.Equal(t, pint.TaxCategoryMarginScheme, notes[0].Ext.Get(untdid.ExtKeyTaxCategory))
+
+		require.NoError(t, inv.Calculate())
+		assert.Len(t, statements(inv), 1)
+	})
+
+	t.Run("an imported statement isn't added again", func(t *testing.T) {
+		inv := margin(pint.TagMarginScheme)
+		inv.Tax = &bill.Tax{Notes: []*tax.Note{{
+			Category: tax.CategoryVAT,
+			Text:     "VAT charged under the Profit Margin Scheme",
+			Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: pint.TaxCategoryMarginScheme}),
+		}}}
+		require.NoError(t, inv.Calculate())
+		notes := statements(inv)
+		require.Len(t, notes, 1)
+		assert.Len(t, inv.Tax.Notes, 1)
+	})
+
+	t.Run("exempt lines without the tag stay E", func(t *testing.T) {
+		inv := margin()
+		assert.Contains(t, aeFaults(t, inv), faultLineExemption)
+		assert.Equal(t, cbc.Code("E"), inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory))
+		assert.Empty(t, statements(inv))
+	})
+
+	t.Run("removing the tag maps the lines back to E", func(t *testing.T) {
+		inv := margin(pint.TagMarginScheme)
+		require.NoError(t, inv.Calculate())
+		inv.Tags = tax.Tags{}
+		require.NoError(t, inv.Calculate())
+		assert.Equal(t, cbc.Code("E"), inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory))
 	})
 
 	t.Run("discounts and charges can't be margin scheme (IBR-115-AE, IBR-114-AE)", func(t *testing.T) {
-		inv := margin()
-		inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(ae.TaxKeyMarginScheme)}}}
-		inv.Charges = []*bill.Charge{{Reason: "Delivery", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(ae.TaxKeyMarginScheme)}}}
-		out := aeFaults(t, inv)
-		assert.Contains(t, out, faultDiscount)
-		assert.Contains(t, out, faultCharge)
+		// The normalizers only give N to lines, so only a category set
+		// directly gets here.
+		ctx := []rules.WithContext{tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AE.Tax())}
+		d := &bill.Discount{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{marginCombo()}}
+		assert.ErrorContains(t, rules.Validate(d, ctx...), faultDiscount)
+		c := &bill.Charge{Reason: "Delivery", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{marginCombo()}}
+		assert.ErrorContains(t, rules.Validate(c, ctx...), faultCharge)
 
-		inv = aeDocument(bill.InvoiceTypeStandard)
+		inv := aeDocument(bill.InvoiceTypeStandard)
 		inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(tax.KeyStandard)}}}
-		out = aeFaults(t, inv)
+		out := aeFaults(t, inv)
 		assert.NotContains(t, out, faultDiscount)
 	})
 
-	t.Run("margin scheme invoices only use the margin scheme key (IBR-116-AE)", func(t *testing.T) {
+	t.Run("margin scheme invoices only have exempt lines (IBR-116-AE)", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard, pint.TagMarginScheme)
 		assert.Contains(t, aeFaults(t, inv), faultOnlyMargin)
 
 		inv = margin(pint.TagMarginScheme)
-		inv.Charges = []*bill.Charge{{Reason: "Delivery", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(tax.KeyStandard)}}}
+		inv.Lines = append(inv.Lines, &bill.Line{
+			Quantity: num.MakeAmount(1, 0),
+			Item:     &org.Item{Name: "Watch strap", Description: "Leather strap", Price: num.NewAmount(1000, 2)},
+			Taxes:    tax.Set{standardVAT()},
+		})
 		assert.Contains(t, aeFaults(t, inv), faultOnlyMargin)
 
-		assert.NotContains(t, aeFaults(t, margin()), faultOnlyMargin, "N lines don't need the tag")
+		for _, key := range []cbc.Key{tax.KeyExempt, tax.KeyStandard} {
+			inv = margin(pint.TagMarginScheme)
+			inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(key)}}}
+			inv.Charges = []*bill.Charge{{Reason: "Delivery", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(key)}}}
+			assert.Contains(t, aeFaults(t, inv), faultOnlyMargin, key)
+		}
 	})
 }
 
@@ -1266,6 +1333,11 @@ func TestBillTagsOutsideAE(t *testing.T) {
 	t.Run("other documents can't use the PINT AE tags", func(t *testing.T) {
 		for _, tag := range aeTags {
 			inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard, tag)
+			if tag == pint.TagMarginScheme {
+				// The UAE regime defines it, so GOBL rejects it first.
+				assert.ErrorContains(t, inv.Calculate(), "'margin-scheme' undefined")
+				continue
+			}
 			assert.Contains(t, faults(t, inv), faultTags, tag)
 		}
 	})

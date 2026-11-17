@@ -353,7 +353,7 @@ func billInvoiceRules() *rules.Set {
 			// (BR-32, BR-37).
 			rules.When(
 				is.Func("margin scheme", invoiceIsMarginScheme),
-				rules.Assert("41", "margin scheme invoice must only use the margin scheme VAT key (IBR-116-AE)",
+				rules.Assert("41", "margin scheme invoice must only have exempt lines, mapped to the margin scheme category N, and no other VAT treatments (IBR-116-AE)",
 					is.Func("only margin scheme VAT", invoiceTaxesAreMarginScheme),
 				),
 			),

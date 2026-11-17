@@ -55,7 +55,8 @@ func init() {
 			norm.For(normalizeTransactionType),
 			norm.For(normalizeRounding),
 			norm.For(normalizeIdentityScopes),
-			norm.For(normalizeTaxComboAE),
+			norm.For(normalizeMarginSchemeAE),
+			norm.For(normalizeMarginSchemeNoteAE),
 		),
 	)
 }
@@ -98,6 +99,14 @@ func newV1Addon() *tax.AddonDef {
 				UAE invoices get the PINT AE transaction type from their tags:
 				"free-trade-zone", "deemed-supply", "margin-scheme", "summary",
 				"continuous-supply", "disclosed-agent", "e-commerce" and "export".
+
+				A UAE supply under the profit margin scheme takes the regime's
+				"margin-scheme" tag, with the "exempt" VAT key on every line. Issue
+				one invoice per sale, with no other VAT treatments and no
+				document-level discounts or charges. The lines get the PINT AE
+				category "N", written at 5% with no VAT amount, and the regime's
+				statement goes out as the VAT exemption reason of the "N" breakdown.
+				The margin VAT is reported in the VAT return.
 			`),
 		},
 		Sources: []*cbc.Source{

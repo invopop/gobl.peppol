@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "4ccaf2567c4378cb75d067ea0e75eeb335b5f8ecd0daa5d2ab6e97ff5cba8efc"
+			"val": "c26c3f64b0a1bd3704a2504990810aeea8a10a0cedbc352f4fe33d5c83a5fc4c"
 		},
 		"from": "iso6523-actorid-upis::0235:112345678900003",
 		"to": "iso6523-actorid-upis::0235:112345679000003"
@@ -29,7 +29,17 @@
 			"ext": {
 				"peppol-pint-ae-transaction-type": "00100000",
 				"untdid-document-type": "380"
-			}
+			},
+			"notes": [
+				{
+					"cat": "VAT",
+					"key": "margin-scheme",
+					"text": "VAT charged under the Profit Margin Scheme",
+					"ext": {
+						"untdid-tax-category": "N"
+					}
+				}
+			]
 		},
 		"supplier": {
 			"name": "Supplier Legal Name",
@@ -150,7 +160,7 @@
 				"taxes": [
 					{
 						"cat": "VAT",
-						"key": "margin-scheme",
+						"key": "exempt",
 						"ext": {
 							"untdid-tax-category": "N"
 						}
@@ -196,7 +206,7 @@
 						"code": "VAT",
 						"rates": [
 							{
-								"key": "margin-scheme",
+								"key": "exempt",
 								"ext": {
 									"untdid-tax-category": "N"
 								},

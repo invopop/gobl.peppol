@@ -145,9 +145,11 @@ func importAEOutsideScope(in *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// importAEMarginScheme gives the margin scheme VAT key to the combos gobl.ubl
-// imports with the N category and a 5% rate. Without a key, EN 16931 would
-// read them as standard rated, which charges VAT the invoice doesn't.
+// importAEMarginScheme reads the combos gobl.ubl imports with the N category
+// and a 5% rate as exempt, with the margin-scheme tag, the way a user writes a
+// margin scheme supply. Without a key, EN 16931 would read them as standard
+// rated, which charges VAT the invoice doesn't. The tag normally comes from
+// the transaction type, but keeps N on the lines when the flag is missing.
 func importAEMarginScheme(inv *bill.Invoice) {
 	var sets []tax.Set
 	for _, l := range inv.Lines {
@@ -159,13 +161,18 @@ func importAEMarginScheme(inv *bill.Invoice) {
 	for _, c := range inv.Charges {
 		sets = append(sets, c.Taxes)
 	}
+	found := false
 	for _, set := range sets {
 		for _, c := range set {
 			if c.Category == tax.CategoryVAT && c.Ext.Get(untdid.ExtKeyTaxCategory) == pint.TaxCategoryMarginScheme {
-				c.Key = ae.TaxKeyMarginScheme
+				c.Key = tax.KeyExempt
 				c.Percent = nil
+				found = true
 			}
 		}
+	}
+	if found && !inv.HasTags(pint.TagMarginScheme) {
+		inv.Tags.List = append(inv.Tags.List, pint.TagMarginScheme)
 	}
 }
 

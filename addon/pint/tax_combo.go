@@ -2,10 +2,10 @@ package pint
 
 import (
 	"github.com/invopop/gobl/addons/eu/en16931"
+	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/num"
-	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/rules/is"
 	"github.com/invopop/gobl/tax"
@@ -62,11 +62,42 @@ func normalizeTaxCombo(tc *tax.Combo) {
 	}
 }
 
-// normalizeTaxComboAE maps the AE regime's margin scheme key to the PINT AE
-// margin scheme category on UAE documents.
-func normalizeTaxComboAE(tc *tax.Combo) {
-	if tc != nil && tc.Key == ae.TaxKeyMarginScheme {
-		tc.Ext = tc.Ext.Set(untdid.ExtKeyTaxCategory, TaxCategoryMarginScheme)
+// normalizeMarginSchemeAE gives the PINT AE margin scheme category to the
+// exempt VAT lines of a UAE margin scheme invoice. The line combos already have
+// E from their key, as norm reaches them before the invoice, and get it back
+// once the tag is removed. Discounts and charges are left alone, so the
+// discount and charge rules 02 and rule 41 reject them (IBR-114-AE,
+// IBR-115-AE, IBR-116-AE).
+func normalizeMarginSchemeAE(inv *bill.Invoice) {
+	if inv == nil || !inv.HasTags(TagMarginScheme) {
+		return
+	}
+	for _, l := range inv.Lines {
+		if l == nil {
+			continue
+		}
+		for _, c := range l.Taxes {
+			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt {
+				c.Ext = c.Ext.Set(untdid.ExtKeyTaxCategory, TaxCategoryMarginScheme)
+			}
+		}
+	}
+}
+
+// normalizeMarginSchemeNoteAE links the regime's margin scheme statement to
+// the margin scheme category, so it goes out as the reason on the N VAT
+// breakdown. It is a note normalizer because the scenario adds the note after
+// the invoice is normalized. The reverse mapping gives the key back to an
+// imported statement, so the scenario doesn't add a second one.
+func normalizeMarginSchemeNoteAE(n *tax.Note) {
+	if n == nil || n.Category != tax.CategoryVAT {
+		return
+	}
+	if n.Key.IsEmpty() && n.Ext.Get(untdid.ExtKeyTaxCategory) == TaxCategoryMarginScheme {
+		n.Key = TagMarginScheme
+	}
+	if n.Key == TagMarginScheme {
+		n.Ext = n.Ext.Set(untdid.ExtKeyTaxCategory, TaxCategoryMarginScheme)
 	}
 }
 

@@ -446,13 +446,18 @@ func TestImportAEMarginScheme(t *testing.T) {
 	importAEMarginScheme(inv)
 
 	ms := inv.Lines[0].Taxes[0]
-	assert.Equal(t, ae.TaxKeyMarginScheme, ms.Key)
+	assert.Equal(t, tax.KeyExempt, ms.Key)
 	assert.Nil(t, ms.Percent, "margin scheme lines charge no VAT")
-	assert.Equal(t, ae.TaxKeyMarginScheme, inv.Discounts[0].Taxes[0].Key)
+	assert.Equal(t, tax.KeyExempt, inv.Discounts[0].Taxes[0].Key)
+	assert.True(t, inv.HasTags(pint.TagMarginScheme), "the tag keeps N on the lines")
 
 	other := inv.Lines[1].Taxes[0]
 	assert.Empty(t, other.Key, "other categories are left to EN 16931")
 	assert.NotNil(t, other.Percent)
+
+	inv = &bill.Invoice{Lines: []*bill.Line{{Taxes: tax.Set{combo("S")}}}}
+	importAEMarginScheme(inv)
+	assert.False(t, inv.HasTags(pint.TagMarginScheme))
 }
 
 func TestImportAEOutsideScope(t *testing.T) {
