@@ -20,8 +20,12 @@ var emirateCodes = []cbc.Code{
 const endpointSchemeUAE cbc.Code = "0235"
 
 // endpointSchemeMailto is the URI scheme of email endpoints, which gobl.ubl
-// writes as cbc:EndpointID.
+// writes as cbc:EndpointID with the scheme endpointSchemeEmail.
 const endpointSchemeMailto = "mailto"
+
+// endpointSchemeEmail is the electronic address scheme gobl.ubl writes for
+// email addresses.
+const endpointSchemeEmail cbc.Code = "EM"
 
 // partyHasIdentifier reports whether the party can be identified through a tax
 // identity code or at least one organisation identity.
@@ -73,7 +77,7 @@ func partyHasLegalIdentity(val any) bool {
 func partyHasOneIdentification(val any) bool {
 	p, ok := val.(*org.Party)
 	if !ok || p == nil {
-		return true
+		return false
 	}
 	n := 0
 	legal := false
@@ -125,7 +129,7 @@ func partyAddressHasEmirate(val any) bool {
 func partyPostalAddressHasEmirate(val any) bool {
 	p, ok := val.(*org.Party)
 	if !ok || p == nil {
-		return true
+		return false
 	}
 	a := partyFirstAddress(p)
 	inAE := a != nil && a.Country == l10n.AE.ISO()
@@ -137,7 +141,8 @@ func partyPostalAddressHasEmirate(val any) bool {
 
 // partyEndpointID returns the scheme and code of the party's electronic
 // address, chosen as gobl.ubl does for cbc:EndpointID: the first ISO 6523
-// endpoint, or else the first inbox with a scheme.
+// endpoint, or else the first email endpoint, or else the first inbox with an
+// email or a scheme. Email addresses have the scheme EM.
 func partyEndpointID(p *org.Party) (cbc.Code, string) {
 	if e := p.Endpoint(iso.ActorIDScheme); e != nil {
 		// An ISO 6523 URI reads "iso6523-actorid-upis::<scheme>:<code>".
@@ -146,8 +151,17 @@ func partyEndpointID(p *org.Party) (cbc.Code, string) {
 			return cbc.Code(scheme), code
 		}
 	}
+	if e := p.Endpoint(endpointSchemeMailto); e != nil && e.URI.Opaque() != "" {
+		return endpointSchemeEmail, e.URI.Opaque()
+	}
 	for _, ib := range p.Inboxes {
-		if ib != nil && ib.Email == "" && ib.Scheme != "" {
+		if ib == nil {
+			continue
+		}
+		if ib.Email != "" {
+			return endpointSchemeEmail, ib.Email
+		}
+		if ib.Scheme != "" {
 			return ib.Scheme, ib.Code.String()
 		}
 	}
@@ -155,25 +169,20 @@ func partyEndpointID(p *org.Party) (cbc.Code, string) {
 }
 
 // partyHasEndpointID reports whether gobl.ubl writes the party's electronic
-// address as cbc:EndpointID: an ISO 6523 or email endpoint, or an inbox. A
-// party without endpoints passes, as rule 04 reports it.
+// address as a cbc:EndpointID that PINT AE accepts: an ISO 6523 endpoint or an
+// inbox with a scheme. An email address is written with the scheme EM, which
+// is not in PINT AE's list (ibr-cl-25). A party without endpoints passes, as
+// rule 04 reports it.
 func partyHasEndpointID(val any) bool {
 	p, ok := val.(*org.Party)
-	if !ok || p == nil || len(p.Endpoints) == 0 {
+	if !ok || p == nil {
+		return false
+	}
+	if len(p.Endpoints) == 0 {
 		return true
 	}
-	if s, _ := partyEndpointID(p); s != "" {
-		return true
-	}
-	if e := p.Endpoint(endpointSchemeMailto); e != nil && e.URI.Opaque() != "" {
-		return true
-	}
-	for _, ib := range p.Inboxes {
-		if ib != nil && ib.Email != "" {
-			return true
-		}
-	}
-	return false
+	s, _ := partyEndpointID(p)
+	return s != "" && s != endpointSchemeEmail
 }
 
 // partyHasUAEEndpointWith returns a predicate that reports whether the party's

@@ -27,7 +27,21 @@ const (
 	// docTypeSelfBilledCreditNote is the code the EN 16931 scenarios set on
 	// self-billed credit notes.
 	docTypeSelfBilledCreditNote cbc.Code = "261"
+	// docTypeSelfBilledInvoice is the code the EN 16931 scenarios set on
+	// self-billed invoices.
+	docTypeSelfBilledInvoice cbc.Code = "389"
 )
+
+// docTypesAE are the UNTDID 1001 codes PINT AE accepts: ibr-cl-01's list for
+// billing, and the self-billing codes.
+var docTypesAE = []cbc.Code{
+	docTypeCommercialInvoice,
+	docTypeInvoiceOutsideScope,
+	docTypeCreditNote,
+	docTypeCreditNoteGoodsServices,
+	docTypeSelfBilledInvoice,
+	docTypeSelfBilledCreditNote,
+}
 
 // invoiceTags are the document tags the PINT addon adds to invoices.
 var invoiceTags = &tax.TagSet{

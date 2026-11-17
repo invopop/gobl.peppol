@@ -104,7 +104,7 @@ func billLineRules() *rules.Set {
 				),
 			),
 			rules.Field("seller",
-				rules.Assert("11", "line seller region must be an emirate code when the country is AE (IBR-128-AE)",
+				rules.AssertIfPresent("11", "line seller region must be an emirate code when the country is AE (IBR-128-AE)",
 					is.Func("postal address region is an emirate", partyPostalAddressHasEmirate),
 				),
 			),

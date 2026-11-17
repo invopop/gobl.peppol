@@ -116,13 +116,16 @@ func billInvoiceRules() *rules.Set {
 				),
 				// TODO: ibr-080 is a shared PINT rule, so every PINT jurisdiction
 				// needs this: rule 04 only checks that there is an endpoint, but
-				// gobl.ubl writes none as cbc:EndpointID for other URI schemes.
-				rules.Assert("14", "customer electronic address must be an ISO 6523 or email endpoint, or an inbox (IBR-080)",
+				// gobl.ubl writes none as cbc:EndpointID for other URI schemes. It
+				// writes an email address with the scheme EM, which is not in
+				// PINT AE's electronic address scheme list (ibr-cl-25). The
+				// supplier has the same gap (ibr-081).
+				rules.AssertIfPresent("14", "customer electronic address must be an ISO 6523 endpoint, or an inbox with a scheme (IBR-080, ibr-cl-25)",
 					is.Func("electronic address written as endpoint ID", partyHasEndpointID),
 				),
 				// TODO: ibr-sr-16 is a shared PINT rule, and EN 16931 has it too
 				// (UBL-SR-16), so every PINT jurisdiction and BIS need this.
-				rules.Assert("15", "customer can have at most one identity besides its first legal one and its tax ones (ibr-sr-16)",
+				rules.AssertIfPresent("15", "customer can have at most one identity besides its first legal one and its tax ones (ibr-sr-16)",
 					is.Func("at most one buyer identifier", partyHasOneIdentification),
 				),
 				// IBR-183-AE's test also accepts CL, which only its rule text's
@@ -163,7 +166,7 @@ func billInvoiceRules() *rules.Set {
 						is.Func("has tax registration", partyHasTaxRegistration),
 					),
 				),
-				rules.Assert("20", "customer must have at most one tax registration (IBR-179-AE)",
+				rules.AssertIfPresent("20", "customer must have at most one tax registration (IBR-179-AE)",
 					is.Func("at most one tax registration", partyHasAtMostOneTaxRegistration),
 				),
 			),
@@ -171,12 +174,12 @@ func billInvoiceRules() *rules.Set {
 			// AE tax representative and issuer
 			rules.Field("ordering",
 				rules.Field("seller",
-					rules.Assert("21", "tax representative region must be an emirate code when the country is AE (IBR-128-AE)",
+					rules.AssertIfPresent("21", "tax representative region must be an emirate code when the country is AE (IBR-128-AE)",
 						is.Func("postal address region is an emirate", partyPostalAddressHasEmirate),
 					),
 				),
 				rules.Field("issuer",
-					rules.Assert("22", "issuer region must be an emirate code when the country is AE (IBR-128-AE)",
+					rules.AssertIfPresent("22", "issuer region must be an emirate code when the country is AE (IBR-128-AE)",
 						is.Func("postal address region is an emirate", partyPostalAddressHasEmirate),
 					),
 				),
@@ -470,6 +473,33 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
+
+			// AE document type list
+			//
+			// PINT AE's list is shorter than EN 16931's: 380 and 480 on invoices,
+			// 381 and 81 on credit notes, and 389 and 261 for self-billing. The
+			// other codes the EN 16931 scenarios set, for pro forma, corrective
+			// and debit note types and the partial, prepayment and factoring
+			// tags, fail ibr-cl-01.
+			rules.Field("tax",
+				rules.Field("ext",
+					rules.Assert("56", "document type must be 380, 480, 381, 81, 389 or 261 (ibr-cl-01)",
+						tax.ExtensionsHasCodes(untdid.ExtKeyDocumentType, docTypesAE...),
+					),
+				),
+			),
+
+			// AE currency decimals
+			//
+			// PINT allows at most two decimals in the document totals (ibr-091,
+			// ibr-121 to ibr-125), and gobl.ubl writes them with the decimals
+			// of the currency, so every document in a currency with three or
+			// more, such as BHD, KWD or OMR, fails.
+			rules.Field("currency",
+				rules.Assert("57", "currency must have at most 2 decimals (ibr-091, ibr-121, ibr-122, ibr-123, ibr-124, ibr-125)",
+					is.Func("currency has at most 2 decimals", currencyHasAtMost2Decimals),
+				),
+			),
 		),
 
 		// Tags
@@ -480,7 +510,7 @@ func billInvoiceRules() *rules.Set {
 		// addon had tags.
 		rules.When(
 			is.Not(is.InContext(tax.RegimeIn(regimesAE...))),
-			rules.Assert("56", "PINT AE tags can only be used on UAE documents",
+			rules.Assert("58", "PINT AE tags can only be used on UAE documents",
 				is.Func("has no PINT AE tags", invoiceHasNoAETags),
 			),
 		),
@@ -565,7 +595,7 @@ func invoiceExtIn(key cbc.Key, codes ...cbc.Code) func(any) bool {
 func invoiceHasNoAETags(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {
-		return true
+		return false
 	}
 	others := bill.DefaultInvoiceTags()
 	if r := inv.RegimeDef(); r != nil {
@@ -583,6 +613,18 @@ func invoiceHasNoAETags(val any) bool {
 		}
 	}
 	return true
+}
+
+// currencyHasAtMost2Decimals reports whether a currency has two decimals or
+// fewer, the most PINT allows in the document totals (ibr-091, ibr-121 to
+// ibr-125). A missing or unknown currency fails.
+func currencyHasAtMost2Decimals(val any) bool {
+	code, ok := val.(currency.Code)
+	if !ok {
+		return false
+	}
+	def := code.Def()
+	return def != nil && def.Subunits <= 2
 }
 
 // exchangeRateToAEDHasAtMost6Decimals reports whether the exchange rate from
@@ -643,7 +685,10 @@ func invoiceHasLineComboOtherThanEorO(val any) bool {
 // (IBR-141-AE). Invoices without a value date pass.
 func pointDateBeforeIssueDate(val any) bool {
 	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil || inv.ValueDate == nil {
+	if !ok || inv == nil {
+		return false
+	}
+	if inv.ValueDate == nil {
 		return true
 	}
 	return inv.IssueDate.DaysSince(inv.ValueDate.Date) > 0

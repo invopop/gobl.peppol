@@ -308,16 +308,18 @@ func aeFaults(t *testing.T, inv *bill.Invoice) string {
 
 func TestBillDocumentRulesAE(t *testing.T) {
 	const (
-		faultSellerTRN       = "GOBL-PEPPOL-PINT-BILL-INVOICE-30"
-		faultReverseCharge   = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
-		faultBuyerLegalID    = "GOBL-PEPPOL-PINT-BILL-INVOICE-31"
-		faultLineCategory    = "GOBL-PEPPOL-PINT-BILL-INVOICE-32"
-		faultDiscountCat     = "GOBL-PEPPOL-PINT-BILL-INVOICE-33"
-		faultChargeCategory  = "GOBL-PEPPOL-PINT-BILL-INVOICE-34"
-		faultOnlyExempt      = "GOBL-PEPPOL-PINT-BILL-INVOICE-36"
-		faultCreditPointDate = "GOBL-PEPPOL-PINT-BILL-INVOICE-37"
-		faultPointDate       = "GOBL-PEPPOL-PINT-BILL-INVOICE-26"
-		faultDueDate         = "GOBL-PEPPOL-PINT-BILL-INVOICE-29"
+		faultSellerTRN        = "GOBL-PEPPOL-PINT-BILL-INVOICE-30"
+		faultReverseCharge    = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
+		faultBuyerLegalID     = "GOBL-PEPPOL-PINT-BILL-INVOICE-31"
+		faultLineCategory     = "GOBL-PEPPOL-PINT-BILL-INVOICE-32"
+		faultDiscountCat      = "GOBL-PEPPOL-PINT-BILL-INVOICE-33"
+		faultChargeCategory   = "GOBL-PEPPOL-PINT-BILL-INVOICE-34"
+		faultOnlyExempt       = "GOBL-PEPPOL-PINT-BILL-INVOICE-36"
+		faultCreditPointDate  = "GOBL-PEPPOL-PINT-BILL-INVOICE-37"
+		faultPointDate        = "GOBL-PEPPOL-PINT-BILL-INVOICE-26"
+		faultDueDate          = "GOBL-PEPPOL-PINT-BILL-INVOICE-29"
+		faultDocumentType     = "GOBL-PEPPOL-PINT-BILL-INVOICE-56"
+		faultCurrencyDecimals = "GOBL-PEPPOL-PINT-BILL-INVOICE-57"
 	)
 	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
 	outsideScope := func() *bill.Invoice {
@@ -499,12 +501,51 @@ func TestBillDocumentRulesAE(t *testing.T) {
 		}
 	})
 
+	t.Run("document type must be in the PINT AE list (ibr-cl-01)", func(t *testing.T) {
+		for name, inv := range map[string]*bill.Invoice{
+			"380": standard(),
+			"381": aeDocument(bill.InvoiceTypeCreditNote),
+			"480": outsideScope(),
+			"81":  outsideScopeCredit(),
+			"389": aeDocument(bill.InvoiceTypeStandard, tax.TagSelfBilled),
+			"261": aeDocument(bill.InvoiceTypeCreditNote, tax.TagSelfBilled),
+		} {
+			assert.NotContains(t, aeFaults(t, inv), faultDocumentType, name)
+		}
+		for name, inv := range map[string]*bill.Invoice{
+			"325 pro forma":   aeDocument(bill.InvoiceTypeProforma),
+			"384 corrective":  aeDocument(bill.InvoiceTypeCorrective),
+			"383 debit note":  aeDocument(bill.InvoiceTypeDebitNote),
+			"326 partial":     aeDocument(bill.InvoiceTypeStandard, tax.TagPartial),
+			"386 prepayment":  aeDocument(bill.InvoiceTypeStandard, tax.TagPrepayment),
+			"393 factoring":   aeDocument(bill.InvoiceTypeStandard, tax.TagFactoring),
+			"396 credit note": aeDocument(bill.InvoiceTypeCreditNote, tax.TagFactoring),
+		} {
+			assert.Contains(t, aeFaults(t, inv), faultDocumentType, name)
+		}
+	})
+
+	t.Run("currency must have at most 2 decimals (ibr-091)", func(t *testing.T) {
+		inv := standard()
+		inv.Currency = currency.BHD
+		inv.ExchangeRates = []*currency.ExchangeRate{{From: currency.BHD, To: currency.AED, Amount: num.MakeAmount(974, 2)}}
+		assert.Contains(t, aeFaults(t, inv), faultCurrencyDecimals)
+
+		for _, cur := range []currency.Code{currency.USD, currency.JPY} {
+			inv = standard()
+			inv.Currency = cur
+			inv.ExchangeRates = []*currency.ExchangeRate{{From: cur, To: currency.AED, Amount: num.MakeAmount(367, 2)}}
+			assert.NotContains(t, aeFaults(t, inv), faultCurrencyDecimals, cur)
+		}
+	})
+
 	t.Run("document rules do not apply outside AE", func(t *testing.T) {
-		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)
+		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeProforma)
+		inv.Currency = currency.BHD
 		require.NoError(t, inv.Calculate())
 		err := rules.Validate(inv, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
 		require.Error(t, err)
-		for _, code := range []string{faultSellerTRN, faultDueDate, faultOnlyExempt} {
+		for _, code := range []string{faultSellerTRN, faultDueDate, faultOnlyExempt, faultDocumentType, faultCurrencyDecimals} {
 			assert.NotContains(t, err.Error(), code)
 		}
 	})
@@ -686,6 +727,15 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		inv = aeIdentityDocument()
 		inv.Customer.Identities = append(inv.Customer.Identities, gln, duns)
 		assert.Contains(t, aeFaults(t, inv), fault)
+	})
+
+	t.Run("a missing customer raises no customer faults but its own (IBR-007)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Customer = nil
+		out := aeFaults(t, inv)
+		assert.Contains(t, out, "GOBL-PEPPOL-PINT-BILL-INVOICE-03")
+		assert.NotContains(t, out, faultCustomerEndpoint)
+		assert.NotContains(t, out, faultCustomerTaxCount)
 	})
 
 	t.Run("supplier with a UAE endpoint needs a legal identity (IBR-150-AE)", func(t *testing.T) {
@@ -888,8 +938,10 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		inv.Customer.Endpoints = []*org.Endpoint{{URI: "https://example.com/inbox"}}
 		assert.Contains(t, aeFaults(t, inv), faultCustomerEndpoint)
 
+		// An email address is written with the scheme EM, which PINT AE
+		// doesn't accept (ibr-cl-25).
 		inv.Customer.Endpoints = append(inv.Customer.Endpoints, &org.Endpoint{URI: "mailto:billing@example.com"})
-		assert.NotContains(t, aeFaults(t, inv), faultCustomerEndpoint)
+		assert.Contains(t, aeFaults(t, inv), faultCustomerEndpoint)
 
 		inv = aeIdentityDocument()
 		inv.Customer.Endpoints = []*org.Endpoint{{URI: "https://example.com/inbox"}}
@@ -1384,7 +1436,7 @@ func TestBillMarginSchemeRulesAE(t *testing.T) {
 }
 
 func TestBillTagsOutsideAE(t *testing.T) {
-	const faultTags = "GOBL-PEPPOL-PINT-BILL-INVOICE-56"
+	const faultTags = "GOBL-PEPPOL-PINT-BILL-INVOICE-58"
 	faults := func(t *testing.T, inv *bill.Invoice) string {
 		t.Helper()
 		require.NoError(t, inv.Calculate())

@@ -88,6 +88,11 @@ func newV1Addon() *tax.AddonDef {
 				UAE documents out of scope of VAT use the "outside-scope" tag, which
 				sets the document type to 480 on invoices and 81 on credit notes.
 
+				UAE documents can only be invoices and credit notes, without the
+				"partial", "prepayment" or "factoring" tags, as PINT AE has no
+				document type for anything else. Their currency can have two
+				decimals at most.
+
 				UAE trade licences carry their issuing authority in the description,
 				and passports their issuing country.
 

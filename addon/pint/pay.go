@@ -97,7 +97,7 @@ func creditTransferHasAccountID(val any) bool {
 func instructionsHaveAccountID(val any) bool {
 	instr, ok := val.(*pay.Instructions)
 	if !ok || instr == nil {
-		return true
+		return false
 	}
 	if len(instr.CreditTransfer) == 0 {
 		return false
