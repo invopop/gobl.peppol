@@ -673,6 +673,20 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		assert.Empty(t, aeFaults(t, aeIdentityDocument()))
 	})
 
+	t.Run("customer has at most one identifier besides its legal one (ibr-sr-16)", func(t *testing.T) {
+		const fault = "GOBL-PEPPOL-PINT-BILL-INVOICE-55"
+		gln := &org.Identity{Code: "5790000435975"}
+		duns := &org.Identity{Code: "123456789"}
+
+		inv := aeIdentityDocument()
+		inv.Customer.Identities = append(inv.Customer.Identities, gln)
+		assert.Empty(t, aeFaults(t, inv))
+
+		inv = aeIdentityDocument()
+		inv.Customer.Identities = append(inv.Customer.Identities, gln, duns)
+		assert.Contains(t, aeFaults(t, inv), fault)
+	})
+
 	t.Run("supplier with a UAE endpoint needs a legal identity (IBR-150-AE)", func(t *testing.T) {
 		inv := aeIdentityDocument()
 		inv.Supplier.Identities = nil

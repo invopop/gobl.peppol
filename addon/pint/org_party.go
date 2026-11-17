@@ -62,6 +62,29 @@ func partyHasLegalIdentity(val any) bool {
 	return false
 }
 
+// partyHasOneIdentification reports whether gobl.ubl writes at most one
+// cac:PartyIdentification for the party, as PINT allows a single buyer
+// identifier (ibr-sr-16). gobl.ubl writes every identity there except those
+// with the tax scope and the first with the legal scope.
+func partyHasOneIdentification(val any) bool {
+	p, ok := val.(*org.Party)
+	if !ok || p == nil {
+		return true
+	}
+	n := 0
+	legal := false
+	for _, id := range p.Identities {
+		switch {
+		case id == nil || id.Scope == org.IdentityScopeTax:
+		case id.Scope == org.IdentityScopeLegal && !legal:
+			legal = true
+		default:
+			n++
+		}
+	}
+	return n <= 1
+}
+
 // partyFirstAddress returns the party's first address, the only one gobl.ubl
 // writes as cac:PostalAddress, or nil if there is none.
 func partyFirstAddress(val any) *org.Address {

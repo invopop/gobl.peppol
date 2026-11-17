@@ -124,7 +124,11 @@ identities labelled `SAC` are written as service accounting codes. The
 delivery's ICC Incoterms (`icc-incoterms-2020` or `-2010`) are written as the
 delivery terms. Several notes on the document, or on a line, are joined into
 one separated by a blank line, as PINT allows a single note on each
-(ibr-sr-51, ibr-sr-34), and are imported back as a single note.
+(ibr-sr-51, ibr-sr-34), and are imported back as a single note. PINT also
+allows a single buyer identifier (ibr-sr-16), so the PINT addon rejects a UAE
+customer with more than one identity written as `cac:PartyIdentification`:
+any identity other than the tax ones and the first legal one, including the
+customer's TIN.
 
 **Profit margin scheme.** A UAE supply under the profit margin scheme takes the AE regime's
 `margin-scheme` tag, with the `exempt` VAT key on every line:

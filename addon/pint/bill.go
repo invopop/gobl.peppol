@@ -114,6 +114,11 @@ func billInvoiceRules() *rules.Set {
 				rules.Assert("13", "customer region must be an emirate code when the country is AE (IBR-128-AE)",
 					is.Func("first address region is an emirate", partyAddressHasEmirate),
 				),
+				// TODO: ibr-sr-16 is a shared PINT rule, and EN 16931 has it too
+				// (UBL-SR-16), so every PINT jurisdiction and BIS need this.
+				rules.Assert("55", "customer can have at most one identity besides its first legal one and its tax ones (ibr-sr-16)",
+					is.Func("at most one buyer identifier", partyHasOneIdentification),
+				),
 				// IBR-183-AE's test also accepts CL, which only its rule text's
 				// "Commercial/Trade license" explains. FormatAE reads CL as a
 				// trade licence on import, but GOBL writes TL, which is valid for
