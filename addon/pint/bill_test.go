@@ -1300,6 +1300,13 @@ func TestBillMarginSchemeRulesAE(t *testing.T) {
 		})
 		assert.Contains(t, aeFaults(t, inv), faultOnlyMargin)
 
+		// A line with a UAE exemption reason is a real exempt supply, not a
+		// margin scheme one.
+		inv = margin(pint.TagMarginScheme)
+		inv.Lines[0].Taxes[0].Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyExemption: "DL8.46.1"})
+		assert.Contains(t, aeFaults(t, inv), faultOnlyMargin)
+		assert.Equal(t, cbc.Code("E"), inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory))
+
 		for _, key := range []cbc.Key{tax.KeyExempt, tax.KeyStandard} {
 			inv = margin(pint.TagMarginScheme)
 			inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{lineCombo(key)}}}

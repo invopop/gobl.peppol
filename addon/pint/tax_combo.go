@@ -67,7 +67,8 @@ func normalizeTaxCombo(tc *tax.Combo) {
 // E from their key, as norm reaches them before the invoice, and get it back
 // once the tag is removed. Discounts and charges are left alone, so the
 // discount and charge rules 02 and rule 41 reject them (IBR-114-AE,
-// IBR-115-AE, IBR-116-AE).
+// IBR-115-AE, IBR-116-AE). Lines with a UAE exemption reason are a real
+// exempt supply, so they keep E and rule 41 rejects the mixed invoice.
 func normalizeMarginSchemeAE(inv *bill.Invoice) {
 	if inv == nil || !inv.HasTags(TagMarginScheme) {
 		return
@@ -77,7 +78,7 @@ func normalizeMarginSchemeAE(inv *bill.Invoice) {
 			continue
 		}
 		for _, c := range l.Taxes {
-			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt {
+			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt && !c.Ext.Has(ExtKeyExemption) {
 				c.Ext = c.Ext.Set(untdid.ExtKeyTaxCategory, TaxCategoryMarginScheme)
 			}
 		}
