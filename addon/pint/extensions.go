@@ -108,7 +108,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyTransactionType,
 		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Transaction Type",
+			i18n.EN: "PINT AE: Transaction Type",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -135,7 +135,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyBeneficiaryID,
 		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Beneficiary ID",
+			i18n.EN: "PINT AE: Beneficiary ID",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -148,7 +148,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyPrincipalID,
 		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Principal ID",
+			i18n.EN: "PINT AE: Principal ID",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -162,7 +162,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyCreditNoteReason,
 		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Credit Note Reason",
+			i18n.EN: "PINT AE: Credit Note Reason",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -209,7 +209,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyBillingFrequency,
 		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Frequency of Billing",
+			i18n.EN: "PINT AE: Frequency of Billing",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -241,7 +241,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyExemption,
 		Usage: usageAETaxCombo,
 		Name: i18n.String{
-			i18n.EN: "PINT AE VAT Exemption Reason",
+			i18n.EN: "PINT AE: VAT Exemption Reason",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -262,7 +262,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyGoodsType,
 		Usage: usageAEItem,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Type of Goods or Services",
+			i18n.EN: "PINT AE: Type of Goods or Services",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -289,7 +289,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyCustomsReference,
 		Usage: usageAEInvoiceTax,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Customs Reference Number",
+			i18n.EN: "PINT AE: Customs Reference Number",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -302,7 +302,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyBatchNumber,
 		Usage: usageAEItem,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Batch Number",
+			i18n.EN: "PINT AE: Batch Number",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -314,7 +314,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeySchemeVersion,
 		Usage: usageAEIdentity,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Scheme Version",
+			i18n.EN: "PINT AE: Scheme Version",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -328,7 +328,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyContractValue,
 		Usage: usageAEDocumentRef,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Contract Value",
+			i18n.EN: "PINT AE: Contract Value",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -341,7 +341,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyPurchaseOrder,
 		Usage: usageAELine,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Line Purchase Order Reference",
+			i18n.EN: "PINT AE: Line Purchase Order Reference",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -354,7 +354,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyDespatchAdvice,
 		Usage: usageAELine,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Line Despatch Advice Reference",
+			i18n.EN: "PINT AE: Line Despatch Advice Reference",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
@@ -366,7 +366,7 @@ var extensions = []*cbc.Definition{
 		Key:   ExtKeyRemittanceScheme,
 		Usage: usageAEInstructions,
 		Name: i18n.String{
-			i18n.EN: "PINT AE Remittance Reference Scheme",
+			i18n.EN: "PINT AE: Remittance Reference Scheme",
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
