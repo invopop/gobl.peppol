@@ -126,6 +126,9 @@
       </cac:Address>
     </cac:DeliveryLocation>
     <cac:DeliveryParty>
+      <cac:PartyIdentification>
+        <cbc:ID>155667745601003</cbc:ID>
+      </cac:PartyIdentification>
       <cac:PartyName>
         <cbc:Name>Buyer Warehouse</cbc:Name>
       </cac:PartyName>

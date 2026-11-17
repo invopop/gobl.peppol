@@ -822,6 +822,77 @@ func TestAELineItems(t *testing.T) {
 	})
 }
 
+func TestAEDeliveryPartyID(t *testing.T) {
+	delivery := func(r *org.Party) *bill.Invoice {
+		return &bill.Invoice{Delivery: &bill.DeliveryDetails{Receiver: r}}
+	}
+	partyID := func(out *goblubl.Invoice) string {
+		require.Len(t, out.Delivery, 1)
+		require.NotNil(t, out.Delivery[0].DeliveryParty)
+		require.Len(t, out.Delivery[0].DeliveryParty.PartyIdentification, 1)
+		return out.Delivery[0].DeliveryParty.PartyIdentification[0].ID.Value
+	}
+
+	t.Run("writes the receiver's TRN", func(t *testing.T) {
+		out := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryParty: &goblubl.Party{PartyName: &goblubl.PartyName{Name: "Warehouse"}}}}}
+		exportAEDeliveryPartyID(out, delivery(&org.Party{
+			Name:       "Warehouse",
+			TaxID:      &tax.Identity{Country: "AE", Code: "155667745601003"},
+			Identities: []*org.Identity{{Type: ae.IdentityTypeTIN, Code: "1345678906"}},
+		}))
+		assert.Equal(t, "155667745601003", partyID(out))
+		assert.Equal(t, "Warehouse", out.Delivery[0].DeliveryParty.PartyName.Name)
+	})
+
+	t.Run("or its TIN without a TRN", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAEDeliveryPartyID(out, delivery(&org.Party{
+			Identities: []*org.Identity{{Type: ae.IdentityTypeTIN, Code: "1345678906"}},
+		}))
+		assert.Equal(t, "1345678906", partyID(out))
+	})
+
+	t.Run("nothing without a UAE tax ID or TIN", func(t *testing.T) {
+		out := new(goblubl.Invoice)
+		exportAEDeliveryPartyID(out, delivery(&org.Party{Name: "Warehouse", TaxID: &tax.Identity{Country: "GB", Code: "123456789"}}))
+		exportAEDeliveryPartyID(out, delivery(nil))
+		exportAEDeliveryPartyID(out, &bill.Invoice{})
+		assert.Empty(t, out.Delivery)
+	})
+
+	t.Run("reads a TRN back as the receiver's tax ID", func(t *testing.T) {
+		in := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryParty: identifiedParty(" 155667745601003 ")}}}
+		inv := delivery(&org.Party{Name: "Warehouse"})
+		importAEDeliveryPartyID(in, inv)
+		r := inv.Delivery.Receiver
+		assert.Equal(t, "Warehouse", r.Name)
+		require.NotNil(t, r.TaxID)
+		assert.Equal(t, l10n.TaxCountryCode("AE"), r.TaxID.Country)
+		assert.Equal(t, cbc.Code("155667745601003"), r.TaxID.Code)
+		assert.Empty(t, r.Identities)
+	})
+
+	t.Run("and anything else as a TIN, on a new receiver", func(t *testing.T) {
+		in := &goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryParty: identifiedParty("1345678906")}}}
+		inv := new(bill.Invoice)
+		importAEDeliveryPartyID(in, inv)
+		require.NotNil(t, inv.Delivery)
+		r := inv.Delivery.Receiver
+		require.NotNil(t, r)
+		assert.Nil(t, r.TaxID)
+		require.Len(t, r.Identities, 1)
+		assert.Equal(t, ae.IdentityTypeTIN, r.Identities[0].Type)
+		assert.Equal(t, cbc.Code("1345678906"), r.Identities[0].Code)
+	})
+
+	t.Run("nothing to read without an ID", func(t *testing.T) {
+		inv := new(bill.Invoice)
+		importAEDeliveryPartyID(&goblubl.Invoice{Delivery: []*goblubl.Delivery{{DeliveryParty: &goblubl.Party{}}}}, inv)
+		importAEDeliveryPartyID(new(goblubl.Invoice), inv)
+		assert.Nil(t, inv.Delivery)
+	})
+}
+
 func TestAEIncoterms(t *testing.T) {
 	delivery := func(key cbc.Key, code cbc.Code) *bill.Invoice {
 		return &bill.Invoice{Delivery: &bill.DeliveryDetails{Ext: tax.ExtensionsOf(cbc.CodeMap{key: code})}}

@@ -1,6 +1,7 @@
 package ubl
 
 import (
+	"regexp"
 	"slices"
 	"strings"
 
@@ -70,6 +71,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	exportAECreditNoteReason(out, inv)
 	exportAEBillingFrequency(out, inv)
 	exportAEIncoterms(out, inv)
+	exportAEDeliveryPartyID(out, inv)
 	exportAECustomsReference(out, inv)
 	exportAEContractValue(out, inv)
 	exportAEPayment(out, inv)
@@ -102,6 +104,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAECreditNoteReason(in, inv)
 	importAEBillingFrequency(in, inv)
 	importAEIncoterms(in, inv)
+	importAEDeliveryPartyID(in, inv)
 	importAECustomsReference(in, inv)
 	importAEContractValue(in, inv)
 	importAERemittanceScheme(in, inv)
@@ -921,6 +924,77 @@ func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
 	}
 	inv.Delivery.Ext = inv.Delivery.Ext.Set(key, code)
 }
+
+// exportAEDeliveryPartyID writes the delivery receiver's UAE TRN, or its TIN
+// when it has no TRN, as cac:DeliveryParty/cac:PartyIdentification/cbc:ID:
+// the Deliver to Party ID (BTAE-23) the implementation guide (section 2.3.11)
+// asks for when the goods go to someone other than the buyer. The PINT AE
+// syntax has the element, the generic PINT one doesn't, but neither the
+// syntax nor the semantic model give it a business term, and no rule checks
+// it. gobl.ubl writes the delivery party with only its name and contact.
+func exportAEDeliveryPartyID(out *goblubl.Invoice, inv *bill.Invoice) {
+	if inv.Delivery == nil {
+		return
+	}
+	id := aeReceiverID(inv.Delivery.Receiver)
+	if id == "" {
+		return
+	}
+	if len(out.Delivery) == 0 {
+		out.Delivery = []*goblubl.Delivery{{}}
+	}
+	d := out.Delivery[0]
+	if d.DeliveryParty == nil {
+		d.DeliveryParty = new(goblubl.Party)
+	}
+	d.DeliveryParty.PartyIdentification = []goblubl.Identification{
+		{ID: &goblubl.IDType{Value: id.String()}},
+	}
+}
+
+// aeReceiverID provides the receiver's UAE TRN, or else its TIN.
+func aeReceiverID(p *org.Party) cbc.Code {
+	if p == nil {
+		return ""
+	}
+	if p.TaxID != nil && p.TaxID.Country.Code() == l10n.AE && p.TaxID.Code != "" {
+		return p.TaxID.Code
+	}
+	for _, id := range p.Identities {
+		if id != nil && id.Type == ae.IdentityTypeTIN && id.Code != "" {
+			return id.Code
+		}
+	}
+	return ""
+}
+
+// importAEDeliveryPartyID reads back what exportAEDeliveryPartyID writes: a
+// TRN, 15 digits starting with 1, as the receiver's UAE tax ID, and anything
+// else as a TIN identity, the only other ID the implementation guide allows.
+func importAEDeliveryPartyID(in *goblubl.Invoice, inv *bill.Invoice) {
+	if len(in.Delivery) == 0 || in.Delivery[0] == nil {
+		return
+	}
+	code := partyIdentificationID(in.Delivery[0].DeliveryParty)
+	if code == "" {
+		return
+	}
+	if inv.Delivery == nil {
+		inv.Delivery = new(bill.DeliveryDetails)
+	}
+	if inv.Delivery.Receiver == nil {
+		inv.Delivery.Receiver = new(org.Party)
+	}
+	r := inv.Delivery.Receiver
+	if trnFormat.MatchString(code.String()) {
+		r.TaxID = &tax.Identity{Country: l10n.AE.Tax(), Code: code}
+		return
+	}
+	r.Identities = append(r.Identities, &org.Identity{Type: ae.IdentityTypeTIN, Code: code})
+}
+
+// trnFormat is the format of a UAE TRN.
+var trnFormat = regexp.MustCompile(`^1\d{14}$`)
 
 // extensionHasCode reports whether the extension lists the code.
 func extensionHasCode(key cbc.Key, code cbc.Code) bool {

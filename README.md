@@ -103,32 +103,33 @@ and `urn:peppol:bis:selfbilling`. Documents carrying either are imported with
 `FormatAUNZ`. `FormatAE` does the same with `SpecificationAESelfBilling`
 (`urn:peppol:pint:selfbilling-1@ae-1`).
 
-`FormatAE` also adjusts the output to the PINT AE rules: it writes the
-invoice UUID, the price base quantity and gross price, the UAE TRN without
-its country prefix, the 5% rate on reverse charge lines and breakdowns, no
-rate on exempt ones, one VAT breakdown per category, and each line's amount
-with VAT and VAT amount. For invoices not in AED, it also writes the exchange
-rate to AED and the total with VAT in AED. The seller and buyer legal
-identities get their PINT AE type (`TL`, `EID`, `PAS` or `CD`, from the AE
-regime's identity keys and `passport`), with the trade licence authority
-(the identity's description) or the passport's issuing country, and the
-seller's TIN goes under the `TIN` tax scheme. It also writes the transaction
-type as `cbc:ProfileExecutionID`, with the free trade zone beneficiary and
-the disclosed agent's principal as the buyer and seller parties, and the
-credit note reason as `cac:DiscrepancyResponse`, the billing frequency in
-`cac:InvoicePeriod`, the UAE VAT exemption reason of exempt lines, and each
-item's type of goods or services subject to the reverse charge as its
-`cbc:NatureCode`, with its GTIN as the standard identifier. Items keyed
+`FormatAE` also adjusts the output to the PINT AE rules: it writes the invoice
+UUID, the price base quantity and gross price, the UAE TRN without its country
+prefix, the 5% rate on reverse charge lines and breakdowns, no rate on exempt
+ones, one VAT breakdown per category, and each line's amount with VAT and VAT
+amount in AED. For invoices not in AED, it also writes the exchange rate to
+AED and the total with VAT in AED, and converts the line amounts with that
+rate. The seller and buyer legal identities get their PINT AE type (`TL`,
+`EID`, `PAS` or `CD`, from the AE regime's identity keys and `passport`), with
+the trade licence authority (the identity's description) or the passport's
+issuing country, and the seller's TIN goes under the `TIN` tax scheme. It also
+writes the transaction type as `cbc:ProfileExecutionID`, with the free trade
+zone beneficiary and the disclosed agent's principal as the buyer and seller
+parties, and the credit note reason as `cac:DiscrepancyResponse`, the billing
+frequency in `cac:InvoicePeriod`, the UAE VAT exemption reason of exempt
+lines, and each item's type of goods or services subject to the reverse charge
+as its `cbc:NatureCode`, with its GTIN as the standard identifier. Items keyed
 `goods`, `services` or `goods-services` get the item type `G`, `S` or `B`, and
 identities labelled `SAC` are written as service accounting codes. The
 delivery's ICC Incoterms (`icc-incoterms-2020` or `-2010`) are written as the
-delivery terms. Several notes on the document, or on a line, are joined into
-one separated by a blank line, as PINT allows a single note on each
-(ibr-sr-51, ibr-sr-34), and are imported back as a single note. PINT also
-allows a single buyer identifier (ibr-sr-16), so the PINT addon rejects a UAE
-customer with more than one identity written as `cac:PartyIdentification`:
-any identity other than the tax ones and the first legal one, including the
-customer's TIN.
+delivery terms, and the delivery receiver's UAE TRN, or its TIN without one,
+as the delivery party's identification (BTAE-23). Several notes on the
+document, or on a line, are joined into one separated by a blank line, as PINT
+allows a single note on each (ibr-sr-51, ibr-sr-34), and are imported back as
+a single note. PINT also allows a single buyer identifier (ibr-sr-16), so the
+PINT addon rejects a UAE customer with more than one identity written as
+`cac:PartyIdentification`: any identity other than the tax ones and the first
+legal one, including the customer's TIN.
 
 **Profit margin scheme.** A UAE supply under the profit margin scheme takes the AE regime's
 `margin-scheme` tag, with the `exempt` VAT key on every line:

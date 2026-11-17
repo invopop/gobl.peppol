@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "90574999a3a16f69c2bb67f50382d58a25f1ddac42678ec20829e60aa531c6c3"
+			"val": "8481a29d392134057728d066188693f072d8aec4b8e9b982b26b31f075d043ad"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -289,6 +289,10 @@
 		"delivery": {
 			"receiver": {
 				"name": "Buyer Warehouse",
+				"tax_id": {
+					"country": "AE",
+					"code": "155667745601003"
+				},
 				"addresses": [
 					{
 						"street": "Industrial Area 4",
