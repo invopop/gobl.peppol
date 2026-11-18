@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "2fd34ae748de52889dcb37e92ee1b77f66c8aa1bc9642e24dd940f44533757ee"
+			"val": "c5556348fbbfc482ae579b572ca67c1f574c2c7992fb3a630e5f04163ffa5e8b"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -28,7 +28,6 @@
 		"value_date": "2025-01-28",
 		"currency": "AED",
 		"tax": {
-			"rounding": "currency",
 			"ext": {
 				"peppol-pint-ae-transaction-type": "00000010",
 				"untdid-document-type": "380"
@@ -46,6 +45,11 @@
 					"type": "TL",
 					"code": "112345678900003",
 					"description": "Trade License issuing Authority"
+				},
+				{
+					"scope": "tax",
+					"type": "TIN",
+					"code": "1357902467"
 				}
 			],
 			"endpoints": [
@@ -82,6 +86,10 @@
 					"type": "TL",
 					"code": "112345679000001",
 					"description": "Trade License issuing Authority"
+				},
+				{
+					"type": "TIN",
+					"code": "1345678906"
 				}
 			],
 			"endpoints": [

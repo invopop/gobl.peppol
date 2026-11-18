@@ -310,6 +310,15 @@ func TestExportAEPartyIdentities(t *testing.T) {
 		assert.Equal(t, goblubl.TaxSchemeTaxRegistration, out.PartyTaxScheme[0].TaxScheme.ID.Value)
 	})
 
+	t.Run("a TIN identification has the scheme 0235", func(t *testing.T) {
+		out := export(&org.Party{Name: "Buyer", Identities: []*org.Identity{
+			{Type: ae.IdentityTypeTIN, Code: "1234567897"},
+		}})
+		require.Len(t, out.PartyIdentification, 1)
+		assert.Equal(t, "1234567897", out.PartyIdentification[0].ID.Value)
+		assert.Equal(t, "0235", *out.PartyIdentification[0].ID.SchemeID)
+	})
+
 	t.Run("nil parties are skipped", func(t *testing.T) {
 		assert.NotPanics(t, func() {
 			exportAEPartyIdentities(nil, &org.Party{})
@@ -341,6 +350,16 @@ func TestImportAEPartyIdentities(t *testing.T) {
 		id := imported(companyID("TL", "Trade License issuing Authority"), false).Identities[0]
 		assert.Equal(t, ae.IdentityTypeTradeLicense, id.Type)
 		assert.Equal(t, "Trade License issuing Authority", id.Description)
+	})
+
+	t.Run("an identification with the scheme 0235 is a TIN", func(t *testing.T) {
+		scheme := "0235"
+		in := &goblubl.Party{PartyIdentification: []goblubl.Identification{
+			{ID: &goblubl.IDType{Value: "1234567897", SchemeID: &scheme}},
+		}}
+		id := imported(in, false).Identities[0]
+		assert.Equal(t, ae.IdentityTypeTIN, id.Type)
+		assert.False(t, id.Ext.Has(iso.ExtKeySchemeID))
 	})
 
 	t.Run("passport with its issuing country", func(t *testing.T) {
@@ -380,6 +399,11 @@ func TestImportAEPartyIdentities(t *testing.T) {
 
 		p = imported(in, false)
 		assert.Empty(t, p.Identities[1].Type, "only the seller has a TIN")
+
+		// Any scheme other than VAT, like the official example's TAX.
+		in.PartyTaxScheme[1].TaxScheme.ID.Value = "TAX"
+		p = imported(in, true)
+		assert.Equal(t, ae.IdentityTypeTIN, p.Identities[1].Type)
 	})
 
 	t.Run("nil parties are skipped", func(t *testing.T) {
@@ -464,27 +488,27 @@ func TestImportAEOutsideScope(t *testing.T) {
 			in.CreditNoteTypeCode = &goblubl.IDType{Value: creditNoteCode}
 		}
 		inv := &bill.Invoice{Type: bill.InvoiceTypeOther}
-		importAEOutsideScope(in, inv)
+		importAEOutsideTaxScope(in, inv)
 		return inv
 	}
 
 	inv := importCode("480", "")
 	assert.Equal(t, bill.InvoiceTypeStandard, inv.Type)
-	assert.True(t, inv.HasTags(pint.TagOutsideScope))
+	assert.True(t, inv.HasTags(pint.TagOutsideTaxScope))
 
 	inv = importCode("", "81")
 	assert.Equal(t, bill.InvoiceTypeCreditNote, inv.Type)
-	assert.True(t, inv.HasTags(pint.TagOutsideScope))
+	assert.True(t, inv.HasTags(pint.TagOutsideTaxScope))
 
 	inv = importCode("380", "")
 	assert.Equal(t, bill.InvoiceTypeOther, inv.Type, "other codes are left to gobl.ubl")
-	assert.False(t, inv.HasTags(pint.TagOutsideScope))
+	assert.False(t, inv.HasTags(pint.TagOutsideTaxScope))
 
 	t.Run("does not add the tag twice", func(t *testing.T) {
 		in := &goblubl.Invoice{InvoiceTypeCode: &goblubl.IDType{Value: "480"}}
-		inv := &bill.Invoice{Tags: tax.WithTags(pint.TagOutsideScope)}
-		importAEOutsideScope(in, inv)
-		assert.Equal(t, []cbc.Key{pint.TagOutsideScope}, inv.Tags.List)
+		inv := &bill.Invoice{Tags: tax.WithTags(pint.TagOutsideTaxScope)}
+		importAEOutsideTaxScope(in, inv)
+		assert.Equal(t, []cbc.Key{pint.TagOutsideTaxScope}, inv.Tags.List)
 	})
 }
 

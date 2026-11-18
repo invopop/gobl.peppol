@@ -238,10 +238,11 @@ func TestBillInvoiceRulesAE(t *testing.T) {
 func aeDocument(typ cbc.Key, tags ...cbc.Key) *bill.Invoice {
 	inv := scenarioInvoice(l10n.AE.Tax(), typ, tags...)
 	inv.Supplier = &org.Party{
-		Name:      "Seller LLC",
-		TaxID:     &tax.Identity{Country: "AE", Code: "100000001600003"},
-		Endpoints: validEndpoints("100000001600003"),
-		Addresses: aeAddress("DXB"),
+		Name:       "Seller LLC",
+		TaxID:      &tax.Identity{Country: "AE", Code: "100000001600003"},
+		Identities: []*org.Identity{tradeLicense("112345678900003")},
+		Endpoints:  validEndpoints("100000001600003"),
+		Addresses:  aeAddress("DXB"),
 	}
 	inv.Customer = &org.Party{
 		Name:      "Buyer LLC",
@@ -251,7 +252,7 @@ func aeDocument(typ cbc.Key, tags ...cbc.Key) *bill.Invoice {
 	}
 	inv.Lines[0].Item.Description = "Consulting services"
 	inv.Lines[0].Taxes = tax.Set{standardVAT()}
-	if inv.HasTags(pint.TagOutsideScope) {
+	if inv.HasTags(pint.TagOutsideTaxScope) {
 		inv.Lines[0].Taxes = tax.Set{{Category: tax.CategoryVAT, Key: tax.KeyOutsideScope}}
 		inv.Customer.Identities = []*org.Identity{{Scope: org.IdentityScopeLegal, Code: "CN-1234567"}}
 	}
@@ -309,7 +310,7 @@ func aeFaults(t *testing.T, inv *bill.Invoice) string {
 func TestBillDocumentRulesAE(t *testing.T) {
 	const (
 		faultSellerTRN        = "GOBL-PEPPOL-PINT-BILL-INVOICE-31"
-		faultReverseCharge    = "GOBL-PEPPOL-PINT-BILL-INVOICE-53"
+		faultReverseCharge    = "GOBL-PEPPOL-PINT-BILL-INVOICE-52"
 		faultBuyerLegalID     = "GOBL-PEPPOL-PINT-BILL-INVOICE-32"
 		faultLineCategory     = "GOBL-PEPPOL-PINT-BILL-INVOICE-33"
 		faultDiscountCat      = "GOBL-PEPPOL-PINT-BILL-INVOICE-34"
@@ -323,10 +324,10 @@ func TestBillDocumentRulesAE(t *testing.T) {
 	)
 	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
 	outsideScope := func() *bill.Invoice {
-		return aeDocument(bill.InvoiceTypeStandard, pint.TagOutsideScope)
+		return aeDocument(bill.InvoiceTypeStandard, pint.TagOutsideTaxScope)
 	}
 	outsideScopeCredit := func() *bill.Invoice {
-		return aeDocument(bill.InvoiceTypeCreditNote, pint.TagOutsideScope)
+		return aeDocument(bill.InvoiceTypeCreditNote, pint.TagOutsideTaxScope)
 	}
 
 	t.Run("valid documents raise no PINT faults", func(t *testing.T) {
@@ -703,6 +704,12 @@ func tradeLicense(code string) *org.Identity {
 	return &org.Identity{Type: ae.IdentityTypeTradeLicense, Code: cbc.Code(code), Description: "Dubai Economy and Tourism"}
 }
 
+// withoutTRN removes the supplier's TRN, from which the supplier gets its
+// TIN.
+func withoutTRN(inv *bill.Invoice) {
+	inv.Supplier.TaxID = &tax.Identity{Country: "AE"}
+}
+
 // aeIdentityDocument returns a valid UAE invoice whose parties have UAE Peppol
 // endpoints and trade licences, the case the legal registration rules apply to.
 func aeIdentityDocument() *bill.Invoice {
@@ -757,24 +764,9 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		assert.NotContains(t, out, faultCustomerTaxCount)
 	})
 
-	t.Run("supplier with a UAE endpoint needs a legal identity (IBR-150-AE)", func(t *testing.T) {
+	t.Run("supplier needs a legal identity (IBR-150-AE)", func(t *testing.T) {
 		inv := aeIdentityDocument()
 		inv.Supplier.Identities = nil
-		assert.Contains(t, aeFaults(t, inv), faultSupplierLegalRequired)
-	})
-
-	t.Run("supplier without a UAE endpoint needs no legal identity (IBR-150-AE)", func(t *testing.T) {
-		inv := aeIdentityDocument()
-		inv.Supplier.Identities = nil
-		inv.Supplier.Endpoints = validEndpoints("1357902467")
-		assert.NotContains(t, aeFaults(t, inv), faultSupplierLegalRequired)
-	})
-
-	t.Run("UAE endpoint in an inbox counts too (IBR-150-AE)", func(t *testing.T) {
-		inv := aeIdentityDocument()
-		inv.Supplier.Identities = nil
-		inv.Supplier.Endpoints = nil
-		inv.Supplier.Inboxes = []*org.Inbox{{Scheme: "0235", Code: "1357902467"}}
 		assert.Contains(t, aeFaults(t, inv), faultSupplierLegalRequired)
 	})
 
@@ -787,15 +779,11 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		assert.Contains(t, out, faultCustomerLegalType)
 	})
 
-	t.Run("legal identity without a type is fine without a UAE endpoint", func(t *testing.T) {
+	t.Run("customer legal identity without a type is fine without a UAE endpoint", func(t *testing.T) {
 		inv := aeIdentityDocument()
-		inv.Supplier.Endpoints = validEndpoints("1357902467")
-		inv.Supplier.Identities = []*org.Identity{{Scope: org.IdentityScopeLegal, Code: "CN-1234567"}}
 		inv.Customer.Endpoints = validEndpoints("1345678906")
 		inv.Customer.Identities = []*org.Identity{{Scope: org.IdentityScopeLegal, Code: "CN-7654321"}}
-		out := aeFaults(t, inv)
-		assert.NotContains(t, out, faultSupplierLegalType)
-		assert.NotContains(t, out, faultCustomerLegalType)
+		assert.NotContains(t, aeFaults(t, inv), faultCustomerLegalType)
 	})
 
 	t.Run("customer with a predefined UAE endpoint needs no legal identity type or authority (IBR-180-AE, IBR-183-AE, IBR-101-AE)", func(t *testing.T) {
@@ -875,12 +863,23 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		assert.Empty(t, aeFaults(t, inv))
 	})
 
-	t.Run("supplier tax identity must be a TIN starting with 1 (IBR-148-AE)", func(t *testing.T) {
+	t.Run("supplier tax identity must be a TIN (IBR-148-AE)", func(t *testing.T) {
+		for _, typ := range []cbc.Code{"", "TAX"} {
+			inv := aeIdentityDocument()
+			inv.Supplier.Identities = append(inv.Supplier.Identities,
+				&org.Identity{Scope: org.IdentityScopeTax, Type: typ, Code: "1234567897"})
+			assert.Contains(t, aeFaults(t, inv), faultSupplierTIN, typ)
+		}
+	})
+
+	t.Run("the AE regime checks the supplier TIN's format (IBR-148-AE)", func(t *testing.T) {
 		for _, code := range []cbc.Code{"2234567890", "123456789"} {
 			inv := aeIdentityDocument()
 			inv.Supplier.Identities = append(inv.Supplier.Identities,
-				&org.Identity{Scope: org.IdentityScopeTax, Type: "TIN", Code: code})
-			assert.Contains(t, aeFaults(t, inv), faultSupplierTIN, code)
+				&org.Identity{Scope: org.IdentityScopeTax, Type: ae.IdentityTypeTIN, Code: code})
+			out := aeFaults(t, inv)
+			assert.Contains(t, out, "GOBL-AE-ORG-IDENTITY-01", code)
+			assert.NotContains(t, out, faultSupplierTIN, code)
 		}
 	})
 
@@ -930,6 +929,7 @@ func TestBillIdentityRulesAE(t *testing.T) {
 
 	t.Run("customer tax identity needs a supplier TIN (IBR-133-AE)", func(t *testing.T) {
 		inv := aeIdentityDocument()
+		withoutTRN(inv)
 		inv.Customer.TaxID = nil
 		inv.Customer.Identities = append(inv.Customer.Identities,
 			&org.Identity{Scope: org.IdentityScopeTax, Code: "1345678906"})
@@ -945,10 +945,17 @@ func TestBillIdentityRulesAE(t *testing.T) {
 		// The scheme is set here as these tests don't register the AU regime,
 		// which gives AU tax IDs the GST scheme.
 		inv.Customer.TaxID = &tax.Identity{Country: "AU", Code: "51824753556", Scheme: tax.CategoryGST}
+		withoutTRN(inv)
 		assert.Contains(t, aeFaults(t, inv), faultTaxSupplier)
 
 		inv.Supplier.Identities = append(inv.Supplier.Identities,
 			&org.Identity{Type: ae.IdentityTypeTIN, Code: "1234567897"})
+		assert.NotContains(t, aeFaults(t, inv), faultTaxSupplier)
+	})
+
+	t.Run("supplier TIN from the TRN is enough (IBR-133-AE)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Customer.TaxID = &tax.Identity{Country: "AU", Code: "51824753556", Scheme: tax.CategoryGST}
 		assert.NotContains(t, aeFaults(t, inv), faultTaxSupplier)
 	})
 
@@ -980,6 +987,7 @@ func TestBillIdentityRulesAE(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				inv := aeIdentityDocument()
 				set(inv)
+				withoutTRN(inv)
 				assert.Contains(t, aeFaults(t, inv), faultTaxSupplier)
 
 				inv.Supplier.Identities = append(inv.Supplier.Identities,
@@ -1006,44 +1014,6 @@ func TestBillIdentityRulesAE(t *testing.T) {
 	})
 }
 
-func TestNormalizeRounding(t *testing.T) {
-	t.Run("AE invoices get the currency rule", func(t *testing.T) {
-		inv := aeDocument(bill.InvoiceTypeStandard)
-		require.NoError(t, inv.Calculate())
-		assert.Equal(t, tax.RoundingRuleCurrency, inv.Tax.Rounding)
-	})
-
-	t.Run("a rule set on the invoice is kept", func(t *testing.T) {
-		inv := aeDocument(bill.InvoiceTypeStandard)
-		inv.Tax = &bill.Tax{Rounding: tax.RoundingRulePrecise}
-		require.NoError(t, inv.Calculate())
-		assert.Equal(t, tax.RoundingRulePrecise, inv.Tax.Rounding)
-	})
-
-	t.Run("lines and VAT breakdown add up", func(t *testing.T) {
-		inv := aeDocument(bill.InvoiceTypeStandard)
-		line := inv.Lines[0]
-		line.Quantity = num.MakeAmount(3335, 4)
-		line.Item.Price = num.NewAmount(1000, 2)
-		inv.Lines = nil
-		for i := 0; i < 12; i++ {
-			l := *line
-			inv.Lines = append(inv.Lines, &l)
-		}
-		require.NoError(t, inv.Calculate())
-		assert.Equal(t, "40.08", inv.Totals.Sum.String())
-		assert.Equal(t, "40.08", inv.Totals.Taxes.Categories[0].Rates[0].Base.String())
-	})
-
-	t.Run("other regimes keep the default", func(t *testing.T) {
-		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)
-		require.NoError(t, inv.Calculate())
-		if inv.Tax != nil {
-			assert.Empty(t, inv.Tax.Rounding)
-		}
-	})
-}
-
 func TestBillTransactionTypeRulesAE(t *testing.T) {
 	const (
 		faultPaymentInstructions = "GOBL-PEPPOL-PINT-BILL-INVOICE-29"
@@ -1053,13 +1023,13 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 		faultDeemedEndpoint      = "GOBL-PEPPOL-PINT-BILL-INVOICE-44"
 		faultSummaryPeriod       = "GOBL-PEPPOL-PINT-BILL-INVOICE-46"
 		faultPrincipal           = "GOBL-PEPPOL-PINT-BILL-INVOICE-47"
-		faultPrincipalSupplier   = "GOBL-PEPPOL-PINT-BILL-INVOICE-48"
-		faultPrincipalTRN        = "GOBL-PEPPOL-PINT-BILL-INVOICE-56"
-		faultSupplierTax         = "GOBL-PEPPOL-PINT-BILL-INVOICE-49"
-		faultECommerceDelivery   = "GOBL-PEPPOL-PINT-BILL-INVOICE-50"
-		faultExportDelivery      = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
+		faultPrincipalTRN        = "GOBL-PEPPOL-PINT-BILL-INVOICE-55"
+		faultPrincipalVAT        = "GOBL-PEPPOL-PINT-BILL-INVOICE-56"
+		faultSupplierTax         = "GOBL-PEPPOL-PINT-BILL-INVOICE-48"
+		faultECommerceDelivery   = "GOBL-PEPPOL-PINT-BILL-INVOICE-49"
+		faultExportDelivery      = "GOBL-PEPPOL-PINT-BILL-INVOICE-50"
 		faultOutsideScopeFlags   = "GOBL-PEPPOL-PINT-BILL-INVOICE-36"
-		faultCustomerIdentifier  = "GOBL-PEPPOL-PINT-BILL-INVOICE-52"
+		faultCustomerIdentifier  = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
 	)
 	setExt := func(inv *bill.Invoice, key cbc.Key, code cbc.Code) {
 		if inv.Tax == nil {
@@ -1152,22 +1122,22 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 		assert.Empty(t, aeFaults(t, inv))
 	})
 
-	t.Run("principal ID must differ from the supplier TRN (IBR-176-AE)", func(t *testing.T) {
-		inv := aeDocument(bill.InvoiceTypeStandard, pint.TagDisclosedAgent)
-		setExt(inv, pint.ExtKeyPrincipalID, inv.Supplier.TaxID.Code)
-		assert.Contains(t, aeFaults(t, inv), faultPrincipalSupplier)
-	})
-
 	t.Run("principal ID must be a TRN (IBR-132-AE)", func(t *testing.T) {
-		for _, code := range []cbc.Code{"255667745601003", "15566774560100", "155667745601004", "1556677456010A3"} {
+		for _, code := range []cbc.Code{"255667745601003", "15566774560100", "1556677456010A3"} {
 			inv := aeDocument(bill.InvoiceTypeStandard, pint.TagDisclosedAgent)
 			setExt(inv, pint.ExtKeyPrincipalID, code)
 			assert.Contains(t, aeFaults(t, inv), faultPrincipalTRN, code)
 		}
 
+		inv := aeDocument(bill.InvoiceTypeStandard, pint.TagDisclosedAgent)
+		setExt(inv, pint.ExtKeyPrincipalID, "155667745601004")
+		out := aeFaults(t, inv)
+		assert.NotContains(t, out, faultPrincipalTRN)
+		assert.Contains(t, out, faultPrincipalVAT)
+
 		// It is checked without the disclosed agent tag too, as it is
 		// written whenever it is there.
-		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv = aeDocument(bill.InvoiceTypeStandard)
 		setExt(inv, pint.ExtKeyPrincipalID, "P-1234")
 		assert.Contains(t, aeFaults(t, inv), faultPrincipalTRN)
 	})
@@ -1181,10 +1151,9 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 		out := aeFaults(t, inv)
 		assert.Contains(t, out, "GOBL-PEPPOL-PINT-BILL-INVOICE-31")
 		assert.NotContains(t, out, faultSupplierTax)
-		assert.NotContains(t, out, faultPrincipalSupplier)
 
 		for _, typ := range []cbc.Key{bill.InvoiceTypeStandard, bill.InvoiceTypeCreditNote} {
-			inv = aeDocument(typ, pint.TagOutsideScope)
+			inv = aeDocument(typ, pint.TagOutsideTaxScope)
 			inv.Supplier.TaxID = &tax.Identity{Country: "AE"}
 			assert.Contains(t, aeFaults(t, inv), faultSupplierTax, typ)
 
@@ -1217,10 +1186,10 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 
 	t.Run("outside scope documents can't be summary, deemed supply or margin scheme (IBR-157-AE)", func(t *testing.T) {
 		for _, tag := range []cbc.Key{pint.TagSummary, pint.TagDeemedSupply, pint.TagMarginScheme} {
-			inv := aeDocument(bill.InvoiceTypeStandard, pint.TagOutsideScope, tag)
+			inv := aeDocument(bill.InvoiceTypeStandard, pint.TagOutsideTaxScope, tag)
 			assert.Contains(t, aeFaults(t, inv), faultOutsideScopeFlags, tag)
 		}
-		inv := aeDocument(bill.InvoiceTypeStandard, pint.TagOutsideScope, pint.TagContinuousSupply)
+		inv := aeDocument(bill.InvoiceTypeStandard, pint.TagOutsideTaxScope, pint.TagContinuousSupply)
 		assert.NotContains(t, aeFaults(t, inv), faultOutsideScopeFlags)
 	})
 
@@ -1252,7 +1221,7 @@ func TestBillCreditNoteReasonRulesAE(t *testing.T) {
 		faultReasonRequired   = "GOBL-PEPPOL-PINT-BILL-INVOICE-39"
 		faultPrecedingMissing = "GOBL-PEPPOL-PINT-BILL-INVOICE-40"
 		faultPrecedingVD      = "GOBL-PEPPOL-PINT-BILL-INVOICE-41"
-		faultReasonCode       = "GOBL-PEPPOL-PINT-BILL-INVOICE-54"
+		faultReasonCode       = "GOBL-PEPPOL-PINT-BILL-INVOICE-53"
 	)
 	withReason := func(inv *bill.Invoice, code cbc.Code) *bill.Invoice {
 		if inv.Tax == nil {
@@ -1272,7 +1241,7 @@ func TestBillCreditNoteReasonRulesAE(t *testing.T) {
 	})
 
 	t.Run("credit note related to goods and services needs a reason (IBR-055-AE)", func(t *testing.T) {
-		inv := aeDocument(bill.InvoiceTypeCreditNote, pint.TagOutsideScope)
+		inv := aeDocument(bill.InvoiceTypeCreditNote, pint.TagOutsideTaxScope)
 		inv.Tax.Ext = inv.Tax.Ext.Delete(pint.ExtKeyCreditNoteReason)
 		assert.Contains(t, aeFaults(t, inv), faultReasonRequired)
 	})
@@ -1313,7 +1282,7 @@ func TestBillCreditNoteReasonRulesAE(t *testing.T) {
 
 func TestBillBillingFrequencyRulesAE(t *testing.T) {
 	const (
-		faultFrequencyCode = "GOBL-PEPPOL-PINT-BILL-INVOICE-55"
+		faultFrequencyCode = "GOBL-PEPPOL-PINT-BILL-INVOICE-54"
 		faultTaxPoint      = "GOBL-PEPPOL-PINT-BILL-INVOICE-57"
 		faultOthersNote    = "GOBL-PEPPOL-PINT-BILL-INVOICE-58"
 	)
@@ -1551,7 +1520,7 @@ func TestBillTagsOutsideAE(t *testing.T) {
 		return err.Error()
 	}
 	aeTags := []cbc.Key{
-		pint.TagOutsideScope, pint.TagFreeTradeZone, pint.TagDeemedSupply, pint.TagMarginScheme,
+		pint.TagOutsideTaxScope, pint.TagFreeTradeZone, pint.TagDeemedSupply, pint.TagMarginScheme,
 		pint.TagSummary, pint.TagContinuousSupply, pint.TagDisclosedAgent, pint.TagECommerce, tax.TagExport,
 	}
 

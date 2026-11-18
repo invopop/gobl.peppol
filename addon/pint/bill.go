@@ -1,6 +1,8 @@
 package pint
 
 import (
+	"regexp"
+
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/untdid"
@@ -60,20 +62,20 @@ func billInvoiceRules() *rules.Set {
 				rules.Assert("06", "supplier region must be an emirate code when the country is AE (IBR-128-AE)",
 					is.Func("first address region is an emirate", partyAddressHasEmirate),
 				),
-				rules.When(
-					is.Func("has UAE Peppol endpoint", partyHasUAEEndpoint),
-					rules.Assert("07", "supplier legal identity is required with a UAE Peppol endpoint (IBR-150-AE)",
-						is.Func("has legal identity", partyHasLegalIdentity),
-					),
-					rules.Field("identities", rules.Each(
-						rules.When(
-							is.Func("legal scope", identityHasLegalScope),
-							rules.Assert("08", "supplier legal identity must be a trade license, Emirates ID, passport or Cabinet Decision with a UAE Peppol endpoint (IBR-173-AE, IBR-181-AE)",
-								is.Or(org.IdentityKeyIn(org.IdentityKeyPassport), org.IdentityTypeIn(identityTypesAE...)),
-							),
-						),
-					)),
+				// IBR-150-AE, IBR-173-AE and IBR-181-AE apply to sellers with a
+				// 0235 endpoint, which every UAE supplier has, as the UAE PASR
+				// gives every end user 0235:<TIN>.
+				rules.Assert("07", "supplier legal identity is required (IBR-150-AE)",
+					is.Func("has legal identity", partyHasLegalIdentity),
 				),
+				rules.Field("identities", rules.Each(
+					rules.When(
+						is.Func("legal scope", identityHasLegalScope),
+						rules.Assert("08", "supplier legal identity must be a trade license, Emirates ID, passport or Cabinet Decision (IBR-173-AE, IBR-181-AE)",
+							is.Or(org.IdentityKeyIn(org.IdentityKeyPassport), org.IdentityTypeIn(identityTypesAE...)),
+						),
+					),
+				)),
 				rules.Field("identities", rules.Each(
 					rules.When(
 						org.IdentityKeyIn(org.IdentityKeyPassport),
@@ -90,12 +92,11 @@ func billInvoiceRules() *rules.Set {
 					// IBR-178-AE needs no rule: EN 16931 allows one tax scope identity
 					// (GOBL-EU-EN16931-ORG-PARTY-03), which, with the TRN, is the two
 					// PartyTaxSchemes with one VAT that it accepts.
+					// The AE regime checks the TIN's format and check digit.
 					rules.When(
 						is.Func("tax scope", identityHasTaxScope),
-						rules.Field("code",
-							rules.Assert("11", "supplier tax scope identity must be a TIN of 10 digits starting with 1 (IBR-148-AE)",
-								is.MatchesRegexp(tinRegexp),
-							),
+						rules.Assert("11", "supplier tax scope identity must be a TIN (IBR-148-AE)",
+							org.IdentityTypeIn(ae.IdentityTypeTIN),
 						),
 					),
 				)),
@@ -416,9 +417,6 @@ func billInvoiceRules() *rules.Set {
 						),
 					),
 				),
-				rules.Assert("48", "principal ID must differ from the supplier tax ID on disclosed agent billing (IBR-176-AE)",
-					is.Func("principal ID is not the supplier tax ID", principalIsNotSupplier),
-				),
 			),
 			// IBR-177-AE asks for the TRN or the TIN on every document. Rule 31
 			// already asks for the TRN except on 480 and 81, so this rule only
@@ -427,14 +425,14 @@ func billInvoiceRules() *rules.Set {
 				is.Func("document type is invoice outside scope or credit note related to goods and services",
 					invoiceExtIn(untdid.ExtKeyDocumentType, docTypeInvoiceOutsideScope, docTypeCreditNoteGoodsServices)),
 				rules.Field("supplier",
-					rules.Assert("49", "supplier TRN or TIN is required on outside scope documents or credit notes related to goods and services (IBR-177-AE)",
+					rules.Assert("48", "supplier TRN or TIN is required on outside scope documents or credit notes related to goods and services (IBR-177-AE)",
 						is.Func("has tax registration", partyHasTaxRegistration),
 					),
 				),
 			),
 			rules.When(
 				is.Func("e-commerce supply", invoiceIsECommerce),
-				rules.Assert("50", "delivery address must have a street, city and region on e-commerce supplies (IBR-142-AE)",
+				rules.Assert("49", "delivery address must have a street, city and region on e-commerce supplies (IBR-142-AE)",
 					is.Func("delivery address is complete", invoiceDeliveryAddressIsComplete),
 				),
 			),
@@ -444,7 +442,7 @@ func billInvoiceRules() *rules.Set {
 			// test, which fails exports without a delivery address.
 			rules.When(
 				is.Func("export", invoiceIsExport),
-				rules.Assert("51", "delivery address outside the UAE must have a street, city and region on exports (IBR-152-AE)",
+				rules.Assert("50", "delivery address outside the UAE must have a street, city and region on exports (IBR-152-AE)",
 					is.Func("delivery address is in the UAE or complete", invoiceDeliveryAddressIsAEOrComplete),
 				),
 			),
@@ -453,7 +451,7 @@ func billInvoiceRules() *rules.Set {
 				rules.Field("customer",
 					rules.When(
 						is.Func("has UAE Peppol endpoint that is not a TIN", partyHasUAEEndpointNotTIN),
-						rules.Assert("52", "customer identity or tax registration is required with a UAE Peppol endpoint that is not a TIN, except on exports (IBR-135-AE)",
+						rules.Assert("51", "customer identity or tax registration is required with a UAE Peppol endpoint that is not a TIN, except on exports (IBR-135-AE)",
 							is.Func("has identifier or tax registration", partyHasIdentificationOrTaxRegistration),
 						),
 					),
@@ -464,7 +462,7 @@ func billInvoiceRules() *rules.Set {
 			rules.When(
 				is.Func("has reverse charge lines", invoiceHasReverseChargeLine),
 				rules.Field("customer",
-					rules.Assert("53", "customer tax registration is required with reverse charge (IBR-103-AE)",
+					rules.Assert("52", "customer tax registration is required with reverse charge (IBR-103-AE)",
 						is.Func("has tax registration", partyHasTaxRegistration),
 					),
 				),
@@ -473,14 +471,17 @@ func billInvoiceRules() *rules.Set {
 			// AE tax extensions
 			rules.Field("tax",
 				rules.Field("ext",
-					rules.Assert("54", "credit note reason must be from the Reasons for credit note code list (IBR-001-AE)",
+					rules.Assert("53", "credit note reason must be from the Reasons for credit note code list (IBR-001-AE)",
 						tax.ExtensionHasValidCode(ExtKeyCreditNoteReason),
 					),
-					rules.Assert("55", "billing frequency must be from the frequency of billing code list (IBR-005-AE)",
+					rules.Assert("54", "billing frequency must be from the frequency of billing code list (IBR-005-AE)",
 						tax.ExtensionHasValidCode(ExtKeyBillingFrequency),
 					),
-					rules.Assert("56", "principal ID must be a TRN of 15 digits starting with 1 and ending with 03 (IBR-132-AE)",
+					rules.Assert("55", "principal ID must be a TRN of 15 digits starting with 1 (IBR-132-AE)",
 						tax.ExtensionHasValidCode(ExtKeyPrincipalID),
+					),
+					rules.Assert("56", "principal ID must end with 03 (IBR-132-AE)",
+						is.Func("principal ID ends with 03", extensionMatches(ExtKeyPrincipalID, vatTRNSuffixPattern)),
 					),
 				),
 				// PINT AE writes the billing frequency where EN writes the VAT
@@ -598,6 +599,17 @@ func billChargeRules() *rules.Set {
 			)),
 		),
 	)
+}
+
+// extensionMatches returns a predicate that reports whether the extension
+// for the key, if there, matches the pattern.
+func extensionMatches(key cbc.Key, pattern string) func(any) bool {
+	re := regexp.MustCompile(pattern)
+	return func(val any) bool {
+		ext, _ := tax.ExtensionsFromValue(val)
+		code := ext.Get(key)
+		return code == "" || re.MatchString(code.String())
+	}
 }
 
 // invoiceExtIn returns a predicate that reports whether the invoice's tax
@@ -800,15 +812,14 @@ func partyHasNonVATTaxRegistration(p *org.Party) bool {
 	return false
 }
 
-// partyHasTIN reports whether the party has a tax scope identity with the
-// code IBR-133-AE looks for in the seller's tax schemes: 10 digits starting
-// with 1.
+// partyHasTIN reports whether the party has a tax scope identity of the TIN
+// type, the seller TIN IBR-133-AE looks for in the seller's tax schemes.
 func partyHasTIN(p *org.Party) bool {
 	if p == nil {
 		return false
 	}
 	for _, id := range p.Identities {
-		if identityHasTaxScope(id) && tinRegexp.MatchString(id.Code.String()) {
+		if identityHasTaxScope(id) && id.Type == ae.IdentityTypeTIN {
 			return true
 		}
 	}
@@ -825,23 +836,6 @@ func partyTaxIDIsNotVAT(p *org.Party) bool {
 	return scheme != "" && scheme != tax.CategoryVAT
 }
 
-// normalizeRounding gives UAE invoices without a rounding rule the currency
-// one. PINT sends each line amount rounded to the currency, and each VAT
-// breakdown must equal the sum of its lines (ALIGNED-IBRP-S-08 and the other
-// breakdown rules). With the default precise rule, the breakdown is the sum
-// of the unrounded lines, which can differ by a few cents.
-func normalizeRounding(inv *bill.Invoice) {
-	if inv == nil {
-		return
-	}
-	if inv.Tax == nil {
-		inv.Tax = new(bill.Tax)
-	}
-	if inv.Tax.Rounding == "" {
-		inv.Tax.Rounding = tax.RoundingRuleCurrency
-	}
-}
-
 // invoiceHasInvoicePeriod reports whether the invoice has what is written as
 // cac:InvoicePeriod: an ordering period or a billing frequency. IBR-138-AE's
 // text asks for the invoicing period, but its test only checks the element
@@ -853,39 +847,6 @@ func invoiceHasInvoicePeriod(val any) bool {
 	}
 	return (inv.Ordering != nil && inv.Ordering.Period != nil) ||
 		inv.Tax.GetExt(ExtKeyBillingFrequency) != ""
-}
-
-// principalIsNotSupplier reports whether the principal ID differs from the
-// supplier's tax registrations, the cbc:CompanyID values of its
-// PartyTaxSchemes (IBR-176-AE). A missing principal ID or supplier tax
-// registration passes, as rules 47 and 49 report those.
-func principalIsNotSupplier(val any) bool {
-	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil {
-		return false
-	}
-	principal := inv.Tax.GetExt(ExtKeyPrincipalID)
-	if principal == "" || inv.Supplier == nil {
-		return true
-	}
-	var codes []cbc.Code
-	if inv.Supplier.TaxID != nil && inv.Supplier.TaxID.Code != "" {
-		codes = append(codes, inv.Supplier.TaxID.Code)
-	}
-	for _, id := range inv.Supplier.Identities {
-		if identityHasTaxScope(id) {
-			codes = append(codes, id.Code)
-		}
-	}
-	if len(codes) == 0 {
-		return true
-	}
-	for _, c := range codes {
-		if c != principal {
-			return true
-		}
-	}
-	return false
 }
 
 // invoiceDeliveryAddress returns the first address of the delivery receiver,

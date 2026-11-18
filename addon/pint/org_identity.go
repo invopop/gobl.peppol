@@ -1,21 +1,12 @@
 package pint
 
 import (
-	"regexp"
-
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/ae"
 )
-
-// tinRegexp matches a UAE TIN as PINT AE expects it: 10 digits starting with
-// 1 (IBR-148-AE). The AE regime checks the identities of the TIN type, check
-// digit included; this one covers any tax scope identity, as the Schematron
-// tests the value written. UAE Peppol endpoints (0235) are TINs too, so it
-// also tells whether an endpoint is one (IBR-135-AE).
-var tinRegexp = regexp.MustCompile(`^1\d{9}$`)
 
 // PINT AE legal registration identifier types, written as @schemeAgencyID on
 // the seller and buyer cbc:CompanyID (BTAE-15, BTAE-16). The trade licence

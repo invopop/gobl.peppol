@@ -146,8 +146,9 @@ func TestDetectAndImportAE(t *testing.T) {
 
 // importFaultsAE are the faults the official PINT AE examples give once
 // imported. They pass the PINT AE Schematron, but their data is made up: the
-// TRNs and TINs fail the check digit the Federal Tax Authority defines, and
-// some email addresses are placeholders. Any other fault is a defect in the
+// TRNs and TINs fail the check digit the Federal Tax Authority defines (the
+// supplier gets no TIN from such a TRN), and some email addresses are
+// placeholders. Any other fault is a defect in the
 // import. margin-scheme-credit-note.xml is the official margin scheme
 // example turned into a credit note, as there is no official one.
 var importFaultsAE = map[string][]string{
@@ -229,8 +230,9 @@ func TestImportAESellerTIN(t *testing.T) {
 	env := loadTestEnvelope(t, "pint/ae/invoice-ae-outside-scope.json")
 	inv, ok := env.Extract().(*bill.Invoice)
 	require.True(t, ok)
+	// The fixture's supplier has its TIN as a tax identity; without the TRN,
+	// the TIN is its only tax registration.
 	inv.Supplier.TaxID = &tax.Identity{Country: "AE"}
-	inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{Type: ae.IdentityTypeTIN, Code: "1357902467"})
 	require.NoError(t, env.Calculate())
 	require.NoError(t, env.Validate())
 

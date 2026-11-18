@@ -162,7 +162,7 @@ number (`peppol-pint-ae-batch-number`) as its lot; and the scheme version
 (`peppol-pint-ae-scheme-version`) of the item's classification and service
 accounting codes. On import, it reads
 the invoice UUID, the out-of-scope type codes 480 and 81 back as the
-`outside-scope` tag, and
+`outside-tax-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as
 identity keys and fields, the transaction type back as its extension and
 tags, and the credit note reason, billing frequency, line exemption

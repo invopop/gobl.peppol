@@ -43,8 +43,6 @@ const aedTotalDocumentType = "aedtotal-incl-vat"
 // charges one above 0 (aligned-ibrp-ae-06, aligned-ibrp-ae-07).
 const aeStandardRate = "5"
 
-// taxSchemeTIN is the tax scheme PINT AE writes the seller TIN under.
-const taxSchemeTIN = "TIN"
 
 // accountSchemeIBAN is the scheme PINT AE gives the ID of an IBAN account
 // (IBT-084-1), as the official examples do.
@@ -101,7 +99,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 		return nil
 	}
 	importAEUUID(in, inv)
-	importAEOutsideScope(in, inv)
+	importAEOutsideTaxScope(in, inv)
 	importAEMarginScheme(inv)
 	importAETransactionType(in, inv)
 	importAECreditNoteReason(in, inv)
@@ -127,11 +125,11 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	return nil
 }
 
-// importAEOutsideScope reads the PINT AE out-of-scope document types, which
+// importAEOutsideTaxScope reads the PINT AE out-of-scope document types, which
 // gobl.ubl does not know and imports as "other": 480 becomes a standard
-// invoice and 81 a credit note, both with the outside-scope tag. The PINT
+// invoice and 81 a credit note, both with the outside-tax-scope tag. The PINT
 // scenarios then set the type code back when the document is calculated.
-func importAEOutsideScope(in *goblubl.Invoice, inv *bill.Invoice) {
+func importAEOutsideTaxScope(in *goblubl.Invoice, inv *bill.Invoice) {
 	code := in.InvoiceTypeCode
 	if code == nil {
 		code = in.CreditNoteTypeCode
@@ -147,8 +145,8 @@ func importAEOutsideScope(in *goblubl.Invoice, inv *bill.Invoice) {
 	default:
 		return
 	}
-	if !inv.HasTags(pint.TagOutsideScope) {
-		inv.Tags.List = append(inv.Tags.List, pint.TagOutsideScope)
+	if !inv.HasTags(pint.TagOutsideTaxScope) {
+		inv.Tags.List = append(inv.Tags.List, pint.TagOutsideTaxScope)
 	}
 }
 
@@ -1001,15 +999,15 @@ func importAEDeliveryPartyID(in *goblubl.Invoice, inv *bill.Invoice) {
 		inv.Delivery.Receiver = new(org.Party)
 	}
 	r := inv.Delivery.Receiver
-	if trnFormat.MatchString(code.String()) {
+	if trnRegexp.MatchString(code.String()) {
 		r.TaxID = &tax.Identity{Country: l10n.AE.Tax(), Code: code}
 		return
 	}
 	r.Identities = append(r.Identities, &org.Identity{Type: ae.IdentityTypeTIN, Code: code})
 }
 
-// trnFormat is the format of a UAE TRN.
-var trnFormat = regexp.MustCompile(`^1\d{14}$`)
+// trnRegexp matches a UAE TRN.
+var trnRegexp = regexp.MustCompile(ae.TRNPattern)
 
 // extensionHasCode reports whether the extension lists the code.
 func extensionHasCode(key cbc.Key, code cbc.Code) bool {
@@ -1239,7 +1237,24 @@ func exportAEPartyIdentities(out *goblubl.Party, p *org.Party) {
 		return
 	}
 	exportAELegalIdentity(out, p)
-	exportAETINScheme(out, p)
+	exportAETINIdentification(out)
+}
+
+// identitySchemeTIN is the ISO 6523 ICD of the UAE TIN, the scheme of UAE
+// Peppol endpoints too.
+const identitySchemeTIN = "0235"
+
+// exportAETINIdentification writes the scheme of a TIN identity in
+// cac:PartyIdentification as its ISO 6523 ICD, 0235. gobl.ubl writes the
+// identity's type, TIN, which is not an ICD (ibr-cl-10).
+func exportAETINIdentification(out *goblubl.Party) {
+	for i := range out.PartyIdentification {
+		id := out.PartyIdentification[i].ID
+		if id != nil && id.SchemeID != nil && *id.SchemeID == ae.IdentityTypeTIN.String() {
+			scheme := identitySchemeTIN
+			id.SchemeID = &scheme
+		}
+	}
 }
 
 // exportAELegalIdentity writes the legal registration identifier type of the
@@ -1288,9 +1303,13 @@ func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 // importAEPartyIdentities reads back what exportAEPartyIdentities writes:
 // the legal identity's key or type from @schemeAgencyID, with
 // @schemeAgencyName as the passport's country or the trade licence's
-// description, and, for the supplier, the TIN type on the tax registration
-// that is not VAT, as PINT AE
-// defines IBT-032 as the seller TIN.
+// description, and a TIN identification from its 0235 scheme. For the
+// supplier, it also reads every tax registration that
+// is not VAT as a TIN, as PINT AE defines IBT-032 as the seller TIN.
+//
+// TODO: the BIS gives the seller TIN's scheme no code list, and the official
+// examples use TIN and TAX. A scheme like TAX is read as a TIN, and written
+// back as TIN.
 func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 	if in == nil || p == nil {
 		return
@@ -1305,10 +1324,26 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 			break
 		}
 	}
-	if supplier {
+	// A cac:PartyIdentification with the scheme 0235 is a TIN, which export
+	// writes with that scheme.
+	for _, id := range p.Identities {
+		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == identitySchemeTIN {
+			id.Type = ae.IdentityTypeTIN
+			id.Ext = id.Ext.Delete(iso.ExtKeySchemeID)
+		}
+	}
+	if !supplier {
+		return
+	}
+	for _, pts := range in.PartyTaxScheme {
+		if pts.CompanyID == nil || pts.TaxScheme == nil ||
+			strings.EqualFold(strings.TrimSpace(pts.TaxScheme.ID.Value), goblubl.TaxSchemeVAT) {
+			continue
+		}
 		for _, id := range p.Identities {
-			if id != nil && id.Scope == org.IdentityScopeTax && id.Key == "" && id.Type == "" {
+			if id != nil && id.Scope == org.IdentityScopeTax && id.Code.String() == pts.CompanyID.Value {
 				id.Type = ae.IdentityTypeTIN
+				break
 			}
 		}
 	}
@@ -1348,32 +1383,6 @@ func importAELegalIdentity(id *org.Identity, cid *goblubl.IDType) {
 		id.Country = l10n.ISOCountryCode(name)
 	case id.Type == ae.IdentityTypeTradeLicense:
 		id.Description = name
-	}
-}
-
-// exportAETINScheme writes the TIN tax scheme on the party tax schemes that
-// gobl.ubl writes for the party's TIN identities, which it gives the generic
-// LOC scheme.
-//
-// No rule asks for TIN: the BIS only says the scheme of the seller TIN
-// (IBT-032) must not be VAT, the syntax binding gives no code list, and
-// IBR-133-AE and IBR-178-AE only check for "not VAT", so LOC would pass too.
-// The official examples don't agree: Seller-TIN-identifier.xml uses TIN and
-// Seller-TRN-and-TIN-identifiers.xml uses TAX. FormatAE writes TIN and reads
-// both. It is not the TIN of UNCL 1153, which is a transport instruction
-// number.
-func exportAETINScheme(out *goblubl.Party, p *org.Party) {
-	for _, id := range p.Identities {
-		if id == nil || id.Type != ae.IdentityTypeTIN || id.Scope != org.IdentityScopeTax {
-			continue
-		}
-		for i := range out.PartyTaxScheme {
-			pts := &out.PartyTaxScheme[i]
-			if pts.CompanyID != nil && pts.CompanyID.Value == id.Code.String() &&
-				pts.TaxScheme != nil && pts.TaxScheme.ID.Value != goblubl.TaxSchemeVAT {
-				pts.TaxScheme.ID.Value = taxSchemeTIN
-			}
-		}
 	}
 }
 

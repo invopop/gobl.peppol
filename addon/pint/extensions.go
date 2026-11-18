@@ -61,10 +61,6 @@ const CreditNoteReasonVolumeDiscount cbc.Code = "VD"
 // in an invoice note (IBR-160-AE).
 const BillingFrequencyOthers cbc.Code = "OTH"
 
-// principalIDPattern is the format of the principal ID, a UAE TRN: 15 digits
-// starting with 1 and ending with 03 (IBR-132-AE).
-const principalIDPattern = `^1\d{12}03$`
-
 // Usages of the PINT AE extensions: offered by the PINT addon under the AE
 // regime, on the object each one goes on.
 var (
@@ -159,11 +155,10 @@ var extensions = []*cbc.Definition{
 				Identifier of the principal a disclosed agent bills on behalf of
 				(BTAE-14), required with the "disclosed-agent" transaction type
 				(IBR-137-AE). It is the principal's TRN: 15 digits starting with 1
-				and ending with 03 (IBR-132-AE), different from the supplier's tax
-				ID (IBR-176-AE).
+				and ending with 03 (IBR-132-AE).
 			`),
 		},
-		Pattern: principalIDPattern,
+		Pattern: ae.TRNPattern,
 	},
 	{
 		Key:   ExtKeyCreditNoteReason,

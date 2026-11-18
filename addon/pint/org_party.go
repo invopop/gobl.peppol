@@ -5,10 +5,13 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/org"
+	"github.com/invopop/gobl/pkg/luhn"
+	"github.com/invopop/gobl/regimes/ae"
 )
 
 // emirateCodes are the country subdivision codes PINT AE accepts for UAE
@@ -225,8 +228,6 @@ func partyHasUAEEndpointWith(match func(code string) bool) func(any) bool {
 }
 
 var (
-	// partyHasUAEEndpoint is the condition of the legal registration rules.
-	partyHasUAEEndpoint = partyHasUAEEndpointWith(func(string) bool { return true })
 	// partyHasUAEEndpointPredefined reports whether the party has one of the
 	// predefined UAE endpoints, which IBR-180-AE, IBR-183-AE and IBR-101-AE
 	// exempt.
@@ -251,7 +252,7 @@ var (
 	// partyHasUAEEndpointNotTIN is the condition of IBR-135-AE: a code that
 	// is not a TIN, 1XXXXXXXXX.
 	partyHasUAEEndpointNotTIN = partyHasUAEEndpointWith(func(code string) bool {
-		return !tinRegexp.MatchString(code)
+		return !tinRegexpAE.MatchString(code)
 	})
 )
 
@@ -317,4 +318,62 @@ func partyHasIdentificationOrTaxRegistration(val any) bool {
 		}
 	}
 	return false
+}
+
+// tinRegexpAE matches a UAE TIN, in the AE regime's format. UAE Peppol
+// endpoints (0235) are TINs too, so it also tells whether an endpoint is one
+// (IBR-135-AE).
+var tinRegexpAE = regexp.MustCompile(ae.TINPattern)
+
+// trnRegexpAE matches a UAE TRN, in the AE regime's format. Its first 10
+// digits are the TIN.
+var trnRegexpAE = regexp.MustCompile(ae.TRNPattern)
+
+// normalizeSupplierAE fills in what the supplier's UAE TRN implies, when it
+// is missing: the TIN the TRN starts with, as a tax scope identity of the
+// TIN type (IBT-032), and the UAE Peppol endpoint, 0235 with the TIN, the
+// one the UAE PASR gives every end user. An identity of the TIN type or with
+// the tax scope is kept as it is, and the endpoint is only added to a
+// supplier with no endpoint or inbox at all.
+//
+// TODO: the customer's endpoint could be derived from its TRN the same way,
+// as every UAE end user is 0235:<TIN>, but it is not done yet.
+func normalizeSupplierAE(inv *bill.Invoice) {
+	if inv == nil || inv.Supplier == nil {
+		return
+	}
+	p := inv.Supplier
+	tin := partyTINFromTRN(p)
+	if tin == "" {
+		return
+	}
+	if !slices.ContainsFunc(p.Identities, func(id *org.Identity) bool {
+		return id != nil && (id.Type == ae.IdentityTypeTIN || id.Scope == org.IdentityScopeTax)
+	}) {
+		p.Identities = append(p.Identities, &org.Identity{
+			Type:  ae.IdentityTypeTIN,
+			Code:  tin,
+			Scope: org.IdentityScopeTax,
+		})
+	}
+	if len(p.Endpoints) == 0 && len(p.Inboxes) == 0 {
+		p.Endpoints = append(p.Endpoints, &org.Endpoint{
+			URI: cbc.URI(iso.ActorIDScheme + "::" + endpointSchemeUAE.String() + ":" + tin.String()),
+		})
+	}
+}
+
+// partyTINFromTRN returns the TIN the party's UAE tax ID starts with, when
+// the code has the TRN format and the TIN a valid check digit, as the AE
+// regime checks them. It returns an empty code otherwise, so an invalid TRN
+// gives one error, not a second one on a derived TIN.
+func partyTINFromTRN(p *org.Party) cbc.Code {
+	if p.TaxID == nil || p.TaxID.Country != l10n.AE.Tax() {
+		return ""
+	}
+	code := p.TaxID.Code.String()
+	if !trnRegexpAE.MatchString(code) || !luhn.Check(cbc.Code(code[:10])) {
+		return ""
+	}
+	return cbc.Code(code[:10])
 }

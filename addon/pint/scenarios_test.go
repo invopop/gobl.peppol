@@ -56,12 +56,12 @@ func TestInvoiceScenarios(t *testing.T) {
 	ae := l10n.AE.Tax()
 
 	t.Run("AE out-of-scope invoice is 480", func(t *testing.T) {
-		inv := scenarioInvoice(ae, bill.InvoiceTypeStandard, pint.TagOutsideScope)
+		inv := scenarioInvoice(ae, bill.InvoiceTypeStandard, pint.TagOutsideTaxScope)
 		assert.Equal(t, cbc.Code("480"), documentType(t, inv))
 	})
 
 	t.Run("AE out-of-scope credit note is 81", func(t *testing.T) {
-		inv := scenarioInvoice(ae, bill.InvoiceTypeCreditNote, pint.TagOutsideScope)
+		inv := scenarioInvoice(ae, bill.InvoiceTypeCreditNote, pint.TagOutsideTaxScope)
 		assert.Equal(t, cbc.Code("81"), documentType(t, inv))
 	})
 
@@ -76,16 +76,16 @@ func TestInvoiceScenarios(t *testing.T) {
 	})
 
 	t.Run("a hand-set code is replaced by the scenario", func(t *testing.T) {
-		inv := scenarioInvoice(ae, bill.InvoiceTypeStandard, pint.TagOutsideScope)
+		inv := scenarioInvoice(ae, bill.InvoiceTypeStandard, pint.TagOutsideTaxScope)
 		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyDocumentType: "380"})}
 		assert.Equal(t, cbc.Code("480"), documentType(t, inv))
 	})
 
 	t.Run("the tag has no effect outside AE", func(t *testing.T) {
-		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard, pint.TagOutsideScope)
+		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard, pint.TagOutsideTaxScope)
 		assert.Equal(t, cbc.Code("380"), documentType(t, inv))
 
-		inv = scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeCreditNote, pint.TagOutsideScope)
+		inv = scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeCreditNote, pint.TagOutsideTaxScope)
 		assert.Equal(t, cbc.Code("381"), documentType(t, inv))
 	})
 }

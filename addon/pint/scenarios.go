@@ -11,9 +11,9 @@ import (
 
 // Document tags and the UNTDID 1001 codes they map to.
 const (
-	// TagOutsideScope marks a PINT AE document as out of scope of VAT,
+	// TagOutsideTaxScope marks a PINT AE document as out of scope of VAT,
 	// the UAE "commercial invoice".
-	TagOutsideScope cbc.Key = "outside-scope"
+	TagOutsideTaxScope cbc.Key = "outside-tax-scope"
 
 	// UNTDID 1001 codes PINT AE uses for out-of-scope documents. 480 is in
 	// UNTDID D.23A but not in the EN 16931 code list, so it lives here.
@@ -48,9 +48,9 @@ var invoiceTags = &tax.TagSet{
 	Schema: bill.ShortSchemaInvoice,
 	List: append([]*cbc.Definition{
 		{
-			Key: TagOutsideScope,
+			Key: TagOutsideTaxScope,
 			Name: i18n.String{
-				i18n.EN: "Outside Scope",
+				i18n.EN: "Outside Tax Scope",
 			},
 			Desc: i18n.String{
 				i18n.EN: "Marks a PINT AE document as out of scope of VAT, the UAE 'commercial invoice'. Invoices are sent with document type 480 and credit notes with 81. Only for UAE documents.",
@@ -69,7 +69,7 @@ var invoiceScenarios = &tax.ScenarioSet{
 		// ** Out of scope of VAT (UAE only) **
 		{
 			Types:  []cbc.Key{bill.InvoiceTypeStandard},
-			Tags:   []cbc.Key{TagOutsideScope},
+			Tags:   []cbc.Key{TagOutsideTaxScope},
 			Filter: invoiceIsAE,
 			Ext: tax.ExtensionsOf(cbc.CodeMap{
 				untdid.ExtKeyDocumentType: docTypeInvoiceOutsideScope,
@@ -77,7 +77,7 @@ var invoiceScenarios = &tax.ScenarioSet{
 		},
 		{
 			Types:  []cbc.Key{bill.InvoiceTypeCreditNote},
-			Tags:   []cbc.Key{TagOutsideScope},
+			Tags:   []cbc.Key{TagOutsideTaxScope},
 			Filter: invoiceIsAE,
 			Ext: tax.ExtensionsOf(cbc.CodeMap{
 				untdid.ExtKeyDocumentType: docTypeCreditNoteGoodsServices,

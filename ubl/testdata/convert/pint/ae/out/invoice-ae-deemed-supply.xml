@@ -31,6 +31,12 @@
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
       </cac:PartyTaxScheme>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>1357902467</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>TIN</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
       <cac:PartyLegalEntity>
         <cbc:RegistrationName>Supplier Legal Name</cbc:RegistrationName>
         <cbc:CompanyID schemeAgencyID="TL" schemeAgencyName="Trade License issuing Authority">112345678900003</cbc:CompanyID>

@@ -53,7 +53,7 @@ func init() {
 		norm.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			norm.For(normalizeTransactionType),
-			norm.For(normalizeRounding),
+			norm.For(normalizeSupplierAE),
 			norm.For(normalizeIdentityScopes),
 			norm.For(normalizeMarginSchemeAE),
 			norm.For(normalizeMarginSchemeNoteAE),
@@ -85,7 +85,7 @@ func newV1Addon() *tax.AddonDef {
 				document's tax regime: Australian and New Zealand documents are also
 				validated against the PINT A-NZ rules; and UAE documents are validated against the PINT AE rules.
 
-				UAE documents out of scope of VAT use the "outside-scope" tag, which
+				UAE documents out of scope of VAT use the "outside-tax-scope" tag, which
 				sets the document type to 480 on invoices and 81 on credit notes.
 
 				UAE documents can only be invoices and credit notes, without the
