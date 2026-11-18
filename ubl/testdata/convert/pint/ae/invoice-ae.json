@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "139a5d40d4f5ff439072a65bbabc517e0c70b7e83020ab63c2a3ba4197ddb8c7"
+			"val": "3370f550c6b4f636857d7d6cf990604d2a29448e31ec5c519e1d588ac83f1ea2"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -60,7 +60,6 @@
 				{
 					"street": "Sheikh Zayed Road",
 					"street_extra": "Trade Centre",
-					"street_third": "Tower 2, Office 1405",
 					"locality": "Dubai",
 					"region": "DXB",
 					"country": "AE"
@@ -163,7 +162,6 @@
 						"branch": {
 							"street": "Baniyas Road",
 							"street_extra": "Deira",
-							"street_third": "Main Branch",
 							"locality": "Dubai",
 							"code": "777",
 							"country": "AE"

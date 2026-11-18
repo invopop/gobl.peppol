@@ -1174,7 +1174,7 @@ func TestExportAEPayment(t *testing.T) {
 		out := ublInvoice()
 		exportAEPayment(out, goblInvoice(&pay.CreditTransfer{
 			IBAN:   iban,
-			Branch: &org.Address{Street: "Baniyas Road", StreetExtra: "Deira", StreetThird: "Main Branch", Locality: "Dubai", Region: "DXB", Code: "777", Country: "AE"},
+			Branch: &org.Address{Street: "Baniyas Road", StreetExtra: "Deira", Locality: "Dubai", Region: "DXB", Code: "777", Country: "AE"},
 		}, nil))
 		acc := out.PaymentMeans[0].PayeeFinancialAccount
 		assert.Equal(t, "IBAN", *acc.ID.SchemeID)
@@ -1182,8 +1182,6 @@ func TestExportAEPayment(t *testing.T) {
 		require.NotNil(t, addr)
 		assert.Equal(t, "Baniyas Road", *addr.StreetName)
 		assert.Equal(t, "Deira", *addr.AdditionalStreetName)
-		require.Len(t, addr.AddressLine, 1)
-		assert.Equal(t, "Main Branch", addr.AddressLine[0].Line)
 		assert.Equal(t, "Dubai", *addr.CityName)
 		assert.Equal(t, "DXB", *addr.CountrySubentity)
 		assert.Equal(t, "777", *addr.PostalZone)

@@ -28,9 +28,6 @@
         <cbc:AdditionalStreetName>Trade Centre</cbc:AdditionalStreetName>
         <cbc:CityName>Dubai</cbc:CityName>
         <cbc:CountrySubentity>DXB</cbc:CountrySubentity>
-        <cac:AddressLine>
-          <cbc:Line>Tower 2, Office 1405</cbc:Line>
-        </cac:AddressLine>
         <cac:Country>
           <cbc:IdentificationCode>AE</cbc:IdentificationCode>
         </cac:Country>
@@ -87,9 +84,6 @@
           <cbc:AdditionalStreetName>Deira</cbc:AdditionalStreetName>
           <cbc:CityName>Dubai</cbc:CityName>
           <cbc:PostalZone>777</cbc:PostalZone>
-          <cac:AddressLine>
-            <cbc:Line>Main Branch</cbc:Line>
-          </cac:AddressLine>
           <cac:Country>
             <cbc:IdentificationCode>AE</cbc:IdentificationCode>
           </cac:Country>

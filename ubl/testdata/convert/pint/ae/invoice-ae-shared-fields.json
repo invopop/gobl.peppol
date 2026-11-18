@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "8481a29d392134057728d066188693f072d8aec4b8e9b982b26b31f075d043ad"
+			"val": "2fd34ae748de52889dcb37e92ee1b77f66c8aa1bc9642e24dd940f44533757ee"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -64,7 +64,6 @@
 				{
 					"street": "Sheikh Zayed Road",
 					"street_extra": "Trade Centre",
-					"street_third": "Tower 2, Office 1405",
 					"locality": "Dubai",
 					"region": "DXB",
 					"country": "AE"
@@ -101,7 +100,6 @@
 				{
 					"street": "Corniche Road",
 					"street_extra": "Al Bateen",
-					"street_third": "Building 7, Floor 3",
 					"locality": "Abu Dhabi",
 					"region": "AUH",
 					"country": "AE"
@@ -245,7 +243,6 @@
 					{
 						"street": "Al Maktoum Road",
 						"street_extra": "Deira",
-						"street_third": "Office 210",
 						"locality": "Dubai",
 						"region": "DXB",
 						"country": "AE"
@@ -297,7 +294,6 @@
 					{
 						"street": "Industrial Area 4",
 						"street_extra": "Musaffah",
-						"street_third": "Gate 3",
 						"locality": "Abu Dhabi",
 						"region": "AUH",
 						"country": "AE"

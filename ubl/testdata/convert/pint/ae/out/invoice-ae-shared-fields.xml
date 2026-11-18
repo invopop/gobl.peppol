@@ -26,9 +26,6 @@
         <cbc:AdditionalStreetName>Trade Centre</cbc:AdditionalStreetName>
         <cbc:CityName>Dubai</cbc:CityName>
         <cbc:CountrySubentity>DXB</cbc:CountrySubentity>
-        <cac:AddressLine>
-          <cbc:Line>Tower 2, Office 1405</cbc:Line>
-        </cac:AddressLine>
         <cac:Country>
           <cbc:IdentificationCode>AE</cbc:IdentificationCode>
         </cac:Country>
@@ -56,9 +53,6 @@
         <cbc:AdditionalStreetName>Al Bateen</cbc:AdditionalStreetName>
         <cbc:CityName>Abu Dhabi</cbc:CityName>
         <cbc:CountrySubentity>AUH</cbc:CountrySubentity>
-        <cac:AddressLine>
-          <cbc:Line>Building 7, Floor 3</cbc:Line>
-        </cac:AddressLine>
         <cac:Country>
           <cbc:IdentificationCode>AE</cbc:IdentificationCode>
         </cac:Country>
@@ -92,9 +86,6 @@
       <cbc:AdditionalStreetName>Deira</cbc:AdditionalStreetName>
       <cbc:CityName>Dubai</cbc:CityName>
       <cbc:CountrySubentity>DXB</cbc:CountrySubentity>
-      <cac:AddressLine>
-        <cbc:Line>Office 210</cbc:Line>
-      </cac:AddressLine>
       <cac:Country>
         <cbc:IdentificationCode>AE</cbc:IdentificationCode>
       </cac:Country>
@@ -117,9 +108,6 @@
         <cbc:AdditionalStreetName>Musaffah</cbc:AdditionalStreetName>
         <cbc:CityName>Abu Dhabi</cbc:CityName>
         <cbc:CountrySubentity>AUH</cbc:CountrySubentity>
-        <cac:AddressLine>
-          <cbc:Line>Gate 3</cbc:Line>
-        </cac:AddressLine>
         <cac:Country>
           <cbc:IdentificationCode>AE</cbc:IdentificationCode>
         </cac:Country>

@@ -315,6 +315,9 @@ func exportAECreditTransfer(acc *goblubl.FinancialAccount, ct *pay.CreditTransfe
 		scheme := accountSchemeIBAN
 		acc.ID.SchemeID = &scheme
 	}
+	// TODO: gobl.ubl reads the branch address for every UBL format, but only
+	// FormatAE writes it, so BIS, PINT and A-NZ drop it on export. Move this
+	// export into gobl.ubl, reusing its address builder, and remove aeAddress.
 	if addr := aeAddress(ct.Branch); addr != nil {
 		if acc.FinancialInstitutionBranch == nil {
 			acc.FinancialInstitutionBranch = new(goblubl.Branch)
@@ -337,9 +340,6 @@ func aeAddress(a *org.Address) *goblubl.PostalAddress {
 	}
 	set(&addr.StreetName, a.LineOne())
 	set(&addr.AdditionalStreetName, a.LineTwo())
-	if l := a.LineThree(); l != "" {
-		addr.AddressLine = []goblubl.AddressLine{{Line: l}}
-	}
 	set(&addr.CityName, a.Locality)
 	set(&addr.PostalZone, a.Code.String())
 	set(&addr.CountrySubentity, a.Region)

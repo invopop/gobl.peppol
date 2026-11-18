@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "c26c3f64b0a1bd3704a2504990810aeea8a10a0cedbc352f4fe33d5c83a5fc4c"
+			"val": "8a4d1fd6cc1cf691229ff59ea2c68aa4001c4a2a71f8226e71574d02a84e0ea9"
 		},
 		"from": "iso6523-actorid-upis::0235:112345678900003",
 		"to": "iso6523-actorid-upis::0235:112345679000003"
@@ -72,7 +72,6 @@
 				{
 					"street": "Street Name",
 					"street_extra": "Additional Street Name",
-					"street_third": "Additional Address line",
 					"locality": "Abu Dhabi",
 					"region": "AUH",
 					"code": "Postal Zone",
@@ -124,7 +123,6 @@
 				{
 					"street": "Street Name",
 					"street_extra": "Additional Street Name",
-					"street_third": "Additional Address Line",
 					"locality": "Abu Dhabi",
 					"region": "AUH",
 					"code": "Postal Zone",
