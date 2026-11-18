@@ -73,5 +73,22 @@ func TestConvertRegister(t *testing.T) {
 		inv, ok := res.Envelope.Extract().(*bill.Invoice)
 		require.True(t, ok)
 		assert.Contains(t, inv.GetAddons(), en16931.V2017)
+		require.Len(t, inv.Supplier.Endpoints, 1)
+		assert.Equal(t, cbc.URI("iso6523-actorid-upis::0007:5566778899"), inv.Supplier.Endpoints[0].URI)
+		require.Len(t, inv.Customer.Endpoints, 1)
+		assert.Equal(t, cbc.URI("iso6523-actorid-upis::0007:8020028711"), inv.Customer.Endpoints[0].URI)
+	})
+
+	t.Run("detect without format option", func(t *testing.T) {
+		data, err := os.ReadFile(filepath.Join("testdata", "parse", "bis", "CII-IN_SE-R-003.xml"))
+		require.NoError(t, err)
+		doc, err := goblcii.Decode(data)
+		require.NoError(t, err)
+		env, err := goblcii.Import(doc)
+		require.NoError(t, err)
+		inv, ok := env.Extract().(*bill.Invoice)
+		require.True(t, ok)
+		require.Len(t, inv.Supplier.Endpoints, 1)
+		assert.Equal(t, cbc.URI("iso6523-actorid-upis::0007:5566778899"), inv.Supplier.Endpoints[0].URI)
 	})
 }
