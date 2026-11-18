@@ -81,21 +81,66 @@ func partyHasLegalIdentity(val any) bool {
 // with the tax scope and the first with the legal scope.
 func partyHasOneIdentification(val any) bool {
 	p, ok := val.(*org.Party)
-	if !ok || p == nil {
-		return false
+	return ok && p != nil && len(partyIdentifications(p)) <= 1
+}
+
+// payeeIsNotSupplier reports whether the invoice's payee differs from the
+// supplier, compared as ibr-017 does: on the legal identities gobl.ubl writes
+// as cac:PartyLegalEntity/cbc:CompanyID when both have one, else on the
+// identities it writes as cac:PartyIdentification when both have any, else on
+// the payee's name against the supplier's, regardless of case. Identities
+// match on code and the scheme gobl.ubl writes. An invoice without a payee
+// passes.
+func payeeIsNotSupplier(val any) bool {
+	inv, ok := val.(*bill.Invoice)
+	if !ok || inv == nil || inv.Payment == nil || inv.Payment.Payee == nil || inv.Supplier == nil {
+		return true
 	}
-	n := 0
-	legal := false
+	payee, supplier := inv.Payment.Payee, inv.Supplier
+	if p, s := partyFirstLegalIdentity(payee), partyFirstLegalIdentity(supplier); p != nil && s != nil {
+		return p.Code != s.Code || p.Ext.Get(iso.ExtKeySchemeID) != s.Ext.Get(iso.ExtKeySchemeID)
+	}
+	if ps, ss := partyIdentifications(payee), partyIdentifications(supplier); len(ps) > 0 && len(ss) > 0 {
+		for _, p := range ps {
+			if slices.ContainsFunc(ss, func(s *org.Identity) bool {
+				return p.Code == s.Code && identificationScheme(p) == identificationScheme(s)
+			}) {
+				return false
+			}
+		}
+		return true
+	}
+	name := payee.Name
+	if payee.Alias != "" {
+		// gobl.ubl writes the alias as the payee's cac:PartyName.
+		name = payee.Alias
+	}
+	return name == "" || supplier.Name == "" ||
+		!strings.EqualFold(strings.TrimSpace(name), strings.TrimSpace(supplier.Name))
+}
+
+// partyIdentifications returns the party's identities gobl.ubl writes as
+// cac:PartyIdentification: all but the tax scope ones and the first legal
+// one.
+func partyIdentifications(p *org.Party) []*org.Identity {
+	legal := partyFirstLegalIdentity(p)
+	var ids []*org.Identity
 	for _, id := range p.Identities {
-		switch {
-		case id == nil || id.Scope == org.IdentityScopeTax:
-		case id.Scope == org.IdentityScopeLegal && !legal:
-			legal = true
-		default:
-			n++
+		if id != nil && id != legal && id.Scope != org.IdentityScopeTax {
+			ids = append(ids, id)
 		}
 	}
-	return n <= 1
+	return ids
+}
+
+// identificationScheme returns the scheme gobl.ubl writes as the @schemeID
+// of an identity's cac:PartyIdentification: its ISO 6523 scheme, or its type
+// when it has no extensions.
+func identificationScheme(id *org.Identity) cbc.Code {
+	if id.Ext.IsZero() {
+		return id.Type
+	}
+	return id.Ext.Get(iso.ExtKeySchemeID)
 }
 
 // partyFirstAddress returns the party's first address, the only one gobl.ubl
@@ -183,10 +228,10 @@ func partyEndpointID(p *org.Party) (cbc.Code, string) {
 }
 
 // partyHasEndpointID reports whether gobl.ubl writes the party's electronic
-// address as a cbc:EndpointID that PINT AE accepts: an ISO 6523 endpoint or an
+// address as a cbc:EndpointID that PINT accepts: an ISO 6523 endpoint or an
 // inbox with a scheme. An email address is written with the scheme EM, which
-// is not in PINT AE's list (ibr-cl-25). A party without endpoints passes, as
-// rule 04 reports it.
+// is not in PINT's list (ibr-cl-25). A party without endpoints passes, as
+// rules 02 and 04 report it.
 func partyHasEndpointID(val any) bool {
 	p, ok := val.(*org.Party)
 	if !ok || p == nil {
@@ -308,16 +353,7 @@ func partyHasIdentificationOrTaxRegistration(val any) bool {
 		return true
 	}
 	p, ok := val.(*org.Party)
-	if !ok || p == nil {
-		return false
-	}
-	legal := partyFirstLegalIdentity(p)
-	for _, id := range p.Identities {
-		if id != nil && id != legal && id.Scope != org.IdentityScopeTax {
-			return true
-		}
-	}
-	return false
+	return ok && p != nil && len(partyIdentifications(p)) > 0
 }
 
 // tinRegexpAE matches a UAE TIN, in the AE regime's format. UAE Peppol

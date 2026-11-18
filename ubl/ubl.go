@@ -94,8 +94,8 @@ var FormatPINT = goblubl.Format{
 	ProfileID:       "urn:peppol:bis:billing",
 	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
-		Invoice:    "org.peppol.pint:invoice:1.1.2",
-		CreditNote: "org.peppol.pint:credit-note:1.1.2",
+		Invoice:    "org.peppol.pint:invoice:1.1.3",
+		CreditNote: "org.peppol.pint:credit-note:1.1.3",
 	},
 	ImportFuncs: []goblubl.ImportFunc{importPINT},
 	// A jurisdiction specialization no dedicated format claimed still follows
@@ -115,8 +115,8 @@ var FormatAUNZ = goblubl.Format{
 	ProfileID:       "urn:peppol:bis:billing",
 	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
-		Invoice:    "org.peppol.pint.aunz:invoice:1.1.2",
-		CreditNote: "org.peppol.pint.aunz:creditnote:1.1.2",
+		Invoice:    "org.peppol.pint.aunz:invoice:1.1.3",
+		CreditNote: "org.peppol.pint.aunz:creditnote:1.1.3",
 	},
 	Specifications: []goblubl.Specification{
 		SpecificationAUNZSelfBilling,
@@ -132,8 +132,8 @@ var SpecificationAUNZSelfBilling = goblubl.Specification{
 	ProfileID:       "urn:peppol:bis:selfbilling",
 	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
-		Invoice:    "org.peppol.pint.aunz:invoice-self-billing:1.1.2",
-		CreditNote: "org.peppol.pint.aunz:creditnote-self-billing:1.1.2",
+		Invoice:    "org.peppol.pint.aunz:invoice-self-billing:1.1.3",
+		CreditNote: "org.peppol.pint.aunz:creditnote-self-billing:1.1.3",
 	},
 	Applies: isSelfBilled,
 }

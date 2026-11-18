@@ -54,6 +54,20 @@ $addons:
 
 See the [`examples`](./examples) directory for complete invoices.
 
+### PINT
+
+Documents with the PINT addon, in any regime:
+
+- Have supplier and customer electronic addresses that are written as
+  `cbc:EndpointID`: an ISO 6523 endpoint, or an inbox with a scheme. An email
+  address is written with the scheme `EM`, which PINT does not accept.
+- Have at most one customer identity written as `cac:PartyIdentification`
+  (any identity other than the tax ones and the first legal one, including a
+  UAE customer's TIN), and at most one customer tax registration (the tax ID
+  or a `tax` identity).
+- Give the payee a name, and a payee that differs from the supplier in its
+  legal identity, identity or name.
+
 ## Layout
 
 - `addon/` — the GOBL addons: normalizers, scenarios and validation rules that
@@ -126,10 +140,7 @@ delivery terms, and the delivery receiver's UAE TRN, or its TIN without one,
 as the delivery party's identification (BTAE-23). Several notes on the
 document, or on a line, are joined into one separated by a blank line, as PINT
 allows a single note on each (ibr-sr-51, ibr-sr-34), and are imported back as
-a single note. PINT also allows a single buyer identifier (ibr-sr-16), so the
-PINT addon rejects a UAE customer with more than one identity written as
-`cac:PartyIdentification`: any identity other than the tax ones and the first
-legal one, including the customer's TIN.
+a single note.
 
 **Profit margin scheme.** A UAE supply under the profit margin scheme takes the AE regime's
 `margin-scheme` tag, with the `exempt` VAT key on every line:
