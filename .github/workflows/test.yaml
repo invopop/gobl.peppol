@@ -34,7 +34,7 @@ jobs:
     # fixtures.
     services:
       phorm:
-        image: phelger/phorm:2.2.14
+        image: phelger/phorm:2.2.15
         ports:
           - 8080:8080
 
