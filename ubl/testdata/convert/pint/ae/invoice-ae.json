@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "2efb95563815d20be7d39ea1abff4b5aeb1ea01e3234a449731ef9bdd2320646"
+			"val": "a3f7cf956a8dc25227ae11efe23cc96474566e24f9d0b51395e5a8294f2efcf1"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -167,6 +167,7 @@
 							"street": "Baniyas Road",
 							"street_extra": "Deira",
 							"locality": "Dubai",
+							"region": "DXB",
 							"code": "777",
 							"country": "AE"
 						}

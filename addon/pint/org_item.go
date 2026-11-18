@@ -4,6 +4,9 @@ import (
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/org"
+	"github.com/invopop/gobl/rules"
+	"github.com/invopop/gobl/rules/is"
+	"github.com/invopop/gobl/tax"
 )
 
 // ItemKeyGoodsServices is the item key for an item that is both goods and
@@ -54,6 +57,42 @@ func ItemKeyAE(typ cbc.Code) cbc.Key {
 	return ""
 }
 
+// orgItemRules asks the items of UAE documents for the HS item
+// classifications PINT AE needs.
+func orgItemRules() *rules.Set {
+	return rules.For(new(org.Item),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			rules.When(
+				is.Func("goods", itemKeyIs(org.ItemKeyGoods)),
+				rules.Field("identities",
+					rules.Assert("01", "goods item needs an HS item classification (IBR-184-AE)",
+						is.Func("has HS", identitiesHaveLabel(IdentityLabelHS)),
+					),
+				),
+			),
+			rules.When(
+				is.Func("goods and services", itemKeyIs(ItemKeyGoodsServices)),
+				rules.Field("identities",
+					rules.Assert("02", "goods and services item needs an HS item classification (IBR-186-AE)",
+						is.Func("has HS", identitiesHaveLabel(IdentityLabelHS)),
+					),
+				),
+			),
+			// gobl.ubl writes identities with a label and no scheme ID as item
+			// classifications, with the label as their list. FormatAE writes the
+			// SAC ones as service accounting codes instead (IBR-189-AE).
+			// IBR-188-AE's text asks for HS on every classification, but its
+			// test passes when any one is HS.
+			rules.Field("identities",
+				rules.Assert("03", "item classifications must include one from the HS list (IBR-188-AE)",
+					is.Func("classifications include HS", identitiesClassifiedWithHS),
+				),
+			),
+		),
+	)
+}
+
 // itemKeyIs returns a predicate that reports whether an item has the key.
 func itemKeyIs(key cbc.Key) func(any) bool {
 	return func(val any) bool {
@@ -62,32 +101,22 @@ func itemKeyIs(key cbc.Key) func(any) bool {
 	}
 }
 
-// identitiesHaveLabel returns a predicate that reports whether an item has
-// identities with all the labels.
-func identitiesHaveLabel(labels ...string) func(any) bool {
+// identitiesHaveLabel returns a predicate that reports whether one of the
+// identities gobl.ubl writes as item classifications, those with a label and
+// no scheme ID, has the label.
+func identitiesHaveLabel(label string) func(any) bool {
 	return func(val any) bool {
 		ids, ok := val.([]*org.Identity)
 		if !ok {
 			return false
 		}
-		for _, label := range labels {
-			if !identitiesHaveLabelOf(ids, label) {
-				return false
+		for _, id := range ids {
+			if id != nil && id.Label == label && !id.Ext.Has(iso.ExtKeySchemeID) {
+				return true
 			}
 		}
-		return true
+		return false
 	}
-}
-
-// identitiesHaveLabelOf reports whether one of the identities gobl.ubl writes
-// as item classifications, those with a label and no scheme ID, has the label.
-func identitiesHaveLabelOf(ids []*org.Identity, label string) bool {
-	for _, id := range ids {
-		if id != nil && id.Label == label && !id.Ext.Has(iso.ExtKeySchemeID) {
-			return true
-		}
-	}
-	return false
 }
 
 // identitiesClassifiedWithHS reports whether the identities gobl.ubl writes

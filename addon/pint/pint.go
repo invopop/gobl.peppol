@@ -44,6 +44,10 @@ func init() {
 		taxComboRules(),
 		taxCategoryTotalRules(),
 		taxIdentityRules(),
+		orgPartyRules(),
+		orgAddressRules(),
+		orgItemRules(),
+		orgIdentityRules(),
 		payInstructionsRules(),
 		creditTransferRules(),
 	)
@@ -83,35 +87,8 @@ func newV1Addon() *tax.AddonDef {
 
 				Jurisdiction-specific requirements are applied according to the
 				document's tax regime: Australian and New Zealand documents are also
-				validated against the PINT A-NZ rules; and UAE documents are validated against the PINT AE rules.
-
-				UAE documents out of scope of VAT use the "outside-tax-scope" tag, which
-				sets the document type to 480 on invoices and 81 on credit notes.
-
-				UAE documents can only be invoices and credit notes, without the
-				"partial", "prepayment" or "factoring" tags, as PINT AE has no
-				document type for anything else. Their currency can have two
-				decimals at most.
-
-				UAE trade licences carry their issuing authority in the description,
-				and passports their issuing country.
-
-				The supplier's and customer's UAE identities without a scope get the
-				one PINT AE reads them from: "legal" for the first trade licence,
-				Emirates ID, passport or Cabinet Decision of a party that has no legal
-				identity yet, and "tax" for the supplier's TIN.
-
-				UAE invoices get the PINT AE transaction type from their tags:
-				"free-trade-zone", "deemed-supply", "margin-scheme", "summary",
-				"continuous-supply", "disclosed-agent", "e-commerce" and "export".
-
-				A UAE supply under the profit margin scheme takes the regime's
-				"margin-scheme" tag, with the "exempt" VAT key on every line. Issue
-				one invoice per sale, with no other VAT treatments and no
-				document-level discounts or charges. The lines get the PINT AE
-				category "N", written at 5% with no VAT amount, and the regime's
-				statement goes out as the VAT exemption reason of the "N" breakdown.
-				The margin VAT is reported in the VAT return.
+				validated against the PINT A-NZ rules, and UAE documents against the
+				PINT AE rules.
 			`),
 		},
 		Sources: []*cbc.Source{

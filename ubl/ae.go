@@ -43,7 +43,6 @@ const aedTotalDocumentType = "aedtotal-incl-vat"
 // charges one above 0 (aligned-ibrp-ae-06, aligned-ibrp-ae-07).
 const aeStandardRate = "5"
 
-
 // accountSchemeIBAN is the scheme PINT AE gives the ID of an IBAN account
 // (IBT-084-1), as the official examples do.
 const accountSchemeIBAN = "IBAN"
@@ -687,6 +686,10 @@ func exportAELineItemType(line *goblubl.InvoiceLine, l *bill.Line) {
 // code (IBT-158-2), or as @schemeVersionID on their additional item
 // identification (BTAE-17-2), which is where the service accounting codes are
 // by now.
+//
+// TODO: IBT-158-2 is an EN 16931 term (BT-158-2), but its value is held in a
+// PINT AE extension and only FormatAE writes it, so other formats drop it on
+// export. Move it into gobl.ubl with a generic extension.
 func exportAELineSchemeVersions(line *goblubl.InvoiceLine, l *bill.Line) {
 	if l == nil || l.Item == nil || line.Item == nil {
 		return
@@ -1070,7 +1073,7 @@ func exportAELine(line *goblubl.InvoiceLine) {
 // document currency check as amounts in the tax currency, which IBR-140-AE
 // fixes to AED. No test checks their currency, and the official exports in
 // USD write them in AED too. Without a rate, which the PINT addon requires
-// (GOBL-PEPPOL-PINT-BILL-INVOICE-28), they stay in the document currency.
+// (GOBL-PEPPOL-PINT-BILL-INVOICE-23), they stay in the document currency.
 //
 // GOBL keeps no VAT per line, so it is the line total at the line's rate,
 // rounded to the document currency, then converted. Exempt lines get no VAT
@@ -1124,7 +1127,7 @@ func aeLineVAT(line *goblubl.InvoiceLine, l *bill.Line) (num.Amount, bool) {
 // to the tax currency (IBR-153-AE), and the total with VAT in AED (BTAE-20,
 // IBR-175-AE). gobl.ubl already writes the tax currency AED and the VAT total
 // in AED (ibt-006, ibt-111) when there is a rate. The PINT addon requires the
-// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-28) with at most 6 decimals (-29).
+// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-23) with at most 6 decimals (-24).
 func exportAEExchangeRate(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Currency == currency.AED {
 		return
@@ -1240,10 +1243,6 @@ func exportAEPartyIdentities(out *goblubl.Party, p *org.Party) {
 	exportAETINIdentification(out)
 }
 
-// identitySchemeTIN is the ISO 6523 ICD of the UAE TIN, the scheme of UAE
-// Peppol endpoints too.
-const identitySchemeTIN = "0235"
-
 // exportAETINIdentification writes the scheme of a TIN identity in
 // cac:PartyIdentification as its ISO 6523 ICD, 0235. gobl.ubl writes the
 // identity's type, TIN, which is not an ICD (ibr-cl-10).
@@ -1251,7 +1250,7 @@ func exportAETINIdentification(out *goblubl.Party) {
 	for i := range out.PartyIdentification {
 		id := out.PartyIdentification[i].ID
 		if id != nil && id.SchemeID != nil && *id.SchemeID == ae.IdentityTypeTIN.String() {
-			scheme := identitySchemeTIN
+			scheme := ae.TINScheme.String()
 			id.SchemeID = &scheme
 		}
 	}
@@ -1327,7 +1326,7 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 	// A cac:PartyIdentification with the scheme 0235 is a TIN, which export
 	// writes with that scheme.
 	for _, id := range p.Identities {
-		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == identitySchemeTIN {
+		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == ae.TINScheme {
 			id.Type = ae.IdentityTypeTIN
 			id.Ext = id.Ext.Delete(iso.ExtKeySchemeID)
 		}

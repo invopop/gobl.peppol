@@ -23,7 +23,7 @@ func payInstructionsRules() *rules.Set {
 	return rules.For(new(pay.Instructions),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAUNZ...)),
-			rules.When(is.Func("payment means is credit transfer", instructionsMeanCreditTransfer),
+			rules.When(is.Func("payment means is credit transfer", instructionsMeansIn(meansCodeCreditTransfer, meansCodeSEPACreditTransfer)),
 				rules.Field("credit_transfer",
 					rules.Assert("01", "invoice credit transfer instructions must include a payment account identifier (ALIGNED-IBRP-018)", is.Present),
 				),
@@ -31,9 +31,18 @@ func payInstructionsRules() *rules.Set {
 		),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
-			rules.When(is.Func("payment means is credit transfer", instructionsMeanCreditTransferAE),
-				rules.Assert("02", "first credit transfer must include an IBAN or account number (IBR-192-AE)",
-					is.Func("has a payment account identifier", instructionsHaveAccountID),
+			// gobl.ubl only writes the first credit transfer, as
+			// cac:PayeeFinancialAccount, but every one needs the account.
+			// Unlike A-NZ, SEPA (58) is not included, as IBR-192-AE only
+			// checks 30.
+			rules.When(is.Func("payment means is credit transfer", instructionsMeansIn(meansCodeCreditTransfer)),
+				rules.Field("credit_transfer",
+					rules.Assert("02", "credit transfer is required with the payment means 30 (IBR-192-AE)", is.Present),
+					rules.Each(
+						rules.Assert("03", "credit transfer must include an IBAN or account number with the payment means 30 (IBR-192-AE)",
+							is.Func("has IBAN or account number", creditTransferHasAccountID),
+						),
+					),
 				),
 			),
 		),
@@ -55,28 +64,13 @@ func creditTransferRules() *rules.Set {
 	)
 }
 
-// instructionsMeanCreditTransfer reports whether the payment means code
-// (ibt-081) of the instructions identifies a local, non-SEPA international or
-// SEPA credit transfer.
-func instructionsMeanCreditTransfer(val any) bool {
-	instr, ok := val.(*pay.Instructions)
-	if !ok || instr == nil {
-		return false
+// instructionsMeansIn returns a predicate that reports whether the payment
+// means code (ibt-081) of the instructions is one of the codes.
+func instructionsMeansIn(codes ...cbc.Code) func(any) bool {
+	return func(val any) bool {
+		instr, ok := val.(*pay.Instructions)
+		return ok && instr != nil && instr.Ext.Get(untdid.ExtKeyPaymentMeans).In(codes...)
 	}
-	code := instr.Ext.Get(untdid.ExtKeyPaymentMeans)
-	return code == meansCodeCreditTransfer || code == meansCodeSEPACreditTransfer
-}
-
-// instructionsMeanCreditTransferAE reports whether the payment means code
-// (ibt-081) of the instructions is 30, a credit transfer. Unlike the A-NZ
-// predicate, SEPA (58) is not included, as IBR-192-AE only checks 30.
-func instructionsMeanCreditTransferAE(val any) bool {
-	instr, ok := val.(*pay.Instructions)
-	if !ok || instr == nil {
-		return false
-	}
-	code := instr.Ext.Get(untdid.ExtKeyPaymentMeans)
-	return code == meansCodeCreditTransfer
 }
 
 // creditTransferHasAccountID reports whether the credit transfer carries an
@@ -87,21 +81,4 @@ func creditTransferHasAccountID(val any) bool {
 		return true
 	}
 	return ct.IBAN != "" || ct.Number != ""
-}
-
-// instructionsHaveAccountID reports whether the instructions' first credit
-// transfer carries an account identifier (ibt-084), either an IBAN or an
-// account number. gobl.ubl only writes the first credit transfer as
-// cac:PayeeFinancialAccount, so the others can't satisfy IBR-192-AE. A missing
-// credit transfer list fails, so one check covers both cases of the rule.
-func instructionsHaveAccountID(val any) bool {
-	instr, ok := val.(*pay.Instructions)
-	if !ok || instr == nil {
-		return false
-	}
-	if len(instr.CreditTransfer) == 0 {
-		return false
-	}
-	ct := instr.CreditTransfer[0]
-	return ct != nil && (ct.IBAN != "" || ct.Number != "")
 }

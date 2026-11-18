@@ -12,17 +12,10 @@ import (
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/pkg/luhn"
 	"github.com/invopop/gobl/regimes/ae"
+	"github.com/invopop/gobl/rules"
+	"github.com/invopop/gobl/rules/is"
+	"github.com/invopop/gobl/tax"
 )
-
-// emirateCodes are the country subdivision codes PINT AE accepts for UAE
-// addresses (IBR-128-AE). They are PINT AE's own list, not ISO 3166-2.
-var emirateCodes = []cbc.Code{
-	"AUH", "DXB", "SHJ", "UAQ", "FUJ", "AJM", "RAK",
-}
-
-// endpointSchemeUAE is the Peppol participant identifier scheme for UAE
-// endpoints, which the PINT AE legal registration rules depend on.
-const endpointSchemeUAE cbc.Code = "0235"
 
 // endpointSchemeMailto is the URI scheme of email endpoints, which gobl.ubl
 // writes as cbc:EndpointID with the scheme endpointSchemeEmail.
@@ -32,47 +25,65 @@ const endpointSchemeMailto = "mailto"
 // email addresses.
 const endpointSchemeEmail cbc.Code = "EM"
 
-// partyHasIdentifier reports whether the party can be identified through a tax
-// identity code or at least one organisation identity.
-func partyHasIdentifier(val any) bool {
-	p, ok := val.(*org.Party)
-	return ok && p != nil && ((p.TaxID != nil && p.TaxID.Code != "") || len(p.Identities) > 0)
+// orgPartyRules asks every party of a UAE document with a UAE tax ID for an
+// address with an emirate code as its region (IBR-128-AE). gobl.ubl writes
+// the country of a party's tax ID over the address's own in
+// cac:PostalAddress, and an address with only that country when the party
+// has none, so every address of the party is in the UAE there. The address
+// rules already check the addresses whose own country is AE.
+//
+// It also checks the type of the legal identities of the parties with a UAE
+// Peppol endpoint (IBR-173-AE, IBR-181-AE, IBR-180-AE, IBR-183-AE). Every one
+// of those tests only fires with a 0235 cbc:EndpointID, so only UAE Peppol
+// participants are checked; foreign payees, receivers and factors have none.
+//
+// TODO: gobl.ubl writes the delivery receiver's address with its own
+// country, as cac:DeliveryLocation/cac:Address, so a receiver with a UAE tax
+// ID and a foreign address gets an emirate error PINT AE wouldn't give.
+func orgPartyRules() *rules.Set {
+	return rules.For(new(org.Party),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			rules.When(
+				is.Func("UAE tax ID", partyHasAETaxID),
+				rules.Field("addresses",
+					rules.Assert("01", "address is required with a UAE tax ID (IBR-128-AE)", is.Present),
+					rules.Each(
+						rules.When(
+							is.Not(is.Func("UAE address", addressIsAE)),
+							rules.Field("region",
+								rules.Assert("02", "region must be an emirate code with a UAE tax ID (IBR-128-AE)",
+									is.Present, is.Matches(emiratePattern),
+								),
+							),
+						),
+					),
+				),
+			),
+			// IBR-180-AE and IBR-183-AE exempt the buyers with the predefined
+			// endpoints 9900000098 and 9900000099. IBR-183-AE also exempts
+			// other 1XXXXXXXXX endpoints, but IBR-180-AE still asks them for a
+			// type, and GOBL can only write the four in the list.
+			rules.When(
+				is.Func("has UAE Peppol endpoint other than 9900000098 or 9900000099", partyHasUAEEndpoint(endpointPatternPredefined, false)),
+				rules.Field("identities", rules.Each(
+					rules.When(
+						is.Func("legal scope", identityScopeIn(org.IdentityScopeLegal)),
+						rules.Assert("03", "legal identity must be a trade license, Emirates ID, passport or Cabinet Decision with a UAE Peppol endpoint other than 9900000098 or 9900000099 (IBR-173-AE, IBR-181-AE, IBR-180-AE, IBR-183-AE)",
+							is.Or(org.IdentityKeyIn(org.IdentityKeyPassport), org.IdentityTypeIn(identityTypesAE...)),
+						),
+					),
+				)),
+			),
+		),
+	)
 }
 
-// partyHasTaxRegistration reports whether the party has a tax registration:
-// a tax ID code or an identity with the tax scope. IBR-103-AE accepts any
-// buyer PartyTaxScheme/CompanyID, and gobl.ubl writes either one there.
-func partyHasTaxRegistration(val any) bool {
+// partyHasAETaxID reports whether the party has a UAE tax ID with a code,
+// which gobl.ubl writes with its country.
+func partyHasAETaxID(val any) bool {
 	p, ok := val.(*org.Party)
-	if !ok || p == nil {
-		return false
-	}
-	if p.TaxID != nil && p.TaxID.Code != "" {
-		return true
-	}
-	for _, id := range p.Identities {
-		if id != nil && id.Scope == org.IdentityScopeTax {
-			return true
-		}
-	}
-	return false
-}
-
-// partyHasLegalIdentity reports whether the party has an identity with the
-// legal scope. gobl.ubl writes the first one as
-// PartyLegalEntity/CompanyID, the buyer legal registration identifier
-// IBR-136-AE requires on 480 and 81.
-func partyHasLegalIdentity(val any) bool {
-	p, ok := val.(*org.Party)
-	if !ok || p == nil {
-		return false
-	}
-	for _, id := range p.Identities {
-		if id != nil && id.Scope == org.IdentityScopeLegal {
-			return true
-		}
-	}
-	return false
+	return ok && p != nil && p.TaxID != nil && p.TaxID.Code != "" && p.TaxID.Country.Code() == l10n.AE
 }
 
 // partyHasOneIdentification reports whether gobl.ubl writes at most one
@@ -143,61 +154,6 @@ func identificationScheme(id *org.Identity) cbc.Code {
 	return id.Ext.Get(iso.ExtKeySchemeID)
 }
 
-// partyFirstAddress returns the party's first address, the only one gobl.ubl
-// writes as cac:PostalAddress, or nil if there is none.
-func partyFirstAddress(val any) *org.Address {
-	p, ok := val.(*org.Party)
-	if !ok || p == nil || len(p.Addresses) == 0 {
-		return nil
-	}
-	return p.Addresses[0]
-}
-
-// partyAddressIsComplete reports whether the party's first address has a
-// street, city and region, written as cbc:StreetName, cbc:CityName and
-// cbc:CountrySubentity (IBR-143-AE, IBR-144-AE). A party without an address
-// passes: EN 16931 already requires supplier and customer addresses (BR-8,
-// BR-10).
-func partyAddressIsComplete(val any) bool {
-	a := partyFirstAddress(val)
-	return a == nil || (a.Street != "" && a.Locality != "" && a.Region != "")
-}
-
-// partyAddressHasEmirate reports whether the party's first address, when in
-// the UAE, has an emirate code as its region (IBR-128-AE). Addresses in other
-// countries pass, and so does a party without addresses: it is for the
-// supplier and customer, whose addresses EN 16931 requires (BR-8, BR-10).
-func partyAddressHasEmirate(val any) bool {
-	return partyFirstAddress(val) == nil || partyPostalAddressHasEmirate(val)
-}
-
-// partyFirstAddressHasEmirate reports whether the party's first address,
-// when in the UAE, has an emirate code as its region (IBR-128-AE). gobl.ubl
-// writes it as the delivery's cac:DeliveryLocation/cac:Address, with the
-// address's own country. A party without addresses passes.
-func partyFirstAddressHasEmirate(val any) bool {
-	a := partyFirstAddress(val)
-	return a == nil || a.Country != l10n.AE.ISO() || cbc.Code(a.Region).In(emirateCodes...)
-}
-
-// partyPostalAddressHasEmirate reports whether the cac:PostalAddress gobl.ubl
-// writes for the party, when in the UAE, has an emirate code as its region
-// (IBR-128-AE). gobl.ubl writes the country of the tax ID over the address's
-// own, and writes an address with only that country for a party without
-// addresses, which fails the rule.
-func partyPostalAddressHasEmirate(val any) bool {
-	p, ok := val.(*org.Party)
-	if !ok || p == nil {
-		return false
-	}
-	a := partyFirstAddress(p)
-	inAE := a != nil && a.Country == l10n.AE.ISO()
-	if p.TaxID != nil && p.TaxID.Code != "" {
-		inAE = p.TaxID.Country.Code() == l10n.AE
-	}
-	return !inAE || (a != nil && cbc.Code(a.Region).In(emirateCodes...))
-}
-
 // partyEndpointID returns the scheme and code of the party's electronic
 // address, chosen as gobl.ubl does for cbc:EndpointID: the first ISO 6523
 // endpoint, or else the first email endpoint, or else the first inbox with an
@@ -227,79 +183,33 @@ func partyEndpointID(p *org.Party) (cbc.Code, string) {
 	return "", ""
 }
 
-// partyHasEndpointID reports whether gobl.ubl writes the party's electronic
-// address as a cbc:EndpointID that PINT accepts: an ISO 6523 endpoint or an
-// inbox with a scheme. An email address is written with the scheme EM, which
-// is not in PINT's list (ibr-cl-25). A party without endpoints passes, as
-// rules 02 and 04 report it.
-func partyHasEndpointID(val any) bool {
-	p, ok := val.(*org.Party)
-	if !ok || p == nil {
-		return false
-	}
-	if len(p.Endpoints) == 0 {
-		return true
-	}
-	s, _ := partyEndpointID(p)
-	return s != "" && s != endpointSchemeEmail
-}
+// Patterns of the UAE Peppol endpoint codes the PINT AE rules depend on.
+const (
+	// endpointPatternPredefined matches the predefined endpoints 9900000098
+	// and 9900000099, which IBR-180-AE and IBR-183-AE exempt.
+	endpointPatternPredefined = `^99000000(98|99)$`
+	// endpointPatternDeemedSupply matches the predefined endpoint of the
+	// buyer of a deemed supply (PINT AE BIS 1.5.3).
+	endpointPatternDeemedSupply = `^9900000097$`
+	// endpointPattern1or9 matches the codes of 10 digits starting with 1 or
+	// 9, which need no buyer legal registration identifier (IBR-149-AE).
+	endpointPattern1or9 = `^[19]\d{9}$`
+)
 
-// endpointCodesPredefined are the predefined UAE Peppol endpoint codes that
-// IBR-180-AE, IBR-183-AE and IBR-101-AE exempt from the buyer legal
-// registration identifier type and authority.
-var endpointCodesPredefined = []string{"9900000098", "9900000099"}
-
-// endpointCodeDeemedSupply is the predefined UAE Peppol endpoint code of the
-// buyer of a deemed supply (PINT AE BIS 1.5.3).
-const endpointCodeDeemedSupply = "9900000097"
-
-// endpoint1or9Regexp matches the UAE Peppol endpoint codes of 10 digits
-// starting with 1 or 9, which need no buyer legal registration identifier
-// (IBR-149-AE).
-var endpoint1or9Regexp = regexp.MustCompile(`^[19]\d{9}$`)
-
-// partyHasUAEEndpointWith returns a predicate that reports whether the party's
-// electronic address uses the UAE Peppol scheme 0235 with a code that match
-// accepts.
-func partyHasUAEEndpointWith(match func(code string) bool) func(any) bool {
+// partyHasUAEEndpoint returns a predicate that reports whether the party's
+// electronic address, as gobl.ubl chooses it, uses the UAE Peppol scheme 0235
+// with a code that matches the pattern, or that doesn't when match is false.
+func partyHasUAEEndpoint(pattern string, match bool) func(any) bool {
+	re := regexp.MustCompile(pattern)
 	return func(val any) bool {
 		p, ok := val.(*org.Party)
 		if !ok || p == nil {
 			return false
 		}
 		scheme, code := partyEndpointID(p)
-		return scheme == endpointSchemeUAE && match(code)
+		return scheme == ae.TINScheme && re.MatchString(code) == match
 	}
 }
-
-var (
-	// partyHasUAEEndpointPredefined reports whether the party has one of the
-	// predefined UAE endpoints, which IBR-180-AE, IBR-183-AE and IBR-101-AE
-	// exempt.
-	partyHasUAEEndpointPredefined = partyHasUAEEndpointWith(func(code string) bool {
-		return slices.Contains(endpointCodesPredefined, code)
-	})
-	// partyHasUAEEndpointNotPredefined is the condition of IBR-180-AE and
-	// IBR-183-AE.
-	partyHasUAEEndpointNotPredefined = partyHasUAEEndpointWith(func(code string) bool {
-		return !slices.Contains(endpointCodesPredefined, code)
-	})
-	// partyHasUAEEndpointDeemedSupply reports whether the party has the
-	// predefined UAE endpoint of a deemed supply buyer.
-	partyHasUAEEndpointDeemedSupply = partyHasUAEEndpointWith(func(code string) bool {
-		return code == endpointCodeDeemedSupply
-	})
-	// partyHasUAEEndpointNot1or9 is the condition of IBR-149-AE: a code
-	// that is not 1XXXXXXXXX or 9XXXXXXXXX.
-	partyHasUAEEndpointNot1or9 = partyHasUAEEndpointWith(func(code string) bool {
-		return !endpoint1or9Regexp.MatchString(code)
-	})
-	// partyHasUAEEndpointNotTIN is the condition of IBR-135-AE: a code that
-	// is not a TIN, 1XXXXXXXXX.
-	partyHasUAEEndpointNotTIN = partyHasUAEEndpointWith(func(code string) bool {
-		return !tinRegexpAE.MatchString(code)
-	})
-)
 
 // partyFirstLegalIdentity returns the party's first identity with the legal
 // scope, the one gobl.ubl writes as cac:PartyLegalEntity/cbc:CompanyID, or nil
@@ -316,50 +226,6 @@ func partyFirstLegalIdentity(val any) *org.Identity {
 	}
 	return nil
 }
-
-// partyTaxIdentityCount returns how many of the party's identities have the
-// tax scope. gobl.ubl writes each one as a cac:PartyTaxScheme.
-func partyTaxIdentityCount(p *org.Party) int {
-	n := 0
-	for _, id := range p.Identities {
-		if identityHasTaxScope(id) {
-			n++
-		}
-	}
-	return n
-}
-
-// partyHasAtMostOneTaxRegistration reports whether the party has at most one
-// tax registration, counting the tax ID code and the tax scope identities, as
-// the buyer can only have one PartyTaxScheme/CompanyID (IBR-179-AE).
-func partyHasAtMostOneTaxRegistration(val any) bool {
-	p, ok := val.(*org.Party)
-	if !ok || p == nil {
-		return false
-	}
-	n := partyTaxIdentityCount(p)
-	if p.TaxID != nil && p.TaxID.Code != "" {
-		n++
-	}
-	return n <= 1
-}
-
-// partyHasIdentificationOrTaxRegistration reports whether the party has an
-// identity gobl.ubl writes as cac:PartyIdentification (any identity that is
-// neither a tax registration nor the first legal one) or a tax registration
-// (IBR-135-AE).
-func partyHasIdentificationOrTaxRegistration(val any) bool {
-	if partyHasTaxRegistration(val) {
-		return true
-	}
-	p, ok := val.(*org.Party)
-	return ok && p != nil && len(partyIdentifications(p)) > 0
-}
-
-// tinRegexpAE matches a UAE TIN, in the AE regime's format. UAE Peppol
-// endpoints (0235) are TINs too, so it also tells whether an endpoint is one
-// (IBR-135-AE).
-var tinRegexpAE = regexp.MustCompile(ae.TINPattern)
 
 // trnRegexpAE matches a UAE TRN, in the AE regime's format. Its first 10
 // digits are the TIN.
@@ -394,7 +260,7 @@ func normalizeSupplierAE(inv *bill.Invoice) {
 	}
 	if len(p.Endpoints) == 0 && len(p.Inboxes) == 0 {
 		p.Endpoints = append(p.Endpoints, &org.Endpoint{
-			URI: cbc.URI(iso.ActorIDScheme + "::" + endpointSchemeUAE.String() + ":" + tin.String()),
+			URI: cbc.URI(iso.ActorIDScheme + "::" + ae.TINScheme.String() + ":" + tin.String()),
 		})
 	}
 }

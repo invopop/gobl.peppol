@@ -66,9 +66,9 @@ func normalizeTaxCombo(tc *tax.Combo) {
 // exempt VAT lines of a UAE margin scheme invoice. The line combos already have
 // E from their key, as norm reaches them before the invoice, and get it back
 // once the tag is removed. Discounts and charges are left alone, so the
-// discount and charge rules 02 and rule 48 reject them (IBR-114-AE,
+// discount and charge rules 01 and invoice rule 44 reject them (IBR-114-AE,
 // IBR-115-AE, IBR-116-AE). Lines with a UAE exemption reason are a real
-// exempt supply, so they keep E and rule 48 rejects the mixed invoice.
+// exempt supply, so they keep E and invoice rule 44 rejects the mixed invoice.
 func normalizeMarginSchemeAE(inv *bill.Invoice) {
 	if inv == nil || !inv.HasTags(TagMarginScheme) {
 		return
@@ -158,6 +158,17 @@ func taxComboRules() *rules.Set {
 				rules.Field("percent",
 					rules.Assert("05", "tax percentage must be 0.00 (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)",
 						num.Equals(num.MakePercentage(0, 2)),
+					),
+				),
+			),
+
+			// Lines, discounts and charges alike: the margin scheme lines have
+			// the category N instead of E, so they need none.
+			rules.When(
+				is.Func("exempt VAT", comboIsExemptVAT),
+				rules.Field("ext",
+					rules.Assert("06", "exempt VAT needs a UAE VAT exemption reason (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
+						tax.ExtensionsRequire(ExtKeyExemption),
 					),
 				),
 			),

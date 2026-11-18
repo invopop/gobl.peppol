@@ -1,11 +1,16 @@
 package pint
 
 import (
+	"slices"
+
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/org"
 	"github.com/invopop/gobl/regimes/ae"
+	"github.com/invopop/gobl/rules"
+	"github.com/invopop/gobl/rules/is"
+	"github.com/invopop/gobl/tax"
 )
 
 // PINT AE legal registration identifier types, written as @schemeAgencyID on
@@ -23,6 +28,34 @@ var identityTypesAE = []cbc.Code{
 	ae.IdentityTypeTradeLicense,
 	ae.IdentityTypeEmiratesID,
 	ae.IdentityTypeCabinetDecision,
+}
+
+// orgIdentityRules asks the passports of UAE documents for their issuing
+// country and the trade licences for their issuing authority, which are
+// written as the @schemeAgencyName of the seller's and buyer's
+// cac:PartyLegalEntity/cbc:CompanyID (IBR-012-AE, IBR-010-AE, IBR-172-AE,
+// IBR-101-AE).
+func orgIdentityRules() *rules.Set {
+	return rules.For(new(org.Identity),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			rules.When(
+				org.IdentityKeyIn(org.IdentityKeyPassport),
+				rules.Field("country",
+					rules.Assert("01", "passport must have the issuing country (IBR-012-AE, IBR-010-AE)", is.Present),
+				),
+			),
+			// IBR-101-AE exempts the buyers with the predefined endpoints
+			// 9900000098 and 9900000099, but an identity can't see its party's
+			// endpoint, so their trade licences need the authority too.
+			rules.When(
+				org.IdentityTypeIn(ae.IdentityTypeTradeLicense),
+				rules.Field("description",
+					rules.Assert("02", "trade license must have the issuing authority in the description (IBR-172-AE, IBR-101-AE)", is.Present),
+				),
+			),
+		),
+	)
 }
 
 // IdentityTypeAE returns the PINT AE legal registration identifier type of an
@@ -118,16 +151,24 @@ func GTINIdentity(ids []*org.Identity) *org.Identity {
 	return nil
 }
 
-// identityHasLegalScope reports whether an identity has the legal scope.
-// EN 16931 allows one per party (GOBL-EU-EN16931-ORG-PARTY-02), the one
-// gobl.ubl writes as cac:PartyLegalEntity/cbc:CompanyID.
-func identityHasLegalScope(val any) bool {
-	id, ok := val.(*org.Identity)
-	return ok && id != nil && id.Scope == org.IdentityScopeLegal
+// identityScopeIn returns a predicate that reports whether an identity has
+// one of the scopes, the empty one for none. gobl.ubl writes the identity
+// with the tax scope as a cac:PartyTaxScheme and the first with the legal
+// scope as cac:PartyLegalEntity/cbc:CompanyID, and the rest as
+// cac:PartyIdentification.
+func identityScopeIn(scopes ...cbc.Key) func(any) bool {
+	return func(val any) bool {
+		id, ok := val.(*org.Identity)
+		return ok && id != nil && id.Scope.In(scopes...)
+	}
 }
 
-// identityHasTaxScope reports whether an identity has the tax scope.
-func identityHasTaxScope(val any) bool {
-	id, ok := val.(*org.Identity)
-	return ok && id != nil && id.Scope == org.IdentityScopeTax
+// identitiesScopeIn returns a predicate that reports whether any of the
+// identities has one of the scopes, the empty one for none.
+func identitiesScopeIn(scopes ...cbc.Key) func(any) bool {
+	match := identityScopeIn(scopes...)
+	return func(val any) bool {
+		ids, ok := val.([]*org.Identity)
+		return ok && slices.ContainsFunc(ids, func(id *org.Identity) bool { return match(id) })
+	}
 }

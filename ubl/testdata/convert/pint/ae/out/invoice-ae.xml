@@ -90,6 +90,7 @@
           <cbc:AdditionalStreetName>Deira</cbc:AdditionalStreetName>
           <cbc:CityName>Dubai</cbc:CityName>
           <cbc:PostalZone>777</cbc:PostalZone>
+          <cbc:CountrySubentity>DXB</cbc:CountrySubentity>
           <cac:Country>
             <cbc:IdentificationCode>AE</cbc:IdentificationCode>
           </cac:Country>

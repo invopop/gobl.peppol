@@ -110,15 +110,6 @@ func transactionTypeFromTags(inv *bill.Invoice) TransactionType {
 	return t
 }
 
-// invoiceTransactionType returns the parsed transaction type of an invoice.
-func invoiceTransactionType(val any) TransactionType {
-	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil {
-		return TransactionType{}
-	}
-	return ParseTransactionType(inv.Tax.GetExt(ExtKeyTransactionType))
-}
-
 // normalizeTransactionType sets the transaction type of a UAE invoice from its
 // flag tags, "00000000" without any. Every PINT AE document needs one
 // (IBR-154-AE). The tags are the only source: a code from an earlier
@@ -173,25 +164,13 @@ var transactionTypeTags = []*cbc.Definition{
 	},
 }
 
-// transactionTypeIs returns a predicate that reports whether an invoice's
-// transaction type has the flag that check reads.
-func transactionTypeIs(check func(TransactionType) bool) func(any) bool {
+// invoiceHasTags returns a predicate that reports whether an invoice has all
+// the tags. The transaction type rules read the flags from the tags, which
+// the transaction type is built from (normalizeTransactionType) and the UBL
+// import sets from it.
+func invoiceHasTags(keys ...cbc.Key) func(any) bool {
 	return func(val any) bool {
-		return check(invoiceTransactionType(val))
+		inv, ok := val.(*bill.Invoice)
+		return ok && inv != nil && inv.HasTags(keys...)
 	}
 }
-
-var (
-	invoiceIsFreeTradeZone  = transactionTypeIs(func(t TransactionType) bool { return t.FreeTradeZone })
-	invoiceIsDeemedSupply   = transactionTypeIs(func(t TransactionType) bool { return t.DeemedSupply })
-	invoiceIsSummary        = transactionTypeIs(func(t TransactionType) bool { return t.Summary })
-	invoiceIsDisclosedAgent = transactionTypeIs(func(t TransactionType) bool { return t.DisclosedAgent })
-	invoiceIsECommerce      = transactionTypeIs(func(t TransactionType) bool { return t.ECommerce })
-	invoiceIsExport         = transactionTypeIs(func(t TransactionType) bool { return t.Export })
-	invoiceIsMarginScheme   = transactionTypeIs(func(t TransactionType) bool { return t.MarginScheme })
-	// invoiceIsSummaryDeemedOrMargin reports the flags outside scope documents
-	// and credit notes related to goods and services can't have (IBR-157-AE).
-	invoiceIsSummaryDeemedOrMargin = transactionTypeIs(func(t TransactionType) bool {
-		return t.Summary || t.DeemedSupply || t.MarginScheme
-	})
-)

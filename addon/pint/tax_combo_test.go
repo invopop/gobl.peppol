@@ -170,8 +170,11 @@ func TestTaxComboRulesAE(t *testing.T) {
 			"O":  tax.KeyOutsideScope,
 			"AE": tax.KeyReverseCharge,
 		} {
-			err := validateIn(vatCombo(key, cat, nil), ae)
-			assert.NoError(t, err, "category %s", cat)
+			c := vatCombo(key, cat, nil)
+			if cat == "E" {
+				c.Ext = c.Ext.Set(pint.ExtKeyExemption, "DL8.46.1")
+			}
+			assert.NoError(t, validateIn(c, ae), "category %s", cat)
 		}
 		assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(5, 2)), ae))
 		assert.NoError(t, validateIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(0, 2)), ae))

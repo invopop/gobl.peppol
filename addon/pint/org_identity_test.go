@@ -142,3 +142,37 @@ func TestNormalizeIdentityScopes(t *testing.T) {
 		assert.Equal(t, []cbc.Key{"", ""}, customer)
 	})
 }
+
+func TestOrgIdentityRulesAE(t *testing.T) {
+	const (
+		fault          = "GOBL-PEPPOL-PINT-ORG-IDENTITY-01"
+		faultAuthority = "GOBL-PEPPOL-PINT-ORG-IDENTITY-02"
+	)
+
+	t.Run("passport needs the issuing country (IBR-012-AE, IBR-010-AE)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Supplier.Identities = []*org.Identity{{Key: org.IdentityKeyPassport, Code: "P9876543210"}}
+		assert.Contains(t, aeFaults(t, inv), fault)
+
+		inv = aeIdentityDocument()
+		inv.Customer.Identities = []*org.Identity{{Key: org.IdentityKeyPassport, Code: "P1234567890"}}
+		assert.Contains(t, aeFaults(t, inv), fault)
+
+		inv = aeIdentityDocument()
+		inv.Customer.Identities = []*org.Identity{{Key: org.IdentityKeyPassport, Code: "P1234567890", Country: "IN"}}
+		assert.NotContains(t, aeFaults(t, inv), fault)
+	})
+	t.Run("trade licence needs the issuing authority (IBR-172-AE, IBR-101-AE)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Supplier.Identities[0].Description = ""
+		assert.Contains(t, aeFaults(t, inv), faultAuthority)
+
+		// IBR-101-AE exempts these buyers, but the rule can't see the endpoint.
+		inv = aeIdentityDocument()
+		inv.Customer.Endpoints = uaeEndpoints("9900000098")
+		inv.Customer.Identities[0].Description = ""
+		assert.Contains(t, aeFaults(t, inv), faultAuthority)
+
+		assert.NotContains(t, aeFaults(t, aeIdentityDocument()), faultAuthority)
+	})
+}

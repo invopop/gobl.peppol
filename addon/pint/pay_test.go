@@ -115,17 +115,17 @@ func TestPayInstructionsRulesAE(t *testing.T) {
 		instr := instructionsWithMeansCode("30")
 		instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD", Name: "Emirates NBD"}}
 		err := validate(instr)
-		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-03")
 	})
 
-	t.Run("only the first credit transfer counts, as it is the one written (IBR-192-AE)", func(t *testing.T) {
+	t.Run("every credit transfer needs an IBAN or account number (IBR-192-AE)", func(t *testing.T) {
 		instr := instructionsWithMeansCode("30")
 		instr.CreditTransfer = []*pay.CreditTransfer{
-			{Name: "Emirates NBD"},
 			{IBAN: "AE070331234567890123456"},
+			{Name: "Emirates NBD"},
 		}
 		err := validate(instr)
-		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-03")
 	})
 
 	t.Run("other payment means are not checked", func(t *testing.T) {
@@ -155,6 +155,6 @@ func TestPayInstructionsRulesAE(t *testing.T) {
 		// A-NZ documents get their own rule for the same case, not the AE one.
 		err = rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
 		require.Error(t, err)
-		assert.NotContains(t, err.Error(), "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
+		assert.NotContains(t, err.Error(), "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-03")
 	})
 }

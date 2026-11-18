@@ -58,15 +58,42 @@ See the [`examples`](./examples) directory for complete invoices.
 
 Documents with the PINT addon, in any regime:
 
-- Have supplier and customer electronic addresses that are written as
-  `cbc:EndpointID`: an ISO 6523 endpoint, or an inbox with a scheme. An email
-  address is written with the scheme `EM`, which PINT does not accept.
+- Have supplier and customer electronic addresses, and no email address as
+  an endpoint or inbox. gobl.ubl writes an email address as `cbc:EndpointID`
+  with the scheme `EM`, which PINT does not accept, so a party can't have one
+  next to its Peppol endpoint either.
 - Have at most one customer identity written as `cac:PartyIdentification`
   (any identity other than the tax ones and the first legal one, including a
   UAE customer's TIN), and at most one customer tax registration (the tax ID
   or a `tax` identity).
 - Give the payee a name, and a payee that differs from the supplier in its
   legal identity, identity or name.
+
+### PINT AE
+
+UAE documents with the PINT addon follow the PINT AE rules:
+
+- They can only be invoices and credit notes, without the `partial`,
+  `prepayment` or `factoring` tags, as PINT AE has no document type for
+  anything else. Documents out of scope of VAT take the `outside-tax-scope`
+  tag, which sets the document type to 480 on invoices and 81 on credit notes.
+- Trade licences carry their issuing authority in the description, and
+  passports their issuing country.
+- The supplier's and customer's UAE identities without a scope get the one
+  PINT AE reads them from: `legal` for the first trade licence, Emirates ID,
+  passport or Cabinet Decision of a party that has no legal identity yet, and
+  `tax` for the supplier's TIN.
+- A supplier with a UAE TRN gets the TIN it starts with as a `tax` identity,
+  and the UAE Peppol endpoint `0235:<TIN>`, when it has neither.
+- The PINT AE transaction type comes from the tags `free-trade-zone`,
+  `deemed-supply`, `margin-scheme`, `summary`, `continuous-supply`,
+  `disclosed-agent`, `e-commerce` and `export`.
+- PINT AE predefines three customer endpoints: `0235:9900000097` on deemed
+  supplies, which the addon checks, and `0235:9900000099` for exports to a
+  receiver not on Peppol and `0235:9900000098` for a buyer not subject to UAE
+  e-invoicing, which the user sets.
+- Supplies under the profit margin scheme take the AE regime's
+  `margin-scheme` tag; see [Conversion](#conversion) for how they are written.
 
 ## Layout
 
@@ -119,7 +146,7 @@ and `urn:peppol:bis:selfbilling`. Documents carrying either are imported with
 
 `FormatAE` also adjusts the output to the PINT AE rules: it writes the invoice
 UUID, the price base quantity and gross price, the UAE TRN without its country
-prefix, the 5% rate on reverse charge lines, breakdowns, allowances and
+prefix, the standard rate on reverse charge lines, breakdowns, allowances and
 charges, no rate on exempt lines and breakdowns, one VAT breakdown per
 category, and each line's amount with VAT and VAT amount in AED. For invoices not in AED, it also writes the exchange rate to
 AED and the total with VAT in AED, and converts the line amounts with that
@@ -147,7 +174,8 @@ a single note.
 
 - Issue one invoice per margin scheme sale, with no other VAT treatments and
   no document-level discounts or charges (IBR-116-AE).
-- The lines go out in the `N` category at 5%, with no VAT amount.
+- The lines go out in the `N` category at the standard rate, with no VAT
+  amount.
 - The statement that VAT is charged under the scheme, which the regime's
   scenario adds as a VAT note, goes out as the VAT exemption reason text of
   the `N` breakdown and lines.

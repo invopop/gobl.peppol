@@ -90,3 +90,122 @@ func TestNormalizeSupplierAE(t *testing.T) {
 		assert.Empty(t, p.Endpoints)
 	})
 }
+
+func TestOrgPartyRulesAE(t *testing.T) {
+	const (
+		faultAddress   = "GOBL-PEPPOL-PINT-ORG-PARTY-01"
+		faultEmirate   = "GOBL-PEPPOL-PINT-ORG-PARTY-02"
+		faultLegalType = "GOBL-PEPPOL-PINT-ORG-PARTY-03"
+	)
+	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
+	trn := func() *tax.Identity { return &tax.Identity{Country: "AE", Code: "100000003200003"} }
+	oman := func() []*org.Address {
+		return []*org.Address{{Street: "Street 1", Locality: "Muscat", Region: "Muscat", Country: "OM"}}
+	}
+
+	t.Run("a UAE tax ID makes every address count as in the UAE (IBR-128-AE)", func(t *testing.T) {
+		inv := standard()
+		inv.Supplier.Addresses = oman()
+		assert.Contains(t, aeFaults(t, inv), faultEmirate)
+
+		inv = standard()
+		inv.Ordering = &bill.Ordering{Seller: &org.Party{Name: "Tax Rep", TaxID: trn(), Addresses: oman()}}
+		assert.Contains(t, aeFaults(t, inv), faultEmirate)
+
+		inv = standard()
+		inv.Supplier.Addresses = oman()
+		inv.Supplier.Addresses[0].Region = "DXB"
+		assert.NotContains(t, aeFaults(t, inv), faultEmirate)
+	})
+
+	t.Run("a UAE tax ID needs an address, as one is written (IBR-128-AE)", func(t *testing.T) {
+		inv := standard()
+		inv.Ordering = &bill.Ordering{Issuer: &org.Party{Name: "Issuer", TaxID: trn()}}
+		assert.Contains(t, aeFaults(t, inv), faultAddress)
+
+		inv = standard()
+		inv.Payment = &bill.PaymentDetails{Payee: &org.Party{Name: "Payee", TaxID: trn()}}
+		assert.Contains(t, aeFaults(t, inv), faultAddress)
+	})
+
+	t.Run("UAE addresses are left to the address rules (IBR-128-AE)", func(t *testing.T) {
+		inv := standard()
+		inv.Supplier.Addresses[0].Region = "Dubai"
+		out := aeFaults(t, inv)
+		assert.Contains(t, out, "GOBL-PEPPOL-PINT-ORG-ADDRESS-01")
+		assert.NotContains(t, out, faultEmirate)
+	})
+
+	t.Run("other parties are not checked (IBR-128-AE)", func(t *testing.T) {
+		inv := standard()
+		inv.Lines[0].Seller = &org.Party{
+			Name:      "Maker",
+			TaxID:     &tax.Identity{Country: "DE", Code: "111111125"},
+			Addresses: []*org.Address{{Street: "Hauptstr. 1", Locality: "Berlin", Region: "Berlin", Country: "DE"}},
+		}
+		inv.Ordering = &bill.Ordering{Issuer: &org.Party{Name: "Issuer"}}
+		out := aeFaults(t, inv)
+		assert.NotContains(t, out, faultAddress)
+		assert.NotContains(t, out, faultEmirate)
+	})
+
+	t.Run("legal identity needs a PINT AE type with a UAE endpoint (IBR-173-AE, IBR-181-AE, IBR-180-AE, IBR-183-AE)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Supplier.Identities = []*org.Identity{{Scope: org.IdentityScopeLegal, Code: "CN-1234567"}}
+		assert.Contains(t, aeFaults(t, inv), faultLegalType)
+
+		inv = aeIdentityDocument()
+		inv.Customer.Identities = []*org.Identity{{Scope: org.IdentityScopeLegal, Code: "CN-7654321"}}
+		assert.Contains(t, aeFaults(t, inv), faultLegalType)
+	})
+
+	t.Run("customer legal identity without a type is fine without a UAE endpoint", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Customer.Endpoints = validEndpoints("1345678906")
+		inv.Customer.Identities = []*org.Identity{{Scope: org.IdentityScopeLegal, Code: "CN-7654321"}}
+		assert.NotContains(t, aeFaults(t, inv), faultLegalType)
+	})
+
+	t.Run("customer with a predefined UAE endpoint needs no legal identity type (IBR-180-AE, IBR-183-AE)", func(t *testing.T) {
+		for _, code := range []string{"9900000098", "9900000099"} {
+			inv := aeIdentityDocument()
+			inv.Customer.Endpoints = uaeEndpoints(code)
+			inv.Customer.Identities = []*org.Identity{
+				{Scope: org.IdentityScopeLegal, Code: "CN-7654321"},
+			}
+			assert.NotContains(t, aeFaults(t, inv), faultLegalType, code)
+		}
+	})
+
+	t.Run("customer with another predefined UAE endpoint still needs one (IBR-180-AE, IBR-183-AE)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Customer.Endpoints = uaeEndpoints("9900000097")
+		inv.Customer.Identities = []*org.Identity{
+			{Scope: org.IdentityScopeLegal, Code: "CN-7654321"},
+		}
+		assert.Contains(t, aeFaults(t, inv), faultLegalType)
+	})
+
+	t.Run("each PINT AE type is accepted (IBR-173-AE, IBR-183-AE)", func(t *testing.T) {
+		for _, id := range []*org.Identity{
+			{Type: ae.IdentityTypeEmiratesID, Code: "784199012345671"},
+			{Key: org.IdentityKeyPassport, Code: "P1234567890", Country: "IN"},
+			{Type: ae.IdentityTypeCabinetDecision, Code: "CD-12-2020"},
+		} {
+			inv := aeIdentityDocument()
+			inv.Supplier.Identities = []*org.Identity{id}
+			assert.Empty(t, aeFaults(t, inv), id.Key)
+		}
+	})
+
+	t.Run("every legal identity is checked (IBR-173-AE)", func(t *testing.T) {
+		// EN 16931 already rejects a second legal identity.
+		inv := aeIdentityDocument()
+		inv.Supplier.Identities[0].Scope = org.IdentityScopeLegal
+		inv.Supplier.Identities = append(inv.Supplier.Identities,
+			&org.Identity{Scope: org.IdentityScopeLegal, Code: "CN-1234567"})
+		out := aeFaults(t, inv)
+		assert.Contains(t, out, "GOBL-EU-EN16931-ORG-PARTY-02")
+		assert.Contains(t, out, faultLegalType)
+	})
+}
