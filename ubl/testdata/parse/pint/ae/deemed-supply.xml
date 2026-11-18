@@ -40,7 +40,7 @@
 		<cac:AdditionalDocumentReference>
 		<cbc:ID>Sample-05</cbc:ID>
 		<cac:Attachment>
-			<cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="Sample_invoice.pdf">KmJzZTY0IGNvbnRlbnQgZXhhbXBsZQ==</cbc:EmbeddedDocumentBinaryObject>
+			<cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="Sample_invoice.pdf">JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA1OTUgODQyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA0OCA+PgpzdHJlYW0KQlQgL0YxIDE0IFRmIDcyIDc3MCBUZCAoU2FtcGxlIGF0dGFjaG1lbnQpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0MSAwMDAwMCBuIAowMDAwMDAwMzM5IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDA5CiUlRU9GCg==</cbc:EmbeddedDocumentBinaryObject>
 		</cac:Attachment>
 	</cac:AdditionalDocumentReference>
 	<cac:AccountingSupplierParty>
@@ -74,7 +74,7 @@
 	</cac:AccountingSupplierParty>
 	<cac:AccountingCustomerParty>
 		<cac:Party>
-			<cbc:EndpointID schemeID="0235">1012345678</cbc:EndpointID>
+			<cbc:EndpointID schemeID="0235">9900000097</cbc:EndpointID>
 			<cac:PostalAddress>
 				<cbc:StreetName>Street Name</cbc:StreetName>
 				<cbc:CityName>Dubai</cbc:CityName>

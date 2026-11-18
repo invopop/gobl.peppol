@@ -1,6 +1,8 @@
 package pint
 
 import (
+	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/invopop/gobl/catalogues/iso"
@@ -121,6 +123,15 @@ func partyAddressHasEmirate(val any) bool {
 	return partyFirstAddress(val) == nil || partyPostalAddressHasEmirate(val)
 }
 
+// partyFirstAddressHasEmirate reports whether the party's first address,
+// when in the UAE, has an emirate code as its region (IBR-128-AE). gobl.ubl
+// writes it as the delivery's cac:DeliveryLocation/cac:Address, with the
+// address's own country. A party without addresses passes.
+func partyFirstAddressHasEmirate(val any) bool {
+	a := partyFirstAddress(val)
+	return a == nil || a.Country != l10n.AE.ISO() || cbc.Code(a.Region).In(emirateCodes...)
+}
+
 // partyPostalAddressHasEmirate reports whether the cac:PostalAddress gobl.ubl
 // writes for the party, when in the UAE, has an emirate code as its region
 // (IBR-128-AE). gobl.ubl writes the country of the tax ID over the address's
@@ -185,6 +196,20 @@ func partyHasEndpointID(val any) bool {
 	return s != "" && s != endpointSchemeEmail
 }
 
+// endpointCodesPredefined are the predefined UAE Peppol endpoint codes that
+// IBR-180-AE, IBR-183-AE and IBR-101-AE exempt from the buyer legal
+// registration identifier type and authority.
+var endpointCodesPredefined = []string{"9900000098", "9900000099"}
+
+// endpointCodeDeemedSupply is the predefined UAE Peppol endpoint code of the
+// buyer of a deemed supply (PINT AE BIS 1.5.3).
+const endpointCodeDeemedSupply = "9900000097"
+
+// endpoint1or9Regexp matches the UAE Peppol endpoint codes of 10 digits
+// starting with 1 or 9, which need no buyer legal registration identifier
+// (IBR-149-AE).
+var endpoint1or9Regexp = regexp.MustCompile(`^[19]\d{9}$`)
+
 // partyHasUAEEndpointWith returns a predicate that reports whether the party's
 // electronic address uses the UAE Peppol scheme 0235 with a code that match
 // accepts.
@@ -202,9 +227,26 @@ func partyHasUAEEndpointWith(match func(code string) bool) func(any) bool {
 var (
 	// partyHasUAEEndpoint is the condition of the legal registration rules.
 	partyHasUAEEndpoint = partyHasUAEEndpointWith(func(string) bool { return true })
-	// partyHasUAEEndpointNotStartingWith1or9 is the condition of IBR-149-AE.
-	partyHasUAEEndpointNotStartingWith1or9 = partyHasUAEEndpointWith(func(code string) bool {
-		return !strings.HasPrefix(code, "1") && !strings.HasPrefix(code, "9")
+	// partyHasUAEEndpointPredefined reports whether the party has one of the
+	// predefined UAE endpoints, which IBR-180-AE, IBR-183-AE and IBR-101-AE
+	// exempt.
+	partyHasUAEEndpointPredefined = partyHasUAEEndpointWith(func(code string) bool {
+		return slices.Contains(endpointCodesPredefined, code)
+	})
+	// partyHasUAEEndpointNotPredefined is the condition of IBR-180-AE and
+	// IBR-183-AE.
+	partyHasUAEEndpointNotPredefined = partyHasUAEEndpointWith(func(code string) bool {
+		return !slices.Contains(endpointCodesPredefined, code)
+	})
+	// partyHasUAEEndpointDeemedSupply reports whether the party has the
+	// predefined UAE endpoint of a deemed supply buyer.
+	partyHasUAEEndpointDeemedSupply = partyHasUAEEndpointWith(func(code string) bool {
+		return code == endpointCodeDeemedSupply
+	})
+	// partyHasUAEEndpointNot1or9 is the condition of IBR-149-AE: a code
+	// that is not 1XXXXXXXXX or 9XXXXXXXXX.
+	partyHasUAEEndpointNot1or9 = partyHasUAEEndpointWith(func(code string) bool {
+		return !endpoint1or9Regexp.MatchString(code)
 	})
 	// partyHasUAEEndpointNotTIN is the condition of IBR-135-AE: a code that
 	// is not a TIN, 1XXXXXXXXX.

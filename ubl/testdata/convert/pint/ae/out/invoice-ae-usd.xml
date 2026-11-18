@@ -16,7 +16,7 @@
   <cac:AdditionalDocumentReference>
     <cbc:ID>AED</cbc:ID>
     <cbc:DocumentTypeCode>aedtotal-incl-vat</cbc:DocumentTypeCode>
-    <cbc:DocumentDescription>AED 6500.91</cbc:DocumentDescription>
+    <cbc:DocumentDescription>6500.91</cbc:DocumentDescription>
   </cac:AdditionalDocumentReference>
   <cac:AccountingSupplierParty>
     <cac:Party>

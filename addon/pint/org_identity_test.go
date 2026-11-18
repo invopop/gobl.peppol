@@ -36,7 +36,7 @@ func TestIdentityTypeAE(t *testing.T) {
 func TestSetIdentityTypeAE(t *testing.T) {
 	tests := map[cbc.Code]org.Identity{
 		"TL":  {Type: ae.IdentityTypeTradeLicense},
-		"CL":  {Type: ae.IdentityTypeTradeLicense},
+		"CL":  {},
 		"EID": {Type: ae.IdentityTypeEmiratesID},
 		"PAS": {Key: org.IdentityKeyPassport},
 		"CD":  {Type: ae.IdentityTypeCabinetDecision},

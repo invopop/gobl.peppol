@@ -23,10 +23,10 @@ const (
 	ExtKeyPrincipalID cbc.Key = "peppol-pint-ae-principal-id"
 	// ExtKeyCreditNoteReason is the reason for a PINT AE credit note (BTAE-03).
 	ExtKeyCreditNoteReason cbc.Key = "peppol-pint-ae-credit-note-reason"
-	// ExtKeyBillingFrequency is the frequency of billing (BTAE-06).
+	// ExtKeyBillingFrequency is the frequency of billing (IBT-008).
 	ExtKeyBillingFrequency cbc.Key = "peppol-pint-ae-billing-frequency"
 	// ExtKeyExemption is the UAE VAT exemption reason of an exempt tax combo
-	// (IBT-186 on lines).
+	// (IBT-186 on lines, IBT-196 and IBT-198 on allowances and charges).
 	ExtKeyExemption cbc.Key = "peppol-pint-ae-exemption"
 	// ExtKeyGoodsType is the type of goods or services subject to the reverse
 	// charge mechanism, on the item (BTAE-09).
@@ -60,6 +60,10 @@ const CreditNoteReasonVolumeDiscount cbc.Code = "VD"
 // BillingFrequencyOthers is the billing frequency "Others", whose value goes
 // in an invoice note (IBR-160-AE).
 const BillingFrequencyOthers cbc.Code = "OTH"
+
+// principalIDPattern is the format of the principal ID, a UAE TRN: 15 digits
+// starting with 1 and ending with 03 (IBR-132-AE).
+const principalIDPattern = `^1\d{12}03$`
 
 // Usages of the PINT AE extensions: offered by the PINT addon under the AE
 // regime, on the object each one goes on.
@@ -154,9 +158,12 @@ var extensions = []*cbc.Definition{
 			i18n.EN: here.Doc(`
 				Identifier of the principal a disclosed agent bills on behalf of
 				(BTAE-14), required with the "disclosed-agent" transaction type
-				(IBR-137-AE). It must differ from the supplier's tax ID (IBR-176-AE).
+				(IBR-137-AE). It is the principal's TRN: 15 digits starting with 1
+				and ending with 03 (IBR-132-AE), different from the supplier's tax
+				ID (IBR-176-AE).
 			`),
 		},
+		Pattern: principalIDPattern,
 	},
 	{
 		Key:   ExtKeyCreditNoteReason,
@@ -213,7 +220,7 @@ var extensions = []*cbc.Definition{
 		},
 		Desc: i18n.String{
 			i18n.EN: here.Doc(`
-				Frequency of billing (BTAE-06), from the frequency of billing code list
+				Frequency of billing (IBT-008), from the frequency of billing code list
 				(IBR-005-AE). With "OTH" (Others), the frequency is given in an invoice
 				note (IBR-160-AE).
 			`),
@@ -247,8 +254,9 @@ var extensions = []*cbc.Definition{
 			i18n.EN: here.Doc(`
 				Reason a supply is exempt from UAE VAT, such as one of the PINT AE
 				"Reasons for exemption from tax" codes (DL8.46.1 to DL8.46.4).
-				Required on exempt lines (IBR-167-AE), where it is written as the
-				line's exemption reason code.
+				Required on exempt lines (IBR-167-AE), discounts (IBR-168-AE) and
+				charges (IBR-169-AE), where it is written as their exemption reason
+				code.
 			`),
 		},
 		Sources: []*cbc.Source{
@@ -280,6 +288,7 @@ var extensions = []*cbc.Definition{
 		Values: []*cbc.Definition{
 			{Code: "DL8.48.8.2", Name: i18n.String{i18n.EN: "Electronic Devices"}},
 			{Code: "DL8.48.8.1", Name: i18n.String{i18n.EN: "Gold and Diamonds"}},
+			{Code: "DL8.48.8.3", Name: i18n.String{i18n.EN: "Metal Scrap Trading"}},
 			{Code: "DL8.48.3.1", Name: i18n.String{i18n.EN: "Crude or refined oil"}},
 			{Code: "DL8.48.3.2", Name: i18n.String{i18n.EN: "Unprocessed or processed natural gas"}},
 			{Code: "DL8.48.3.3", Name: i18n.String{i18n.EN: "Pure hydrocarbons"}},

@@ -75,6 +75,7 @@ func TestBillGoodsTypeRulesAE(t *testing.T) {
 	})
 
 	t.Run("goods type must be from the AE list on any line (IBR-006-AE)", func(t *testing.T) {
+		assert.NotContains(t, aeFaults(t, reverseCharge("DL8.48.8.3", gtin("0160"))), faultGoodsTypeValue)
 		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.9", gtin("0160"))), faultGoodsTypeValue)
 
 		inv := aeDocument(bill.InvoiceTypeStandard)
@@ -97,9 +98,8 @@ func TestBillGoodsTypeRulesAE(t *testing.T) {
 func TestBillItemTypeRulesAE(t *testing.T) {
 	const (
 		faultGoodsHS        = "GOBL-PEPPOL-PINT-BILL-LINE-07"
-		faultServicesSAC    = "GOBL-PEPPOL-PINT-BILL-LINE-08"
-		faultGoodsServices  = "GOBL-PEPPOL-PINT-BILL-LINE-09"
-		faultClassification = "GOBL-PEPPOL-PINT-BILL-LINE-10"
+		faultGoodsServices  = "GOBL-PEPPOL-PINT-BILL-LINE-08"
+		faultClassification = "GOBL-PEPPOL-PINT-BILL-LINE-09"
 	)
 	hs := &org.Identity{Label: pint.IdentityLabelHS, Code: "8471"}
 	sac := &org.Identity{Label: pint.IdentityLabelSAC, Code: "998713"}
@@ -120,22 +120,19 @@ func TestBillItemTypeRulesAE(t *testing.T) {
 		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods, withScheme)), faultGoodsHS)
 	})
 
-	t.Run("services need a service accounting code (IBR-185-AE)", func(t *testing.T) {
-		assert.Contains(t, aeFaults(t, item(org.ItemKeyServices)), faultServicesSAC)
-		assert.Contains(t, aeFaults(t, item(org.ItemKeyServices, hs)), faultServicesSAC)
-		assert.NotContains(t, aeFaults(t, item(org.ItemKeyServices, sac)), faultServicesSAC)
+	t.Run("services need no service accounting code", func(t *testing.T) {
+		assert.Empty(t, aeFaults(t, item(org.ItemKeyServices)))
 	})
 
-	t.Run("goods and services need both (IBR-186-AE)", func(t *testing.T) {
-		assert.Contains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, hs)), faultGoodsServices)
+	t.Run("goods and services need an HS classification (IBR-186-AE)", func(t *testing.T) {
+		assert.Contains(t, aeFaults(t, item(pint.ItemKeyGoodsServices)), faultGoodsServices)
 		assert.Contains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, sac)), faultGoodsServices)
-		assert.NotContains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, hs, sac)), faultGoodsServices)
+		assert.NotContains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, hs)), faultGoodsServices)
 	})
 
 	t.Run("no item type needs neither", func(t *testing.T) {
 		out := aeFaults(t, item(""))
 		assert.NotContains(t, out, faultGoodsHS)
-		assert.NotContains(t, out, faultServicesSAC)
 		assert.NotContains(t, out, faultGoodsServices)
 	})
 

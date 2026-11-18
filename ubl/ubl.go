@@ -151,8 +151,8 @@ var FormatAE = goblubl.Format{
 	ProfileID:       "urn:peppol:bis:billing",
 	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
-		Invoice:    "org.peppol.pint.ae:invoice:2026.5",
-		CreditNote: "org.peppol.pint.ae:creditnote:2026.5",
+		Invoice:    "org.peppol.pint.ae:invoice:2026.11",
+		CreditNote: "org.peppol.pint.ae:creditnote:2026.11",
 	},
 	Specifications: []goblubl.Specification{
 		SpecificationAESelfBilling,
@@ -172,8 +172,8 @@ var SpecificationAESelfBilling = goblubl.Specification{
 	ProfileID:       "urn:peppol:bis:selfbilling",
 	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
-		Invoice:    "org.peppol.pint.ae:invoice-self-billing:2026.5",
-		CreditNote: "org.peppol.pint.ae:creditnote-self-billing:2026.5",
+		Invoice:    "org.peppol.pint.ae:invoice-self-billing:2026.11",
+		CreditNote: "org.peppol.pint.ae:creditnote-self-billing:2026.11",
 	},
 	Applies: isSelfBilled,
 }

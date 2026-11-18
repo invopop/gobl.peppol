@@ -39,7 +39,7 @@
   </cac:AccountingSupplierParty>
   <cac:AccountingCustomerParty>
     <cac:Party>
-      <cbc:EndpointID schemeID="0235">1345678906</cbc:EndpointID>
+      <cbc:EndpointID schemeID="0235">9900000097</cbc:EndpointID>
       <cac:PartyName>
         <cbc:Name>Buyer Legal Name</cbc:Name>
       </cac:PartyName>

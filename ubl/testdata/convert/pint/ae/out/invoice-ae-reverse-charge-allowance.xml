@@ -83,7 +83,7 @@
     <cbc:Amount currencyID="AED">25.00</cbc:Amount>
     <cac:TaxCategory>
       <cbc:ID>AE</cbc:ID>
-      <cbc:Percent>0</cbc:Percent>
+      <cbc:Percent>5</cbc:Percent>
       <cac:TaxScheme>
         <cbc:ID>VAT</cbc:ID>
       </cac:TaxScheme>
@@ -95,7 +95,7 @@
     <cbc:Amount currencyID="AED">50.00</cbc:Amount>
     <cac:TaxCategory>
       <cbc:ID>AE</cbc:ID>
-      <cbc:Percent>0</cbc:Percent>
+      <cbc:Percent>5</cbc:Percent>
       <cac:TaxScheme>
         <cbc:ID>VAT</cbc:ID>
       </cac:TaxScheme>

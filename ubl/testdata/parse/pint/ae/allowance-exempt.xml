@@ -98,6 +98,7 @@
 		<cac:TaxCategory>
 			<cbc:ID>E</cbc:ID>
 			<cbc:Percent>0</cbc:Percent>
+			<cbc:TaxExemptionReasonCode>DL8.46.4</cbc:TaxExemptionReasonCode>
 			<cac:TaxScheme>
 				<cbc:ID>VAT</cbc:ID>
 			</cac:TaxScheme>
@@ -129,11 +130,11 @@
 		<cbc:InvoicedQuantity unitCode="H87">10</cbc:InvoicedQuantity>
 		<cbc:LineExtensionAmount currencyID="AED">1000</cbc:LineExtensionAmount>
 		<cac:Item>
-			<cbc:Description>Educational services exempt from VAT</cbc:Description>
-			<cbc:Name>Education Services</cbc:Name>
+			<cbc:Description>Local passenger transport services exempt from VAT</cbc:Description>
+			<cbc:Name>Local Passenger Transport</cbc:Name>
 			<cac:ClassifiedTaxCategory>
 				<cbc:ID>E</cbc:ID>
-				<cbc:TaxExemptionReasonCode>VATEX-AE-EDU</cbc:TaxExemptionReasonCode>
+				<cbc:TaxExemptionReasonCode>DL8.46.4</cbc:TaxExemptionReasonCode>
 				<cac:TaxScheme>
 					<cbc:ID>VAT</cbc:ID>
 				</cac:TaxScheme>

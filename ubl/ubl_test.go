@@ -151,16 +151,18 @@ func TestDetectAndImportAE(t *testing.T) {
 // import. margin-scheme-credit-note.xml is the official margin scheme
 // example turned into a credit note, as there is no official one.
 var importFaultsAE = map[string][]string{
-	"allowance-exempt.xml":          {"GOBL-AE-TAX-IDENTITY-02"},
-	"buyer-pas-identifier.xml":      {"GOBL-AE-TAX-IDENTITY-02"},
-	"deemed-supply.xml":             {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"margin-scheme.xml":             {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"margin-scheme-credit-note.xml": {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"reverse-charge.xml":            {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"seller-pas-identifier.xml":     {"GOBL-AE-TAX-IDENTITY-02"},
-	"seller-tin-identifier.xml":     {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
-	"standard-invoice.xml":          {"GOBL-AE-TAX-IDENTITY-02"},
-	"supply-free-trade-zone.xml":    {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"allowance-exempt.xml":           {"GOBL-AE-TAX-IDENTITY-02"},
+	"allowance-reverse-charge.xml":   {"GOBL-AE-TAX-IDENTITY-02"},
+	"buyer-pas-identifier.xml":       {"GOBL-AE-TAX-IDENTITY-02"},
+	"deemed-supply.xml":              {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"margin-scheme.xml":              {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"margin-scheme-credit-note.xml":  {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"reverse-charge.xml":             {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"seller-pas-identifier.xml":      {"GOBL-AE-TAX-IDENTITY-02"},
+	"seller-tin-identifier.xml":      {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"seller-trn-tin-identifiers.xml": {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"standard-invoice.xml":           {"GOBL-AE-TAX-IDENTITY-02"},
+	"supply-free-trade-zone.xml":     {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
 }
 
 // faultCodePattern matches the fault codes in a validation error.

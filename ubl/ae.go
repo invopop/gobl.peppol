@@ -36,9 +36,11 @@ const (
 const aedTotalDocumentType = "aedtotal-incl-vat"
 
 // aeStandardRate is the rate PINT AE expects on reverse charge and margin
-// scheme lines and breakdowns. GOBL keeps both without a percent, as the
-// invoice charges no VAT, but the PINT AE examples and the 5% standard rate
-// (IBR-190-AE) write 5, and margin scheme lines need a rate (IBR-111-AE).
+// scheme lines and breakdowns, and on reverse charge allowances and charges.
+// GOBL keeps them without a percent, as the invoice charges no VAT, but the
+// PINT AE examples and the 5% standard rate (IBR-190-AE) write 5, margin
+// scheme lines need a rate (IBR-111-AE), and reverse charge allowances and
+// charges one above 0 (aligned-ibrp-ae-06, aligned-ibrp-ae-07).
 const aeStandardRate = "5"
 
 // taxSchemeTIN is the tax scheme PINT AE writes the seller TIN under.
@@ -76,6 +78,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	exportAEContractValue(out, inv)
 	exportAEPayment(out, inv)
 	exportAEChargeExemptions(out, inv)
+	exportAEChargeRates(out)
 	exportAELines(out.InvoiceLines, inv)
 	exportAELines(out.CreditNoteLines, inv)
 	for _, p := range goblubl.InvoiceParties(inv, out) {
@@ -412,6 +415,22 @@ func exportAEChargeExemptions(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
+// exportAEChargeRates writes the rate of the reverse charge allowances and
+// charges at 5, as PINT AE wants one above 0 (aligned-ibrp-ae-06,
+// aligned-ibrp-ae-07) and gobl.ubl writes 0. Exempt ones keep the 0 PINT AE
+// wants there (aligned-ibrp-e-06, aligned-ibrp-e-07), and the margin scheme
+// isn't allowed on them (IBR-114-AE, IBR-115-AE).
+func exportAEChargeRates(out *goblubl.Invoice) {
+	for _, ac := range out.AllowanceCharge {
+		for _, c := range ac.TaxCategory {
+			if c != nil && c.ID != nil && c.ID.Value == taxCategoryReverseCharge {
+				rate := aeStandardRate
+				c.Percent = &rate
+			}
+		}
+	}
+}
+
 // importAEChargeExemptions reads the exemption reasons of the charges and
 // discounts back onto their VAT combos. gobl.ubl imports the charges and the
 // discounts apart, each in the order of the document.
@@ -510,9 +529,9 @@ func exportAECreditNoteReason(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// importAECreditNoteReason reads the first credit note reason back. PINT AE
-// examples can repeat the element, as the volume discount one does with VD
-// then DL8.61.1.E; GOBL keeps one reason, the first.
+// importAECreditNoteReason reads the credit note reason back from the first
+// cac:DiscrepancyResponse with a code, the only one PINT AE allows
+// (ibr-198-ae).
 func importAECreditNoteReason(in *goblubl.Invoice, inv *bill.Invoice) {
 	for _, r := range in.DiscrepancyResponse {
 		if r.ResponseCode != nil && strings.TrimSpace(r.ResponseCode.Value) != "" {
@@ -853,13 +872,9 @@ func setAESchemeVersion(id *org.Identity, version *string) {
 }
 
 // exportAEBillingFrequency writes the billing frequency as
-// cac:InvoicePeriod/cbc:DescriptionCode (BTAE-06), on the period gobl.ubl
+// cac:InvoicePeriod/cbc:DescriptionCode (IBT-008), on the period gobl.ubl
 // writes from the ordering period, or on its own: IBR-CO-19 accepts a period
 // with only a description code.
-//
-// The PINT AE syntax binds BTAE-06 to cbc:Description, but the IBR-005-AE
-// and IBR-160-AE tests read cbc:DescriptionCode, so we follow the tests. The
-// official examples use both.
 func exportAEBillingFrequency(out *goblubl.Invoice, inv *bill.Invoice) {
 	freq := inv.Tax.GetExt(pint.ExtKeyBillingFrequency)
 	if freq == "" {
@@ -1055,10 +1070,9 @@ func exportAELine(line *goblubl.InvoiceLine) {
 // to AED. The implementation guide (section 3.1.1) asks for AED whatever the
 // invoice currency, and IBR-126 leaves cac:ItemPriceExtension out of the
 // document currency check as amounts in the tax currency, which IBR-140-AE
-// fixes to AED. No test checks their currency. The two official examples in
-// another currency write them in USD, but both are zero rated exports, so
-// their VAT is zero either way. Without a rate, which the PINT addon requires
-// (GOBL-PEPPOL-PINT-BILL-INVOICE-24), they stay in the document currency.
+// fixes to AED. No test checks their currency, and the official exports in
+// USD write them in AED too. Without a rate, which the PINT addon requires
+// (GOBL-PEPPOL-PINT-BILL-INVOICE-25), they stay in the document currency.
 //
 // GOBL keeps no VAT per line, so it is the line total at the line's rate,
 // rounded to the document currency, then converted. Exempt lines get no VAT
@@ -1112,7 +1126,7 @@ func aeLineVAT(line *goblubl.InvoiceLine, l *bill.Line) (num.Amount, bool) {
 // to the tax currency (IBR-153-AE), and the total with VAT in AED (BTAE-20,
 // IBR-175-AE). gobl.ubl already writes the tax currency AED and the VAT total
 // in AED (ibt-006, ibt-111) when there is a rate. The PINT addon requires the
-// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-24) with at most 6 decimals (-25).
+// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-25) with at most 6 decimals (-26).
 func exportAEExchangeRate(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Currency == currency.AED {
 		return
@@ -1132,7 +1146,7 @@ func exportAEExchangeRate(out *goblubl.Invoice, inv *bill.Invoice) {
 		out.AdditionalDocumentReference = append(out.AdditionalDocumentReference, goblubl.Reference{
 			ID:                  goblubl.IDType{Value: currency.AED.String()},
 			DocumentTypeCode:    aedTotalDocumentType,
-			DocumentDescription: currency.AED.String() + " " + total.String(),
+			DocumentDescription: total.String(),
 		})
 	}
 }
@@ -1185,8 +1199,8 @@ func lineUnitCode(line *goblubl.InvoiceLine) string {
 // category. gobl.ubl writes 0 when a combo has no percent, which is right for
 // A-NZ but not for AE: exempt must have no rate (aligned-ibrp-e-05,
 // IBR-121-AE), and reverse charge and margin scheme must have one
-// (aligned-ibrp-ae-05-ae, IBR-119-AE, IBR-111-AE). Document allowances and charges keep gobl.ubl's 0, which is
-// what PINT AE wants there for both (aligned-ibrp-e-06/07, ae-06/07).
+// (aligned-ibrp-ae-05-ae, IBR-119-AE, IBR-111-AE). Document allowances and
+// charges are set by exportAEChargeRates.
 func aeRate(id *goblubl.IDType, percent *string) *string {
 	if id == nil {
 		return percent
@@ -1344,9 +1358,10 @@ func importAELegalIdentity(id *org.Identity, cid *goblubl.IDType) {
 // No rule asks for TIN: the BIS only says the scheme of the seller TIN
 // (IBT-032) must not be VAT, the syntax binding gives no code list, and
 // IBR-133-AE and IBR-178-AE only check for "not VAT", so LOC would pass too.
-// TIN is the value the only official example with a seller TIN uses
-// (Seller-TIN-identifier.xml), so receivers are most likely to expect it.
-// It is not the TIN of UNCL 1153, which is a transport instruction number.
+// The official examples don't agree: Seller-TIN-identifier.xml uses TIN and
+// Seller-TRN-and-TIN-identifiers.xml uses TAX. FormatAE writes TIN and reads
+// both. It is not the TIN of UNCL 1153, which is a transport instruction
+// number.
 func exportAETINScheme(out *goblubl.Party, p *org.Party) {
 	for _, id := range p.Identities {
 		if id == nil || id.Type != ae.IdentityTypeTIN || id.Scope != org.IdentityScopeTax {

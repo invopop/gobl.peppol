@@ -343,12 +343,6 @@ func TestImportAEPartyIdentities(t *testing.T) {
 		assert.Equal(t, "Trade License issuing Authority", id.Description)
 	})
 
-	t.Run("CL is read as a trade licence", func(t *testing.T) {
-		id := imported(companyID("CL", "Dubai Economy and Tourism"), false).Identities[0]
-		assert.Equal(t, ae.IdentityTypeTradeLicense, id.Type)
-		assert.Equal(t, "Dubai Economy and Tourism", id.Description)
-	})
-
 	t.Run("passport with its issuing country", func(t *testing.T) {
 		id := imported(companyID("PAS", "IN"), false).Identities[0]
 		assert.Equal(t, org.IdentityKeyPassport, id.Key)
@@ -365,7 +359,7 @@ func TestImportAEPartyIdentities(t *testing.T) {
 	})
 
 	t.Run("unknown or missing types are left alone", func(t *testing.T) {
-		for _, typ := range []string{"XYZ", ""} {
+		for _, typ := range []string{"XYZ", "CL", ""} {
 			id := imported(companyID(typ, "Some Authority"), false).Identities[0]
 			assert.Empty(t, id.Key, typ)
 			assert.Empty(t, id.Type, typ)
@@ -1048,7 +1042,7 @@ func TestExportAEExchangeRate(t *testing.T) {
 		ref := out.AdditionalDocumentReference[0]
 		assert.Equal(t, "AED", ref.ID.Value)
 		assert.Equal(t, "aedtotal-incl-vat", ref.DocumentTypeCode)
-		assert.Equal(t, "AED 913621.44", ref.DocumentDescription, "the Exports.xml example: 248750 USD at 3.67285")
+		assert.Equal(t, "913621.44", ref.DocumentDescription, "the Exports.xml example: 248750 USD at 3.67285")
 	})
 
 	t.Run("AED invoices need neither", func(t *testing.T) {
@@ -1343,6 +1337,21 @@ func TestAEChargeExemptions(t *testing.T) {
 		importAEChargeExemptions(in, inv)
 		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
 	})
+}
+
+func TestExportAEChargeRates(t *testing.T) {
+	category := func(id string) []*goblubl.TaxCategory {
+		return []*goblubl.TaxCategory{{ID: &goblubl.IDType{Value: id}, Percent: strPtr("0")}}
+	}
+	out := &goblubl.Invoice{AllowanceCharge: []goblubl.AllowanceCharge{
+		{ChargeIndicator: true, TaxCategory: category("AE")},
+		{TaxCategory: category("AE")},
+		{TaxCategory: category("E")},
+	}}
+	exportAEChargeRates(out)
+	assert.Equal(t, "5", *out.AllowanceCharge[0].TaxCategory[0].Percent, "reverse charge charge (aligned-ibrp-ae-07)")
+	assert.Equal(t, "5", *out.AllowanceCharge[1].TaxCategory[0].Percent, "reverse charge allowance (aligned-ibrp-ae-06)")
+	assert.Equal(t, "0", *out.AllowanceCharge[2].TaxCategory[0].Percent, "exempt keeps 0 (aligned-ibrp-e-06)")
 }
 
 func TestAELineExemptionReason(t *testing.T) {

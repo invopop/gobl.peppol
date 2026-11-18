@@ -24,11 +24,6 @@ var tinRegexp = regexp.MustCompile(`^1\d{9}$`)
 const (
 	// IdentityTypePassport is a passport.
 	IdentityTypePassport cbc.Code = "PAS"
-	// identityTypeCommercialLicense is only accepted by IBR-183-AE's test, for
-	// the buyer. No other source lists it; its rule text names
-	// "Commercial/Trade license", so it is read as a trade licence and never
-	// written: TL is valid for both seller and buyer.
-	identityTypeCommercialLicense cbc.Code = "CL"
 )
 
 // identityTypesAE are the AE regime's identity types that are PINT AE legal
@@ -59,8 +54,6 @@ func SetIdentityTypeAE(id *org.Identity, typ cbc.Code) bool {
 	switch {
 	case typ == IdentityTypePassport:
 		id.Key = org.IdentityKeyPassport
-	case typ == identityTypeCommercialLicense:
-		id.Type = ae.IdentityTypeTradeLicense
 	case typ.In(identityTypesAE...):
 		id.Type = typ
 	default:
