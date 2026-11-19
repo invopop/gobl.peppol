@@ -21,6 +21,9 @@ const (
 // CreditNoteReasonVolumeDiscount is the credit note reason for a volume discount.
 const CreditNoteReasonVolumeDiscount cbc.Code = "VD"
 
+// principalIDPattern is a UAE TRN ending with 03, as PINT AE asks of the principal ID (IBR-132-AE).
+const principalIDPattern = `^1\d{12}03$`
+
 // Usages of the PINT AE extensions, under the AE regime.
 var (
 	usageAEInvoiceTax = &cbc.Usage{
@@ -92,7 +95,7 @@ var extensions = []*cbc.Definition{
 				and ending with 03 (IBR-132-AE).
 			`),
 		},
-		Pattern: ae.TRNPattern,
+		Pattern: principalIDPattern,
 	},
 	{
 		Key:   ExtKeyCreditNoteReason,

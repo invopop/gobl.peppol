@@ -151,9 +151,12 @@ func taxComboRules() *rules.Set {
 				),
 			),
 
-			rules.When(
-				is.Func("exempt VAT", comboIsExemptVAT),
-				rules.Field("ext",
+			rules.Field("ext",
+				rules.When(
+					is.AllOf(
+						tax.ExtensionsRequire(untdid.ExtKeyTaxCategory),
+						tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, en16931.TaxCategoryExempt),
+					),
 					rules.Assert("06", "exempt VAT needs a VAT exemption reason (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
 						tax.ExtensionsRequire(cef.ExtKeyVATEX),
 					),
@@ -161,12 +164,9 @@ func taxComboRules() *rules.Set {
 			),
 
 			// The Schematron doesn't check the code list, but UAE VAT law allows no other reasons.
-			rules.When(
-				is.Func("VAT", comboIsVAT),
-				rules.Field("ext",
-					rules.Assert("07", "VAT exemption reason must be a UAE one: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4",
-						tax.ExtensionsHasCodes(cef.ExtKeyVATEX, exemptionCodesAE...),
-					),
+			rules.Field("ext",
+				rules.Assert("07", "VAT exemption reason must be a UAE one: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4",
+					tax.ExtensionsHasCodes(cef.ExtKeyVATEX, exemptionCodesAE...),
 				),
 			),
 		),
@@ -187,26 +187,4 @@ func taxComboIsZero(val any) bool {
 var taxCategoryCodesOutsideScope = []cbc.Code{
 	en16931.TaxCategoryExempt,
 	en16931.TaxCategoryOutsideScope,
-}
-
-// comboIsVAT reports whether a tax combo is VAT.
-func comboIsVAT(val any) bool {
-	c, ok := val.(*tax.Combo)
-	return ok && c != nil && c.Category == tax.CategoryVAT
-}
-
-// comboIsExemptVAT reports whether a tax combo is VAT with the exempt
-// category code E.
-func comboIsExemptVAT(val any) bool {
-	c, ok := val.(*tax.Combo)
-	return ok && c != nil && c.Category == tax.CategoryVAT &&
-		c.Ext.Get(untdid.ExtKeyTaxCategory) == en16931.TaxCategoryExempt
-}
-
-// comboIsMarginScheme reports whether a tax combo is VAT under the profit
-// margin scheme.
-func comboIsMarginScheme(val any) bool {
-	c, ok := val.(*tax.Combo)
-	return ok && c != nil && c.Category == tax.CategoryVAT &&
-		c.Ext.Get(untdid.ExtKeyTaxCategory) == TaxCategoryMarginScheme
 }
