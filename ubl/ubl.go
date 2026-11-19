@@ -8,9 +8,9 @@ package ubl
 import (
 	"strings"
 
+	"github.com/invopop/gobl.peppol/addon/bis"
 	"github.com/invopop/gobl.peppol/addon/pint"
 	goblubl "github.com/invopop/gobl.ubl"
-	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
@@ -41,7 +41,7 @@ var FormatBIS = goblubl.Format{
 	Export:          []schema.ID{invoiceSchema, statusSchema},
 	CustomizationID: "urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0",
 	ProfileID:       "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0",
-	Addons:          []cbc.Key{en16931.V2017},
+	Addons:          []cbc.Key{bis.V3},
 	VESIDs: goblubl.VESIDMapping{
 		Invoice:    "eu.peppol.bis3:invoice:2026.5",
 		CreditNote: "eu.peppol.bis3:creditnote:2026.5",
@@ -51,7 +51,7 @@ var FormatBIS = goblubl.Format{
 		SpecificationBISInvoiceResponse,
 	},
 	ExportFuncs: []goblubl.ExportFunc{exportBISBilling, exportInvoiceResponse},
-	ImportFuncs: []goblubl.ImportFunc{importInvoiceResponse},
+	ImportFuncs: []goblubl.ImportFunc{importInvoiceResponse, importEndpoints},
 }
 
 // SpecificationBISSelfBilling is Peppol BIS Self-Billing 3.0, used for
@@ -59,7 +59,7 @@ var FormatBIS = goblubl.Format{
 var SpecificationBISSelfBilling = goblubl.Specification{
 	CustomizationID: "urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:selfbilling:3.0",
 	ProfileID:       "urn:fdc:peppol.eu:2017:poacc:selfbilling:01:1.0",
-	Addons:          []cbc.Key{en16931.V2017},
+	Addons:          []cbc.Key{bis.V3},
 	VESIDs: goblubl.VESIDMapping{
 		Invoice:    "eu.peppol.bis3:invoice-self-billing:2026.5",
 		CreditNote: "eu.peppol.bis3:creditnote-self-billing:2026.5",
@@ -95,7 +95,7 @@ var FormatPINT = goblubl.Format{
 		Invoice:    "org.peppol.pint:invoice:1.1.2",
 		CreditNote: "org.peppol.pint:credit-note:1.1.2",
 	},
-	ImportFuncs: []goblubl.ImportFunc{importPINT},
+	ImportFuncs: []goblubl.ImportFunc{importPINT, importEndpoints},
 	// A jurisdiction specialization no dedicated format claimed still follows
 	// the base billing model its CustomizationID is suffixed from.
 	Fallback: matchCustomization("urn:peppol:pint:billing-1@"),
@@ -119,7 +119,7 @@ var FormatAUNZ = goblubl.Format{
 	Specifications: []goblubl.Specification{
 		SpecificationAUNZSelfBilling,
 	},
-	ImportFuncs: []goblubl.ImportFunc{importPINT},
+	ImportFuncs: []goblubl.ImportFunc{importPINT, importEndpoints},
 	Match:       matchCustomization("urn:peppol:pint:billing-1@aunz-1", "urn:peppol:pint:selfbilling-1@aunz-1"),
 }
 
@@ -157,7 +157,5 @@ func isSelfBilled(doc any) bool {
 }
 
 func init() {
-	// gobl.ubl still registers its own ubl+peppol+bis-v3 format, so FormatBIS
-	// is only registered once gobl.ubl drops it.
-	goblubl.RegisterFormats(FormatPINT, FormatAUNZ)
+	goblubl.RegisterFormats(FormatBIS, FormatPINT, FormatAUNZ)
 }

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "919e125441380a4ffee381b9f80d13d148afeb894affd4ee3c8ef69db59f46c4"
+			"val": "860bf84ea9de16b97bc9123c7d2606eecbad3384b55382004df53617668b93ce"
 		},
 		"from": "iso6523-actorid-upis::9930:de111111125",
 		"to": "iso6523-actorid-upis::9938:lu98765432"
@@ -13,7 +13,8 @@
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "DE",
 		"$addons": [
-			"eu-en16931-v2017"
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
 		],
 		"$tags": [
 			"reverse-charge"

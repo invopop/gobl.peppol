@@ -1,6 +1,8 @@
 // Package cii adds the Peppol BIS CII format on top of the gobl.cii base
-// import and export. Export with goblcii.WithFormat(FormatBIS) to apply it,
-// as gobl.cii still registers its own format under KeyBIS.
+// import and export, and registers it with gobl.cii and the GOBL convert
+// register. Import it for its side effects:
+//
+//	import _ "github.com/invopop/gobl.peppol/cii"
 package cii
 
 import (
@@ -30,4 +32,9 @@ var FormatBIS = goblcii.Format{
 	Attachments: true,
 	VESID:       "eu.cen.en16931:cii:1.3.16",
 	ExportFuncs: []goblcii.ExportFunc{exportBISBilling},
+	ImportFuncs: []goblcii.ImportFunc{importEndpoints},
+}
+
+func init() {
+	goblcii.RegisterFormats(FormatBIS)
 }

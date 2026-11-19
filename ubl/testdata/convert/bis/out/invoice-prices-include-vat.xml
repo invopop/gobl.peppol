@@ -7,9 +7,7 @@
   <cbc:DueDate>2024-02-15</cbc:DueDate>
   <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
   <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
-  <cac:OrderReference>
-    <cbc:ID>NA</cbc:ID>
-  </cac:OrderReference>
+  <cbc:BuyerReference>PO-2024-003</cbc:BuyerReference>
   <cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="0208">0123456749</cbc:EndpointID>

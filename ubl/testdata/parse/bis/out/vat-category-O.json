@@ -4,13 +4,16 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "364ff2df0ca6f282f669cc7716e4a0a957f3440035b36d34fcb91c694aff4eac"
-		}
+			"val": "e296fb334e0563239069f4177fae62be783cc8300fd41b7b21cf80eb2b6307f9"
+		},
+		"from": "iso6523-actorid-upis::0088:7300010000001",
+		"to": "iso6523-actorid-upis::0192:987654325"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$addons": [
-			"eu-en16931-v2017"
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",
@@ -40,6 +43,11 @@
 					"code": "7300010000001"
 				}
 			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0088:7300010000001"
+				}
+			],
 			"inboxes": [
 				{
 					"scheme": "0088",
@@ -57,6 +65,11 @@
 		},
 		"customer": {
 			"name": "The Buyercompany",
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0192:987654325"
+				}
+			],
 			"inboxes": [
 				{
 					"scheme": "0192",

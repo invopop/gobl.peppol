@@ -4,14 +4,17 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "01608446c93fc728e82a6ffbc6762b9e11198843ec7c3184329b6010f1c67e1a"
-		}
+			"val": "b2c6536d4eed993837fd0260668d21bb3d20e5532177c2f8f1ad32a724eb4e3a"
+		},
+		"from": "iso6523-actorid-upis::0002:FR23342",
+		"to": "iso6523-actorid-upis::0088:9482348239847239874"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "GB",
 		"$addons": [
-			"eu-en16931-v2017"
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
 		],
 		"$tags": [
 			"self-billed"
@@ -46,6 +49,11 @@
 				},
 				{
 					"code": "99887766"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0088:9482348239847239874"
 				}
 			],
 			"inboxes": [
@@ -91,6 +99,11 @@
 					"name": {
 						"given": "Lisa Johnson"
 					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0002:FR23342"
 				}
 			],
 			"inboxes": [
