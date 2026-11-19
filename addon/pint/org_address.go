@@ -8,12 +8,10 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// emiratePattern matches the country subdivision codes PINT AE accepts for
-// UAE addresses (IBR-128-AE). They are PINT AE's own list, not ISO 3166-2.
+// emiratePattern matches the emirate codes PINT AE accepts, its own list rather than ISO 3166-2.
 const emiratePattern = `^(AUH|DXB|SHJ|UAQ|FUJ|AJM|RAK)$`
 
-// orgAddressRules asks every UAE address of a UAE document for an emirate
-// code as its region (IBR-128-AE), written as cbc:CountrySubentity.
+// orgAddressRules validates addresses on UAE documents.
 func orgAddressRules() *rules.Set {
 	return rules.For(new(org.Address),
 		rules.When(

@@ -6,13 +6,10 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// taxIdentityRules requires the trailing 03 of a VAT registration on every
-// UAE tax identity of a UAE document (IBR-132-AE). The rest of IBR-132-AE's
-// format, 15 digits starting with 1, is checked by the AE regime, together
-// with the check digit of the TIN they start with.
-// vatTRNSuffixPattern is the trailing 03 of a UAE TRN for VAT (IBR-132-AE).
+// vatTRNSuffixPattern is the trailing 03 of a UAE TRN for VAT.
 const vatTRNSuffixPattern = `03$`
 
+// taxIdentityRules validates tax identities on UAE documents.
 func taxIdentityRules() *rules.Set {
 	return rules.For(new(tax.Identity),
 		rules.When(

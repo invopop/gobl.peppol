@@ -11,27 +11,17 @@ import (
 
 // PINT AE extension keys, for the BTAE fields GOBL has no place for.
 const (
-	// ExtKeyTransactionType is the PINT AE invoice transaction type (BTAE-02).
-	ExtKeyTransactionType cbc.Key = "peppol-pint-ae-transaction-type"
-	// ExtKeyBeneficiaryID is the ID of the beneficiary of a supply in a free
-	// trade zone (BTAE-01).
-	ExtKeyBeneficiaryID cbc.Key = "peppol-pint-ae-beneficiary-id"
-	// ExtKeyPrincipalID is the ID of the principal a disclosed agent bills for
-	// (BTAE-14).
-	ExtKeyPrincipalID cbc.Key = "peppol-pint-ae-principal-id"
-	// ExtKeyCreditNoteReason is the reason for a PINT AE credit note (BTAE-03).
+	ExtKeyTransactionType  cbc.Key = "peppol-pint-ae-transaction-type"
+	ExtKeyBeneficiaryID    cbc.Key = "peppol-pint-ae-beneficiary-id" // free trade zone beneficiary
+	ExtKeyPrincipalID      cbc.Key = "peppol-pint-ae-principal-id"   // principal a disclosed agent bills for
 	ExtKeyCreditNoteReason cbc.Key = "peppol-pint-ae-credit-note-reason"
-	// ExtKeyGoodsType is the type of goods or services subject to the reverse
-	// charge mechanism, on the item (BTAE-09).
-	ExtKeyGoodsType cbc.Key = "peppol-pint-ae-goods-type"
+	ExtKeyGoodsType        cbc.Key = "peppol-pint-ae-goods-type" // goods or services under reverse charge
 )
 
-// CreditNoteReasonVolumeDiscount is the credit note reason for a volume
-// discount, the only one that needs no preceding invoice (IBR-055-AE).
+// CreditNoteReasonVolumeDiscount is the credit note reason for a volume discount.
 const CreditNoteReasonVolumeDiscount cbc.Code = "VD"
 
-// Usages of the PINT AE extensions: offered by the PINT addon under the AE
-// regime, on the object each one goes on.
+// Usages of the PINT AE extensions, under the AE regime.
 var (
 	usageAEInvoiceTax = &cbc.Usage{
 		Keys:    []cbc.Key{V1},

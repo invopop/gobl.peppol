@@ -138,9 +138,8 @@ var SpecificationAUNZSelfBilling = goblubl.Specification{
 	Applies: isSelfBilled,
 }
 
-// FormatAE defines the Peppol PINT AE format, for UAE e-invoicing. Invoices
-// are written with PINT AE Billing, and self-billed invoices with PINT AE
-// Self-Billing. The exported document is adjusted to the AE rules by exportAE.
+// FormatAE defines the Peppol PINT AE format. Invoices are written with
+// PINT AE Billing, and self-billed invoices with PINT AE Self-Billing.
 var FormatAE = goblubl.Format{
 	Key:             KeyAE,
 	Name:            i18n.NewString("UBL Peppol PINT AE 1"),
@@ -158,9 +157,7 @@ var FormatAE = goblubl.Format{
 		SpecificationAESelfBilling,
 	},
 	ExportFuncs: []goblubl.ExportFunc{exportAE},
-	// importPINT is left out: it makes a tax registration that isn't VAT the
-	// tax ID, which is right for GST, but in PINT AE that one is the seller's
-	// TIN. gobl.ubl already reads the VAT one as the tax ID.
+	// No importPINT: it reads a non-VAT tax registration as the tax ID, which in PINT AE is the seller's TIN.
 	ImportFuncs: []goblubl.ImportFunc{importAE},
 	Match:       matchCustomization("urn:peppol:pint:billing-1@ae-1", "urn:peppol:pint:selfbilling-1@ae-1"),
 }

@@ -158,7 +158,7 @@ func vatCombo(key cbc.Key, category string, percent *num.Percentage) *tax.Combo 
 	}
 }
 
-func validateIn(tc *tax.Combo, regime l10n.TaxCountryCode) error {
+func validateComboIn(tc *tax.Combo, regime l10n.TaxCountryCode) error {
 	return rules.Validate(tc, tax.AddonContext(pint.V1), tax.RegimeContext(regime))
 }
 
@@ -175,52 +175,62 @@ func TestTaxComboRulesAE(t *testing.T) {
 			if cat == "E" {
 				c.Ext = c.Ext.Set(cef.ExtKeyVATEX, "DL8.46.1")
 			}
-			assert.NoError(t, validateIn(c, ae), "category %s", cat)
+			assert.NoError(t, validateComboIn(c, ae), "category %s", cat)
 		}
-		assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(5, 2)), ae))
-		assert.NoError(t, validateIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(0, 2)), ae))
-		assert.NoError(t, validateIn(vatCombo(tax.KeyExempt, "N", nil), ae))
+		assert.NoError(t, validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(5, 2)), ae))
+		assert.NoError(t, validateComboIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(0, 2)), ae))
+		assert.NoError(t, validateComboIn(vatCombo(tax.KeyExempt, "N", nil), ae))
 	})
 
 	t.Run("margin scheme category is rejected outside AE", func(t *testing.T) {
 		for _, regime := range []l10n.TaxCountryCode{l10n.SG.Tax(), l10n.AU.Tax()} {
-			err := validateIn(vatCombo(cbc.KeyEmpty, "N", nil), regime)
+			err := validateComboIn(vatCombo(cbc.KeyEmpty, "N", nil), regime)
 			assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-01", "regime %s", regime)
 		}
 	})
 
 	t.Run("categories outside the AE subset are rejected (IBR-139-AE)", func(t *testing.T) {
 		for _, cat := range []string{"G", "K", "L", "M"} {
-			err := validateIn(vatCombo(cbc.KeyEmpty, cat, nil), ae)
+			err := validateComboIn(vatCombo(cbc.KeyEmpty, cat, nil), ae)
 			assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-03", "category %s", cat)
 		}
 	})
 
 	t.Run("AE subset does not apply outside AE", func(t *testing.T) {
-		assert.NoError(t, validateIn(vatCombo(cbc.KeyEmpty, "K", nil), l10n.SG.Tax()))
+		assert.NoError(t, validateComboIn(vatCombo(cbc.KeyEmpty, "K", nil), l10n.SG.Tax()))
 	})
 
 	t.Run("standard rate must be 5% (IBR-190-AE, ALIGNED-IBRP-S-05/06/07)", func(t *testing.T) {
 		for _, rate := range []int64{0, 10} {
-			err := validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(rate, 2)), ae)
+			err := validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(rate, 2)), ae)
 			assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-04", "rate %d", rate)
 		}
 	})
 
 	t.Run("5% check compares numbers, not strings", func(t *testing.T) {
-		assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(50, 3)), ae))
+		assert.NoError(t, validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(50, 3)), ae))
 	})
 
 	t.Run("zero rate must be 0% (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)", func(t *testing.T) {
-		err := validateIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(5, 2)), ae)
+		err := validateComboIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(5, 2)), ae)
 		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-05")
+	})
+
+	t.Run("exempt VAT needs an exemption reason (IBR-167-AE, IBR-168-AE, IBR-169-AE)", func(t *testing.T) {
+		const faultExemption = "GOBL-PEPPOL-PINT-TAX-COMBO-06"
+		assert.ErrorContains(t, validateComboIn(vatCombo(tax.KeyExempt, "E", nil), ae), faultExemption)
+		for _, code := range []cbc.Code{"DL8.46.1", "DL8.46.4"} {
+			c := vatCombo(tax.KeyExempt, "E", nil)
+			c.Ext = c.Ext.Set(cef.ExtKeyVATEX, code)
+			assert.NoError(t, validateComboIn(c, ae), code)
+		}
 	})
 
 	t.Run("rate rules do not apply outside AE", func(t *testing.T) {
 		for _, regime := range []l10n.TaxCountryCode{l10n.SG.Tax(), l10n.AU.Tax()} {
-			assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(0, 2)), regime), regime)
-			assert.NoError(t, validateIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(10, 2)), regime), regime)
-			assert.NoError(t, validateIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(5, 2)), regime), regime)
+			assert.NoError(t, validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(0, 2)), regime), regime)
+			assert.NoError(t, validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(10, 2)), regime), regime)
+			assert.NoError(t, validateComboIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(5, 2)), regime), regime)
 		}
 	})
 }

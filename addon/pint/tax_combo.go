@@ -12,10 +12,7 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// TaxCategoryMarginScheme is the PINT AE VAT category for supplies under the
-// profit margin scheme, "Standard rate additional VAT". The official code list
-// writes it with a Greek capital Nu (U+039D), but the Schematron tests and
-// examples use the Latin N, so we follow them.
+// TaxCategoryMarginScheme is the PINT AE margin scheme VAT category.
 const TaxCategoryMarginScheme cbc.Code = "N"
 
 // taxCategoryMap maps GOBL tax keys to the UNTDID 5305 tax category codes that
@@ -31,10 +28,7 @@ var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyOutsideScope:   en16931.TaxCategoryOutsideScope,
 })
 
-// exemptionCodesAE are the UAE VAT exemption reasons PINT AE takes in the
-// CEF VATEX extension: the four exempt supplies of Article 46 of the UAE VAT
-// Decree-Law (Federal Decree-Law No. 8 of 2017), the only ones the law
-// allows.
+// exemptionCodesAE are the UAE VAT exemptions of Article 46 of Federal Decree-Law No. 8 of 2017.
 var exemptionCodesAE = []cbc.Code{
 	"DL8.46.1", // certain financial services
 	"DL8.46.2", // residential buildings
@@ -74,13 +68,8 @@ func normalizeTaxCombo(tc *tax.Combo) {
 	}
 }
 
-// normalizeMarginSchemeAE gives the PINT AE margin scheme category to the
-// exempt VAT lines of a UAE margin scheme invoice. The line combos already have
-// E from their key, as norm reaches them before the invoice, and get it back
-// once the tag is removed. Discounts and charges are left alone, so the
-// discount and charge rules 01 and invoice rule 44 reject them (IBR-114-AE,
-// IBR-115-AE, IBR-116-AE). Lines with an exemption reason are a real
-// exempt supply, so they keep E and invoice rule 44 rejects the mixed invoice.
+// normalizeMarginSchemeAE gives N to the exempt VAT lines without a VATEX code of a UAE margin scheme
+// invoice. Discounts, charges and lines with a reason keep E, so the rules reject them.
 func normalizeMarginSchemeAE(inv *bill.Invoice) {
 	if inv == nil || !inv.HasTags(TagMarginScheme) {
 		return
@@ -97,11 +86,8 @@ func normalizeMarginSchemeAE(inv *bill.Invoice) {
 	}
 }
 
-// normalizeMarginSchemeNoteAE links the regime's margin scheme statement to
-// the margin scheme category, so it goes out as the reason on the N VAT
-// breakdown. It is a note normalizer because the scenario adds the note after
-// the invoice is normalized. The reverse mapping gives the key back to an
-// imported statement, so the scenario doesn't add a second one.
+// normalizeMarginSchemeNoteAE ties the margin scheme note to N, and keys an imported one so the scenario
+// doesn't add a second. It normalizes notes as the scenario adds the note after the invoice is normalized.
 func normalizeMarginSchemeNoteAE(n *tax.Note) {
 	if n == nil || n.Category != tax.CategoryVAT {
 		return
@@ -114,6 +100,7 @@ func normalizeMarginSchemeNoteAE(n *tax.Note) {
 	}
 }
 
+// taxComboRules validates tax combos on PINT documents.
 func taxComboRules() *rules.Set {
 	return rules.For(new(tax.Combo),
 		// PINT recognises GST (and other non-VAT schemes) as standard, zero or
@@ -121,14 +108,9 @@ func taxComboRules() *rules.Set {
 		// to outside scope must not apply here.
 		rules.Ignore("GOBL-EU-EN16931-TAX-COMBO-05"),
 
-		// UAE documents have their own list, with the margin scheme category
-		// (rule 03).
-		rules.When(
-			is.Not(is.InContext(tax.RegimeIn(regimesAE...))),
-			rules.Field("ext",
-				rules.Assert("01", "invoice line tax category code must be a recognised PINT UNTDID 5305 code",
-					tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryMap.Values()...),
-				),
+		rules.Field("ext",
+			rules.Assert("01", "invoice line tax category code must be a recognised PINT UNTDID 5305 code",
+				tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryMap.Values()...),
 			),
 		),
 		rules.When(
@@ -140,14 +122,11 @@ func taxComboRules() *rules.Set {
 			),
 		),
 
-		// TODO: A-NZ has the same zero rate rule (05), and asks for a standard
-		// rate above zero (ALIGNED-IBRP-S-05/06/07).
+		// TODO: A-NZ has the same zero rate rule (ALIGNED-IBRP-Z-05/06/07) and a positive standard rate (ALIGNED-IBRP-S-05/06/07).
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
-			// EN 16931 checks VAT category codes against its own list, which has
-			// no PINT AE margin scheme category (N). Rule 03 checks them against
-			// the PINT AE list instead.
-			rules.Ignore("GOBL-EU-EN16931-TAX-COMBO-02"),
+			// EN 16931's and PINT's category lists have no N; IBR-139-AE checks the PINT AE list instead.
+			rules.Ignore("GOBL-EU-EN16931-TAX-COMBO-02", "GOBL-PEPPOL-PINT-TAX-COMBO-01"),
 			rules.Field("ext",
 				rules.Assert("03", "tax category code must be an AE UNCL5305 code: E, S, Z, O, AE or N (IBR-139-AE)",
 					tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryCodesAE...),
@@ -157,8 +136,6 @@ func taxComboRules() *rules.Set {
 			rules.When(
 				is.Func("tax combo is standard rated", taxComboIsStandard),
 				rules.Field("percent",
-					// 5.00 also covers the rate above zero ALIGNED-IBRP-S-05/06/07
-					// ask for.
 					rules.Assert("04", "tax percentage must be 5.00 (IBR-190-AE, ALIGNED-IBRP-S-05/06/07)",
 						num.Equals(num.MakePercentage(5, 2)),
 					),
@@ -174,8 +151,6 @@ func taxComboRules() *rules.Set {
 				),
 			),
 
-			// Lines, discounts and charges alike: the margin scheme lines have
-			// the category N instead of E, so they need none.
 			rules.When(
 				is.Func("exempt VAT", comboIsExemptVAT),
 				rules.Field("ext",
@@ -185,8 +160,7 @@ func taxComboRules() *rules.Set {
 				),
 			),
 
-			// The UAE VAT law allows no other exemption reasons, though the
-			// Schematron doesn't check the code list.
+			// The Schematron doesn't check the code list, but UAE VAT law allows no other reasons.
 			rules.When(
 				is.Func("VAT", comboIsVAT),
 				rules.Field("ext",
@@ -209,8 +183,7 @@ func taxComboIsZero(val any) bool {
 	return ok && tc != nil && tc.Key == tax.KeyZero
 }
 
-// taxCategoryCodesOutsideScope are the VAT category codes allowed on 480 and
-// 81 documents: exempt (E) and not subject to VAT (O) (IBR-122-AE).
+// taxCategoryCodesOutsideScope are the VAT category codes allowed on outside scope documents.
 var taxCategoryCodesOutsideScope = []cbc.Code{
 	en16931.TaxCategoryExempt,
 	en16931.TaxCategoryOutsideScope,

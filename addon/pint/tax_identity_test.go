@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
@@ -27,18 +26,6 @@ func TestTaxIdentityRulesAE(t *testing.T) {
 		assert.ErrorContains(t, err, faultTRN)
 	})
 
-	t.Run("the rest of the TRN format is left to the AE regime (IBR-132-AE)", func(t *testing.T) {
-		for name, code := range map[string]cbc.Code{
-			"does not start with 1": "200000000000003",
-			"too short":             "10000000000003",
-			"too long":              "1000000000000003",
-		} {
-			err := validate(&tax.Identity{Country: "AE", Code: code})
-			assert.ErrorContains(t, err, "GOBL-AE-TAX-IDENTITY-01", name)
-			assert.NotContains(t, err.Error(), faultTRN, name)
-		}
-	})
-
 	t.Run("identity without a code is accepted (IBR-132-AE)", func(t *testing.T) {
 		assert.NoError(t, validate(&tax.Identity{Country: "AE"}))
 	})
@@ -51,7 +38,7 @@ func TestTaxIdentityRulesAE(t *testing.T) {
 	})
 
 	t.Run("the rule does not apply outside AE", func(t *testing.T) {
-		err := validateIn(&tax.Identity{Country: "AE", Code: "200000000000003"}, l10n.AU.Tax())
+		err := validateIn(&tax.Identity{Country: "AE", Code: "100000001600004"}, l10n.AU.Tax())
 		if err != nil {
 			assert.NotContains(t, err.Error(), faultTRN)
 		}

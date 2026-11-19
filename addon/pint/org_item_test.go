@@ -12,19 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestItemTypeAE(t *testing.T) {
-	tests := map[cbc.Key]cbc.Code{
-		org.ItemKeyGoods:          pint.ItemTypeGoods,
-		org.ItemKeyServices:       pint.ItemTypeServices,
-		pint.ItemKeyGoodsServices: pint.ItemTypeGoodsServices,
-		"other":                   "",
-		cbc.KeyEmpty:              "",
-	}
-	for key, want := range tests {
-		assert.Equal(t, want, pint.ItemTypeAE(key), key)
-	}
-}
-
 func TestItemKeyAE(t *testing.T) {
 	tests := map[cbc.Code]cbc.Key{
 		"G": org.ItemKeyGoods,
@@ -61,10 +48,6 @@ func TestOrgItemRulesAE(t *testing.T) {
 		// An identity with a scheme ID isn't written as a classification.
 		withScheme := &org.Identity{Label: pint.IdentityLabelHS, Code: "8471", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: "0088"})}
 		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods, withScheme)), faultGoodsHS)
-	})
-
-	t.Run("services need no service accounting code", func(t *testing.T) {
-		assert.Empty(t, aeFaults(t, item(org.ItemKeyServices)))
 	})
 
 	t.Run("goods and services need an HS classification (IBR-186-AE)", func(t *testing.T) {

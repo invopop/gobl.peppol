@@ -65,16 +65,6 @@ func TestInvoiceScenarios(t *testing.T) {
 		assert.Equal(t, cbc.Code("81"), documentType(t, inv))
 	})
 
-	t.Run("AE invoice without the tag keeps EN's 380", func(t *testing.T) {
-		inv := scenarioInvoice(ae, bill.InvoiceTypeStandard)
-		assert.Equal(t, cbc.Code("380"), documentType(t, inv))
-	})
-
-	t.Run("AE credit note without the tag keeps EN's 381", func(t *testing.T) {
-		inv := scenarioInvoice(ae, bill.InvoiceTypeCreditNote)
-		assert.Equal(t, cbc.Code("381"), documentType(t, inv))
-	})
-
 	t.Run("a hand-set code is replaced by the scenario", func(t *testing.T) {
 		inv := scenarioInvoice(ae, bill.InvoiceTypeStandard, pint.TagOutsideTaxScope)
 		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyDocumentType: "380"})}

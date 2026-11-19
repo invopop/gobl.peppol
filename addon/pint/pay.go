@@ -16,9 +16,7 @@ const (
 	meansCodeSEPACreditTransfer cbc.Code = "58"
 )
 
-// payInstructionsRules enforces the payment instruction rules of the
-// jurisdictions: A-NZ on Australian and New Zealand documents, and AE on UAE
-// documents.
+// payInstructionsRules validates payment instructions on A-NZ and UAE documents.
 func payInstructionsRules() *rules.Set {
 	return rules.For(new(pay.Instructions),
 		rules.When(
@@ -31,10 +29,7 @@ func payInstructionsRules() *rules.Set {
 		),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
-			// gobl.ubl only writes the first credit transfer, as
-			// cac:PayeeFinancialAccount, but every one needs the account.
-			// Unlike A-NZ, SEPA (58) is not included, as IBR-192-AE only
-			// checks 30.
+			// IBR-192-AE checks only 30, not 58. Every credit transfer needs an account, though gobl.ubl writes only the first.
 			rules.When(is.Func("payment means is credit transfer", instructionsMeansIn(meansCodeCreditTransfer)),
 				rules.Field("credit_transfer",
 					rules.Assert("02", "credit transfer is required with the payment means 30 (IBR-192-AE)", is.Present),
@@ -51,8 +46,6 @@ func payInstructionsRules() *rules.Set {
 
 // creditTransferRules enforces that any credit transfer information provided
 // on Australian and New Zealand documents carries a payment account identifier.
-// AE has no such rule: IBR-192-AE only applies to credit transfer means (30),
-// so it is checked from the payment instructions instead.
 func creditTransferRules() *rules.Set {
 	return rules.For(new(pay.CreditTransfer),
 		rules.When(

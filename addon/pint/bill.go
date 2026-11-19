@@ -16,15 +16,10 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// billInvoiceRules enforces the PINT invoice rules shared by every
-// jurisdiction, and the PINT AE rules on UAE documents.
+// billInvoiceRules validates invoices on PINT documents.
 func billInvoiceRules() *rules.Set {
 	return rules.For(new(bill.Invoice),
-		// EN 16931 wants an EU VATEX code or an exemption note for every E, O
-		// and AE VAT breakdown (BR-E-10, BR-O-10, BR-AE-10). PINT has no such
-		// rule. PINT AE only asks for the UAE exemption reason on exempt lines,
-		// discounts and charges (IBR-167-AE, IBR-168-AE, IBR-169-AE), and no
-		// official example has a reason on a breakdown.
+		// PINT has no BR-E-10, BR-O-10 or BR-AE-10; PINT AE asks for the UAE reason per line, discount and charge.
 		rules.Ignore("GOBL-EU-EN16931-BILL-INVOICE-08"),
 
 		// Supplier and customer
@@ -46,12 +41,7 @@ func billInvoiceRules() *rules.Set {
 			),
 		),
 		// Electronic addresses and customer identification
-		//
-		// gobl.ubl writes an email address, from an endpoint or an inbox, as
-		// cbc:EndpointID with the scheme EM, which is not in PINT's electronic
-		// address scheme list (ibr-cl-25). We assume no party has both a
-		// Peppol endpoint and an email address, so any email address is
-		// rejected.
+		// gobl.ubl writes emails as EndpointID scheme EM, which PINT doesn't list (ibr-cl-25).
 		rules.Field("supplier",
 			rules.Field("endpoints", rules.Each(
 				rules.Field("uri",
@@ -82,8 +72,7 @@ func billInvoiceRules() *rules.Set {
 			rules.AssertIfPresent("09", "customer can have at most one identity besides its first legal one and its tax ones (ibr-sr-16)",
 				is.Func("at most one buyer identifier", partyHasOneIdentification),
 			),
-			// EN 16931 allows one tax scope identity (GOBL-EU-EN16931-ORG-PARTY-03),
-			// so only one with a tax ID code is too many.
+			// EN 16931 already allows one tax scope identity, so with a tax ID code there must be none.
 			rules.When(
 				org.PartyHasTaxIDCode(),
 				rules.Field("identities",
@@ -105,10 +94,6 @@ func billInvoiceRules() *rules.Set {
 			is.Func("payee is not the supplier", payeeIsNotSupplier),
 		),
 		// Notes
-		//
-		// PINT allows a single note on the document and on each line. Several
-		// notes are rejected rather than joined, so the user decides how to
-		// combine their texts and subject codes.
 		rules.Field("notes",
 			rules.Assert("13", "invoice can have at most one note (ibr-sr-51)", is.Length(0, 1)),
 		),
@@ -118,11 +103,7 @@ func billInvoiceRules() *rules.Set {
 			),
 		)),
 		// Due dates
-		//
-		// Not PINT rules but our own limitation: PINT can carry instalments
-		// (IBG-33) next to the payment due date (IBT-009), but we only write
-		// the due date, which has no amount. More due dates, or one for part
-		// of the amount, are rejected rather than lost.
+		// Our own limit, not a PINT rule: only the payment due date (IBT-009) is written, with no amount.
 		rules.Field("payment",
 			rules.Field("terms",
 				rules.Field("due_dates",
@@ -138,9 +119,6 @@ func billInvoiceRules() *rules.Set {
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			// AE supplier
-			//
-			// The party and address rules ask every UAE address for an emirate
-			// code as its region (IBR-128-AE).
 			rules.Field("supplier",
 				rules.Field("addresses",
 					rules.Each(
@@ -155,19 +133,12 @@ func billInvoiceRules() *rules.Set {
 						),
 					),
 				),
-				// IBR-150-AE applies to sellers with a 0235 endpoint, which every
-				// UAE supplier has, as the UAE PASR gives every end user
-				// 0235:<TIN>. The party rules check the type of the legal
-				// identities (IBR-173-AE, IBR-181-AE).
+				// IBR-150-AE only applies with a 0235 endpoint, which every UAE supplier gets (normalizeSupplierAE).
 				rules.Field("identities",
 					rules.Assert("20", "supplier legal identity is required (IBR-150-AE)",
 						is.Func("has legal scope identity", identitiesScopeIn(org.IdentityScopeLegal)),
 					),
 				),
-				// IBR-178-AE needs no rule: EN 16931 allows one tax scope identity
-				// (GOBL-EU-EN16931-ORG-PARTY-03), which, with the TRN, is the two
-				// PartyTaxSchemes with one VAT that it accepts.
-				// The AE regime checks the TIN's format and check digit.
 				rules.Field("identities", rules.Each(
 					rules.When(
 						is.Func("tax scope", identityScopeIn(org.IdentityScopeTax)),
@@ -203,13 +174,8 @@ func billInvoiceRules() *rules.Set {
 				),
 			),
 
-			// AE tax schemes of every party
-			//
-			// IBR-133-AE's test runs on every cac:TaxScheme/cbc:ID: a scheme
-			// other than VAT needs a seller TIN. gobl.ubl writes tax schemes for
-			// the customer, tax representative, issuer, payee and line sellers.
-			// The supplier's own pass: its tax ID is under VAT, and rule 17 makes
-			// any tax scope identity of it a TIN. Every tax category here is VAT.
+			// AE tax schemes
+			// IBR-133-AE's test checks every cac:TaxScheme, not only the seller's.
 			rules.Assert("26", "tax registrations must be VAT when the supplier does not have a TIN (IBR-133-AE)",
 				is.Func("non-VAT tax registrations with supplier TIN", invoiceNonVATTaxRegistrationsHaveSupplierTIN),
 			),
@@ -244,10 +210,7 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
-			// Self-billed credit notes (261) are exempt too. The rule text only
-			// names 381 and 81, but the Schematron test also exempts 261, and we
-			// follow the test. Rule 26 already asks these documents for the
-			// payment details, and GOBL due dates for their date.
+			// The IBR-127-AE test also exempts 261, which its text doesn't name; we follow the test.
 			rules.When(
 				is.Not(is.Or(
 					is.Func("document type is 381, 81 or 261",
@@ -271,7 +234,7 @@ func billInvoiceRules() *rules.Set {
 				),
 			),
 
-			// AE document types: all but outside scope (480, 81)
+			// AE document types
 			rules.When(
 				is.Not(is.Func("document type is invoice outside scope or credit note related to goods and services",
 					invoiceExtIn(untdid.ExtKeyDocumentType, docTypeInvoiceOutsideScope, docTypeCreditNoteGoodsServices))),
@@ -282,7 +245,7 @@ func billInvoiceRules() *rules.Set {
 				),
 			),
 
-			// AE document types: outside scope (480, 81)
+			// AE outside scope documents
 			rules.When(
 				is.Func("document type is invoice outside scope or credit note related to goods and services",
 					invoiceExtIn(untdid.ExtKeyDocumentType, docTypeInvoiceOutsideScope, docTypeCreditNoteGoodsServices)),
@@ -341,7 +304,7 @@ func billInvoiceRules() *rules.Set {
 				),
 			),
 
-			// AE document types: commercial invoice and credit note (380, 381)
+			// AE commercial invoices and credit notes
 			rules.When(
 				is.Func("document type is 380 or 381",
 					invoiceExtIn(untdid.ExtKeyDocumentType, docTypeCommercialInvoice, docTypeCreditNote)),
@@ -350,11 +313,8 @@ func billInvoiceRules() *rules.Set {
 				),
 			),
 
-			// AE document types: credit notes (381, 81)
-			//
-			// IBR-158-AE only names 381, but IBR-055-AE's test fails 81 credit
-			// notes without a reason too, whether or not they have a preceding
-			// invoice, so both need one.
+			// AE credit notes
+			// IBR-158-AE names only 381, but the IBR-055-AE test also fails 81 without a reason.
 			rules.When(
 				is.Func("document type is credit note or credit note related to goods and services",
 					invoiceExtIn(untdid.ExtKeyDocumentType, docTypeCreditNote, docTypeCreditNoteGoodsServices)),
@@ -371,7 +331,6 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 				rules.When(
-					// A credit note without a reason is reported by the rule above.
 					is.Not(is.Func("credit note reason is missing or volume discount",
 						invoiceExtIn(ExtKeyCreditNoteReason, cbc.CodeEmpty, CreditNoteReasonVolumeDiscount))),
 					rules.Field("preceding",
@@ -409,9 +368,6 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
-			// PINT AE BIS 1.5.3 predefines the buyer electronic address of a
-			// deemed supply. The other predefined endpoints, 9900000098 and
-			// 9900000099, depend on facts GOBL doesn't know.
 			rules.When(
 				is.Func("deemed supply", invoiceHasTags(TagDeemedSupply)),
 				rules.Field("customer",
@@ -420,9 +376,6 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
-			// With the discount and charge rules 01, a margin scheme invoice can
-			// have no discounts or charges, as GOBL requires them to have taxes
-			// (BR-32, BR-37).
 			rules.When(
 				is.Func("margin scheme", invoiceHasTags(TagMarginScheme)),
 				rules.Assert("48", "margin scheme invoice must only have exempt lines without a UAE exemption reason, mapped to the margin scheme category N, and no other VAT treatments (IBR-116-AE)",
@@ -452,9 +405,7 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
-			// IBR-177-AE asks for the TRN or the TIN on every document. Rule 30
-			// already asks for the TRN except on 480 and 81, so this rule only
-			// covers those, where the TIN is enough.
+			// IBR-134-AE already requires the TRN elsewhere, so IBR-177-AE is only checked on 480 and 81.
 			rules.When(
 				is.Func("document type is invoice outside scope or credit note related to goods and services",
 					invoiceExtIn(untdid.ExtKeyDocumentType, docTypeInvoiceOutsideScope, docTypeCreditNoteGoodsServices)),
@@ -469,10 +420,6 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
-			// IBR-142-AE and IBR-152-AE read the delivery address, which
-			// gobl.ubl writes from the delivery receiver's first address as
-			// cac:DeliveryLocation/cac:Address. Their tests fail a document
-			// without one.
 			rules.When(
 				is.Or(
 					is.Func("e-commerce supply", invoiceHasTags(TagECommerce)),
@@ -508,10 +455,7 @@ func billInvoiceRules() *rules.Set {
 					),
 				),
 			),
-			// IBR-152-AE's text says the delivery country should not be AE on
-			// exports, but its test accepts a delivery address in the UAE, and
-			// only asks the others for a street, city and region. We follow the
-			// test.
+			// IBR-152-AE's text forbids an AE delivery country on exports, but its test accepts one; we follow the test.
 			rules.When(
 				is.Func("export", invoiceHasTags(tax.TagExport)),
 				rules.Field("delivery",
@@ -540,9 +484,7 @@ func billInvoiceRules() *rules.Set {
 				rules.Field("customer",
 					rules.When(
 						is.Func("has UAE Peppol endpoint that is not a TIN", partyHasUAEEndpoint(ae.TINPattern, false)),
-						// gobl.ubl writes the identities without a scope as
-						// cac:PartyIdentification. The legal one, of which EN 16931
-						// allows one, goes to cac:PartyLegalEntity.
+						// gobl.ubl writes unscoped identities as cac:PartyIdentification.
 						rules.When(
 							is.Not(org.PartyHasTaxIDCode()),
 							rules.Field("identities",
@@ -583,10 +525,6 @@ func billInvoiceRules() *rules.Set {
 						is.Func("principal ID ends with 03", extensionMatches(ExtKeyPrincipalID, vatTRNSuffixPattern)),
 					),
 				),
-				// PINT AE uses the element EN writes the VAT point date code
-				// (BT-8) in, cac:InvoicePeriod/cbc:DescriptionCode, for the
-				// billing frequency, and IBR-005-AE only accepts frequencies
-				// there.
 				rules.Field("point",
 					rules.Assert("67", "tax point must not be set, as PINT AE uses its element for the billing frequency (IBR-005-AE)",
 						is.Not(is.Present),
@@ -595,12 +533,6 @@ func billInvoiceRules() *rules.Set {
 			),
 
 			// AE document type list
-			//
-			// PINT AE's list is shorter than EN 16931's: 380 and 480 on invoices,
-			// 381 and 81 on credit notes, and 389 and 261 for self-billing. The
-			// other codes the EN 16931 scenarios set, for pro forma, corrective
-			// and debit note types and the partial, prepayment and factoring
-			// tags, fail ibr-cl-01.
 			rules.Field("tax",
 				rules.Field("ext",
 					rules.Assert("68", "document type must be 380, 480, 381, 81, 389 or 261 (ibr-cl-01)",
@@ -611,17 +543,8 @@ func billInvoiceRules() *rules.Set {
 		),
 
 		// Currency decimals
-		//
-		// PINT 1.1.4, which PINT AE 1.0.5 builds on, allows as many decimals
-		// in the document totals as the official precision of the currency
-		// (ibr-091, ibr-121 to ibr-125): 3 for BHD, IQD, JOD, KWD, LYD, OMR
-		// and TND, 4 for CLF and UYW, and 2 for the rest. PINT 1.1.3, which
-		// FormatPINT and FormatAUNZ validate against, allows 2 for every
-		// currency. gobl.ubl writes the totals with GOBL's decimals for the
-		// currency, which are more than PINT's for a few, such as MGA and MRU.
-		//
-		// TODO: check the other regimes against the precision of the currency
-		// too once their VESIDs move to PINT 1.1.4.
+		// PINT AE validates against PINT 1.1.4, which allows each currency's precision; the others use 1.1.3, which allows 2.
+		// TODO: use the currency precision everywhere once the other VESIDs move to PINT 1.1.4.
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			rules.Field("currency",
@@ -640,11 +563,7 @@ func billInvoiceRules() *rules.Set {
 		),
 
 		// Tags
-		//
-		// The tags the addon defines are for UAE documents, but GOBL can't limit
-		// an addon's tags to a regime. Other documents can only use the ones
-		// their regime, another addon or GOBL itself defines too, as before the
-		// addon had tags.
+		// GOBL can't limit an addon's tags to a regime, so the PINT AE ones are rejected elsewhere.
 		rules.When(
 			is.Not(is.InContext(tax.RegimeIn(regimesAE...))),
 			rules.Assert("70", "PINT AE tags can only be used on UAE documents",
@@ -654,8 +573,7 @@ func billInvoiceRules() *rules.Set {
 	)
 }
 
-// billDiscountRules enforces the PINT AE document level discount rules on UAE
-// documents.
+// billDiscountRules validates document level discounts on UAE documents.
 func billDiscountRules() *rules.Set {
 	return rules.For(new(bill.Discount),
 		rules.When(
@@ -674,8 +592,7 @@ func billDiscountRules() *rules.Set {
 	)
 }
 
-// billChargeRules enforces the PINT AE document level charge rules on UAE
-// documents.
+// billChargeRules validates document level charges on UAE documents.
 func billChargeRules() *rules.Set {
 	return rules.For(new(bill.Charge),
 		rules.When(
@@ -715,9 +632,8 @@ func invoiceExtIn(key cbc.Key, codes ...cbc.Code) func(any) bool {
 	}
 }
 
-// invoiceHasNoAETags reports whether the invoice has none of the tags only
-// the PINT addon defines. A tag its regime, another addon or GOBL itself
-// defines with the same key, such as the Spanish "summary", is not one.
+// invoiceHasNoAETags reports whether the invoice has none of the tags only the PINT addon defines.
+// Tags that the regime, another addon or GOBL also define don't count.
 func invoiceHasNoAETags(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {
@@ -749,9 +665,7 @@ var currencyDecimalsPINT = map[currency.Code]uint32{
 	currency.CLF: 4,
 }
 
-// currencyHasPINTDecimals reports whether GOBL's decimals for a currency,
-// those gobl.ubl writes the totals with, are no more than its precision in
-// PINT 1.1.4 (ibr-091, ibr-121 to ibr-125). A missing or unknown currency fails.
+// currencyHasPINTDecimals reports whether GOBL's decimals for the currency fit its PINT 1.1.4 precision.
 func currencyHasPINTDecimals(val any) bool {
 	code, ok := val.(currency.Code)
 	if !ok {
@@ -768,9 +682,7 @@ func currencyHasPINTDecimals(val any) bool {
 	return def.Subunits <= limit
 }
 
-// currencyHasAtMost2Decimals reports whether GOBL's decimals for a currency,
-// those gobl.ubl writes the totals with, are 2 at most, the limit in PINT
-// 1.1.3 (ibr-091, ibr-121 to ibr-125). A missing or unknown currency fails.
+// currencyHasAtMost2Decimals reports whether GOBL's decimals for the currency are 2 at most (PINT 1.1.3).
 func currencyHasAtMost2Decimals(val any) bool {
 	code, ok := val.(currency.Code)
 	if !ok {
@@ -780,10 +692,7 @@ func currencyHasAtMost2Decimals(val any) bool {
 	return def != nil && def.Subunits <= 2
 }
 
-// exchangeRateToAEDHasAtMost6Decimals reports whether the exchange rate from
-// the invoice currency to AED has at most 6 decimals, the limit for
-// cbc:CalculationRate (IBR-002-AE). It is the only rate written. Invoices
-// without it pass: they are in AED, or rule 23 reports them.
+// exchangeRateToAEDHasAtMost6Decimals reports whether the rate to AED, if any, has at most 6 decimals.
 func exchangeRateToAEDHasAtMost6Decimals(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {
@@ -794,7 +703,7 @@ func exchangeRateToAEDHasAtMost6Decimals(val any) bool {
 }
 
 // invoiceHasReverseChargeLine reports whether any line of the invoice has a
-// VAT combo with the reverse charge category AE, the code IBR-103-AE tests.
+// VAT combo with the reverse charge category AE.
 func invoiceHasReverseChargeLine(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {
@@ -808,10 +717,7 @@ func invoiceHasReverseChargeLine(val any) bool {
 	return false
 }
 
-// invoiceHasLineComboOtherThanEorO reports whether at least one line has a VAT
-// combo whose category is neither exempt (E) nor not subject to VAT (O)
-// (IBR-151-AE). Combos of other taxes are ignored, as they carry no VAT
-// category.
+// invoiceHasLineComboOtherThanEorO reports whether any line has a VAT category other than E or O.
 func invoiceHasLineComboOtherThanEorO(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {
@@ -833,9 +739,7 @@ func invoiceHasLineComboOtherThanEorO(val any) bool {
 	return false
 }
 
-// pointDateBeforeIssueDate reports whether the invoice's value date, written as
-// the VAT point date cbc:TaxPointDate, is strictly before the issue date
-// (IBR-141-AE). Invoices without a value date pass.
+// pointDateBeforeIssueDate reports whether the value date, if any, is before the issue date.
 func pointDateBeforeIssueDate(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {
@@ -847,9 +751,8 @@ func pointDateBeforeIssueDate(val any) bool {
 	return inv.IssueDate.DaysSince(inv.ValueDate.Date) > 0
 }
 
-// dueDatesCoverAmountDue reports whether the invoice's due dates are each for
-// the whole amount still due, as a percentage of 100% or as that amount, the
-// way an imported payment due date comes back. Due dates without either pass.
+// dueDatesCoverAmountDue reports whether each due date is for the whole amount due, as 100% or as
+// that amount. Due dates with neither pass.
 func dueDatesCoverAmountDue(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil || inv.Payment == nil || inv.Payment.Terms == nil || inv.Totals == nil {
@@ -873,9 +776,8 @@ func dueDatesCoverAmountDue(val any) bool {
 	return true
 }
 
-// invoiceIsDue reports whether the amount gobl.ubl writes as
-// cbc:PayableAmount is greater than zero, as IBR-127-AE tests it: the due
-// total when set, the payable total otherwise.
+// invoiceIsDue reports whether the amount gobl.ubl writes as cbc:PayableAmount, the due total
+// when set or the payable total otherwise, is greater than zero.
 func invoiceIsDue(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil || inv.Totals == nil {
@@ -887,15 +789,8 @@ func invoiceIsDue(val any) bool {
 	return inv.Totals.Payable.IsPositive()
 }
 
-// invoiceNonVATTaxRegistrationsHaveSupplierTIN reports whether the supplier
-// has a TIN (IBT-032) whenever another party has a tax registration that
-// gobl.ubl writes under a tax scheme other than VAT: a tax scope identity
-// whose type isn't VAT, or a tax ID from a regime with another scheme, such
-// as GST in Australia. PINT AE only allows those when the seller has a TIN
-// (IBR-133-AE). The parties are the ones gobl.ubl writes tax schemes for:
-// the customer, tax representative, issuer, payee and line sellers. The
-// official exports example sends a foreign buyer's tax number as its
-// electronic address and legal identifier instead.
+// invoiceNonVATTaxRegistrationsHaveSupplierTIN reports whether the supplier has a TIN whenever another party
+// has a tax registration gobl.ubl writes under a scheme other than VAT.
 func invoiceNonVATTaxRegistrationsHaveSupplierTIN(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil {
@@ -921,9 +816,7 @@ func invoiceNonVATTaxRegistrationsHaveSupplierTIN(val any) bool {
 	return true
 }
 
-// partyHasNonVATTaxRegistration reports whether gobl.ubl writes a tax scheme
-// other than VAT for the party: its tax ID's, or a tax scope identity's,
-// which is the identity type, or LOC without one.
+// partyHasNonVATTaxRegistration reports whether gobl.ubl writes a non-VAT tax scheme for the party.
 func partyHasNonVATTaxRegistration(p *org.Party) bool {
 	if p == nil {
 		return false
@@ -939,8 +832,7 @@ func partyHasNonVATTaxRegistration(p *org.Party) bool {
 	return false
 }
 
-// partyHasTIN reports whether the party has a tax scope identity of the TIN
-// type, the seller TIN IBR-133-AE looks for in the seller's tax schemes.
+// partyHasTIN reports whether the party has a tax scope identity of the TIN type.
 func partyHasTIN(p *org.Party) bool {
 	if p == nil {
 		return false

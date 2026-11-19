@@ -20,16 +20,11 @@ const (
 	docTypeInvoiceOutsideScope     cbc.Code = "480"
 	docTypeCreditNoteGoodsServices cbc.Code = "81"
 
-	// UNTDID 1001 codes the EN 16931 scenarios set on standard invoices and
-	// credit notes, which some PINT AE rules check.
-	docTypeCommercialInvoice cbc.Code = "380"
-	docTypeCreditNote        cbc.Code = "381"
-	// docTypeSelfBilledCreditNote is the code the EN 16931 scenarios set on
-	// self-billed credit notes.
+	// UNTDID 1001 codes the EN 16931 scenarios set.
+	docTypeCommercialInvoice    cbc.Code = "380"
+	docTypeCreditNote           cbc.Code = "381"
 	docTypeSelfBilledCreditNote cbc.Code = "261"
-	// docTypeSelfBilledInvoice is the code the EN 16931 scenarios set on
-	// self-billed invoices.
-	docTypeSelfBilledInvoice cbc.Code = "389"
+	docTypeSelfBilledInvoice    cbc.Code = "389"
 )
 
 // docTypesAE are the UNTDID 1001 codes PINT AE accepts: ibr-cl-01's list for
@@ -59,10 +54,7 @@ var invoiceTags = &tax.TagSet{
 	}, transactionTypeTags...),
 }
 
-// invoiceScenarios set the UNTDID 1001 document type for PINT AE's
-// out-of-scope documents. EN 16931's scenarios run first and set 380 or 381
-// from the invoice type; these match afterwards and replace the code, the same
-// way EN maps the self-billed tag to 389.
+// invoiceScenarios set 480 and 81 on out-of-scope documents, replacing the 380 or 381 that EN 16931 sets first.
 var invoiceScenarios = &tax.ScenarioSet{
 	Schema: bill.ShortSchemaInvoice,
 	List: []*tax.Scenario{
@@ -86,9 +78,8 @@ var invoiceScenarios = &tax.ScenarioSet{
 	},
 }
 
-// invoiceIsAE reports whether the scenario document is a UAE invoice. Tags and
-// scenarios belong to the addon, which runs for every regime, so the AE-only
-// scenarios use it as their filter.
+// invoiceIsAE reports whether the scenario document is a UAE invoice, as the addon's scenarios
+// apply under every regime.
 func invoiceIsAE(doc any) bool {
 	inv, ok := doc.(*bill.Invoice)
 	return ok && inv != nil && inv.GetRegime() == l10n.AE.Tax()

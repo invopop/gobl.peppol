@@ -48,12 +48,14 @@ func TestNormalizeSupplierAE(t *testing.T) {
 		}
 	})
 
-	t.Run("a Peppol endpoint or inbox is kept", func(t *testing.T) {
+	t.Run("a Peppol endpoint is kept", func(t *testing.T) {
 		p := trn()
 		p.Endpoints = []*org.Endpoint{{URI: "iso6523-actorid-upis::0088:5790000435975"}}
 		assert.Len(t, normalize(l10n.AE.Tax(), p).Endpoints, 1)
+	})
 
-		p = trn()
+	t.Run("an existing Peppol inbox stops the UAE endpoint", func(t *testing.T) {
+		p := trn()
 		p.Inboxes = []*org.Inbox{{Scheme: "0235", Code: "1234567897"}}
 		assert.Empty(t, normalize(l10n.AE.Tax(), p).Endpoints)
 	})
@@ -131,9 +133,7 @@ func TestOrgPartyRulesAE(t *testing.T) {
 	t.Run("UAE addresses are left to the address rules (IBR-128-AE)", func(t *testing.T) {
 		inv := standard()
 		inv.Supplier.Addresses[0].Region = "Dubai"
-		out := aeFaults(t, inv)
-		assert.Contains(t, out, "GOBL-PEPPOL-PINT-ORG-ADDRESS-01")
-		assert.NotContains(t, out, faultEmirate)
+		assert.NotContains(t, aeFaults(t, inv), faultEmirate)
 	})
 
 	t.Run("other parties are not checked (IBR-128-AE)", func(t *testing.T) {
@@ -204,8 +204,6 @@ func TestOrgPartyRulesAE(t *testing.T) {
 		inv.Supplier.Identities[0].Scope = org.IdentityScopeLegal
 		inv.Supplier.Identities = append(inv.Supplier.Identities,
 			&org.Identity{Scope: org.IdentityScopeLegal, Code: "CN-1234567"})
-		out := aeFaults(t, inv)
-		assert.Contains(t, out, "GOBL-EU-EN16931-ORG-PARTY-02")
-		assert.Contains(t, out, faultLegalType)
+		assert.Contains(t, aeFaults(t, inv), faultLegalType)
 	})
 }

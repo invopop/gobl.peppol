@@ -11,11 +11,10 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// billLineRules enforces the PINT AE line rules on UAE documents.
+// billLineRules validates invoice lines on UAE documents.
 func billLineRules() *rules.Set {
 	return rules.For(new(bill.Line),
-		// TODO: IBR-145-AE matches ALIGNED-IBRP-050/059-AUNZ (GST). Extend to
-		// A-NZ after discussing it with colleagues.
+		// TODO: extend IBR-145-AE to A-NZ (ALIGNED-IBRP-050/059-AUNZ).
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			rules.Field("taxes",
@@ -38,8 +37,7 @@ func billLineRules() *rules.Set {
 					),
 				),
 			),
-			// The IBR-006-AE test checks every goods type, not only those of
-			// reverse charge lines as its text says.
+			// The IBR-006-AE test checks every goods type, not only those of reverse charge lines as its text says.
 			rules.Field("item",
 				rules.Field("ext",
 					rules.Assert("04", "type of goods or services must be from the PINT AE code list (IBR-006-AE)",
@@ -61,10 +59,7 @@ func billLineRules() *rules.Set {
 	)
 }
 
-// lineHasReverseChargeVAT reports whether a line's VAT combo has the reverse
-// charge category AE, the code gobl.ubl writes as the line's
-// cac:ClassifiedTaxCategory/cbc:ID and IBR-103-AE, IBR-166-AE and IBR-174-AE
-// test.
+// lineHasReverseChargeVAT reports whether the line's VAT category is AE, reverse charge.
 func lineHasReverseChargeVAT(val any) bool {
 	l, ok := val.(*bill.Line)
 	if !ok || l == nil {

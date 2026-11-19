@@ -11,28 +11,16 @@ import (
 // Invoice tags for the PINT AE transaction type flags (BTAE-02). Exports use
 // GOBL's own "export" tag.
 const (
-	// TagFreeTradeZone marks a supply of goods or services in a free trade zone.
-	TagFreeTradeZone cbc.Key = "free-trade-zone"
-	// TagDeemedSupply marks a supply of goods or services without
-	// consideration.
-	TagDeemedSupply cbc.Key = "deemed-supply"
-	// TagMarginScheme marks a supply of goods under the profit margin scheme.
-	// The UAE regime defines it, with the statement the invoice must carry.
-	TagMarginScheme = ae.TagMarginScheme
-	// TagSummary marks a summary invoice: more than one supply to the same
-	// person in the same calendar month.
-	TagSummary cbc.Key = "summary"
-	// TagContinuousSupply marks a supply made on a recurrent basis.
+	TagFreeTradeZone    cbc.Key = "free-trade-zone"
+	TagDeemedSupply     cbc.Key = "deemed-supply"
+	TagMarginScheme             = ae.TagMarginScheme
+	TagSummary          cbc.Key = "summary"
 	TagContinuousSupply cbc.Key = "continuous-supply"
-	// TagDisclosedAgent marks a supply an agent who is a registrant makes on
-	// behalf of a principal.
-	TagDisclosedAgent cbc.Key = "disclosed-agent"
-	// TagECommerce marks a supply of goods or services through e-commerce.
-	TagECommerce cbc.Key = "e-commerce"
+	TagDisclosedAgent   cbc.Key = "disclosed-agent"
+	TagECommerce        cbc.Key = "e-commerce"
 )
 
-// transactionTypePattern is the format of the transaction type: 8 flags of
-// 0 or 1 (IBR-154-AE).
+// transactionTypePattern is the format of the transaction type: 8 flags of 0 or 1.
 const transactionTypePattern = `^[01]{8}$`
 
 // TransactionType is a parsed PINT AE invoice transaction type (BTAE-02).
@@ -63,9 +51,8 @@ var transactionTypeFlags = []struct {
 	{tax.TagExport, func(t *TransactionType) *bool { return &t.Export }},
 }
 
-// ParseTransactionType reads the flags of a transaction type code. A flag is
-// set when its position holds a 1; a missing or malformed code gives no
-// flags, as IBR-154-AE checks the format.
+// ParseTransactionType reads the flags of a transaction type code: each position holding a 1 sets
+// its flag.
 func ParseTransactionType(code cbc.Code) TransactionType {
 	var t TransactionType
 	s := code.String()
@@ -110,11 +97,8 @@ func transactionTypeFromTags(inv *bill.Invoice) TransactionType {
 	return t
 }
 
-// normalizeTransactionType sets the transaction type of a UAE invoice from its
-// flag tags, "00000000" without any. Every PINT AE document needs one
-// (IBR-154-AE). The tags are the only source: a code from an earlier
-// calculation can't be told apart from one set directly, so keeping it would
-// leave the flags of removed tags in place.
+// normalizeTransactionType sets the transaction type from the flag tags only: a code from an earlier
+// calculation can't be told apart from one set directly.
 func normalizeTransactionType(inv *bill.Invoice) {
 	if inv == nil {
 		return
@@ -164,10 +148,7 @@ var transactionTypeTags = []*cbc.Definition{
 	},
 }
 
-// invoiceHasTags returns a predicate that reports whether an invoice has all
-// the tags. The transaction type rules read the flags from the tags, which
-// the transaction type is built from (normalizeTransactionType) and the UBL
-// import sets from it.
+// invoiceHasTags returns a predicate that reports whether an invoice has all the tags.
 func invoiceHasTags(keys ...cbc.Key) func(any) bool {
 	return func(val any) bool {
 		inv, ok := val.(*bill.Invoice)

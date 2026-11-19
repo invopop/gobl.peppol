@@ -25,25 +25,14 @@ const endpointSchemeMailto = "mailto"
 // email addresses.
 const endpointSchemeEmail cbc.Code = "EM"
 
-// orgPartyRules asks every party of a UAE document with a UAE tax ID for an
-// address with an emirate code as its region (IBR-128-AE). gobl.ubl writes
-// the country of a party's tax ID over the address's own in
-// cac:PostalAddress, and an address with only that country when the party
-// has none, so every address of the party is in the UAE there. The address
-// rules already check the addresses whose own country is AE.
+// orgPartyRules validates parties on UAE documents.
 //
-// It also checks the type of the legal identities of the parties with a UAE
-// Peppol endpoint (IBR-173-AE, IBR-181-AE, IBR-180-AE, IBR-183-AE). Every one
-// of those tests only fires with a 0235 cbc:EndpointID, so only UAE Peppol
-// participants are checked; foreign payees, receivers and factors have none.
-//
-// TODO: gobl.ubl writes the delivery receiver's address with its own
-// country, as cac:DeliveryLocation/cac:Address, so a receiver with a UAE tax
-// ID and a foreign address gets an emirate error PINT AE wouldn't give.
+// TODO: a delivery receiver with a UAE tax ID and a foreign address gets an emirate error PINT AE wouldn't.
 func orgPartyRules() *rules.Set {
 	return rules.For(new(org.Party),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
+			// gobl.ubl writes a UAE tax ID's country over the address's, so the address counts as UAE.
 			rules.When(
 				is.Func("UAE tax ID", partyHasAETaxID),
 				rules.Field("addresses",
@@ -60,10 +49,7 @@ func orgPartyRules() *rules.Set {
 					),
 				),
 			),
-			// IBR-180-AE and IBR-183-AE exempt the buyers with the predefined
-			// endpoints 9900000098 and 9900000099. IBR-183-AE also exempts
-			// other 1XXXXXXXXX endpoints, but IBR-180-AE still asks them for a
-			// type, and GOBL can only write the four in the list.
+			// IBR-183-AE also exempts other 1XXXXXXXXX endpoints, but IBR-180-AE still asks them for a type.
 			rules.When(
 				is.Func("has UAE Peppol endpoint other than 9900000098 or 9900000099", partyHasUAEEndpoint(endpointPatternPredefined, false)),
 				rules.Field("identities", rules.Each(
@@ -86,22 +72,14 @@ func partyHasAETaxID(val any) bool {
 	return ok && p != nil && p.TaxID != nil && p.TaxID.Code != "" && p.TaxID.Country.Code() == l10n.AE
 }
 
-// partyHasOneIdentification reports whether gobl.ubl writes at most one
-// cac:PartyIdentification for the party, as PINT allows a single buyer
-// identifier (ibr-sr-16). gobl.ubl writes every identity there except those
-// with the tax scope and the first with the legal scope.
+// partyHasOneIdentification reports whether gobl.ubl writes at most one cac:PartyIdentification.
 func partyHasOneIdentification(val any) bool {
 	p, ok := val.(*org.Party)
 	return ok && p != nil && len(partyIdentifications(p)) <= 1
 }
 
-// payeeIsNotSupplier reports whether the invoice's payee differs from the
-// supplier, compared as ibr-017 does: on the legal identities gobl.ubl writes
-// as cac:PartyLegalEntity/cbc:CompanyID when both have one, else on the
-// identities it writes as cac:PartyIdentification when both have any, else on
-// the payee's name against the supplier's, regardless of case. Identities
-// match on code and the scheme gobl.ubl writes. An invoice without a payee
-// passes.
+// payeeIsNotSupplier reports whether the payee differs from the supplier by legal identity, else by
+// identification, else by name.
 func payeeIsNotSupplier(val any) bool {
 	inv, ok := val.(*bill.Invoice)
 	if !ok || inv == nil || inv.Payment == nil || inv.Payment.Payee == nil || inv.Supplier == nil {
@@ -154,10 +132,7 @@ func identificationScheme(id *org.Identity) cbc.Code {
 	return id.Ext.Get(iso.ExtKeySchemeID)
 }
 
-// partyEndpointID returns the scheme and code of the party's electronic
-// address, chosen as gobl.ubl does for cbc:EndpointID: the first ISO 6523
-// endpoint, or else the first email endpoint, or else the first inbox with an
-// email or a scheme. Email addresses have the scheme EM.
+// partyEndpointID returns the scheme and code gobl.ubl writes as the party's cbc:EndpointID.
 func partyEndpointID(p *org.Party) (cbc.Code, string) {
 	if e := p.Endpoint(iso.ActorIDScheme); e != nil {
 		// An ISO 6523 URI reads "iso6523-actorid-upis::<scheme>:<code>".
@@ -185,15 +160,9 @@ func partyEndpointID(p *org.Party) (cbc.Code, string) {
 
 // Patterns of the UAE Peppol endpoint codes the PINT AE rules depend on.
 const (
-	// endpointPatternPredefined matches the predefined endpoints 9900000098
-	// and 9900000099, which IBR-180-AE and IBR-183-AE exempt.
-	endpointPatternPredefined = `^99000000(98|99)$`
-	// endpointPatternDeemedSupply matches the predefined endpoint of the
-	// buyer of a deemed supply (PINT AE BIS 1.5.3).
+	endpointPatternPredefined   = `^99000000(98|99)$`
 	endpointPatternDeemedSupply = `^9900000097$`
-	// endpointPattern1or9 matches the codes of 10 digits starting with 1 or
-	// 9, which need no buyer legal registration identifier (IBR-149-AE).
-	endpointPattern1or9 = `^[19]\d{9}$`
+	endpointPattern1or9         = `^[19]\d{9}$`
 )
 
 // partyHasUAEEndpoint returns a predicate that reports whether the party's
@@ -231,15 +200,9 @@ func partyFirstLegalIdentity(val any) *org.Identity {
 // digits are the TIN.
 var trnRegexpAE = regexp.MustCompile(ae.TRNPattern)
 
-// normalizeSupplierAE fills in what the supplier's UAE TRN implies, when it
-// is missing: the TIN the TRN starts with, as a tax scope identity of the
-// TIN type (IBT-032), and the UAE Peppol endpoint, 0235 with the TIN, the
-// one the UAE PASR gives every end user. An identity of the TIN type or with
-// the tax scope is kept as it is, and the endpoint is only added to a
-// supplier with no endpoint or inbox at all.
-//
-// TODO: the customer's endpoint could be derived from its TRN the same way,
-// as every UAE end user is 0235:<TIN>, but it is not done yet.
+// normalizeSupplierAE adds the TIN identity (IBT-032) and 0235:<TIN> endpoint a UAE supplier's TRN implies,
+// unless it already has a TIN or tax identity, or any endpoint or inbox.
+// TODO: derive the customer's endpoint from its TRN too.
 func normalizeSupplierAE(inv *bill.Invoice) {
 	if inv == nil || inv.Supplier == nil {
 		return
@@ -265,10 +228,8 @@ func normalizeSupplierAE(inv *bill.Invoice) {
 	}
 }
 
-// partyTINFromTRN returns the TIN the party's UAE tax ID starts with, when
-// the code has the TRN format and the TIN a valid check digit, as the AE
-// regime checks them. It returns an empty code otherwise, so an invalid TRN
-// gives one error, not a second one on a derived TIN.
+// partyTINFromTRN returns the TIN a valid UAE TRN starts with, or "", so an invalid TRN gives one error,
+// not a second one on a derived TIN.
 func partyTINFromTRN(p *org.Party) cbc.Code {
 	if p.TaxID == nil || p.TaxID.Country != l10n.AE.Tax() {
 		return ""

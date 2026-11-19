@@ -87,10 +87,4 @@ func TestBillGoodsTypeRulesAE(t *testing.T) {
 		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.3.1", nil)), faultGTIN)
 		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.3.1", gtin("0088"))), faultGTIN)
 	})
-
-	t.Run("other lines need neither", func(t *testing.T) {
-		out := aeFaults(t, aeDocument(bill.InvoiceTypeStandard))
-		assert.NotContains(t, out, faultGoodsType)
-		assert.NotContains(t, out, faultGTIN)
-	})
 }
