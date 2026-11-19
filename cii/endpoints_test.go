@@ -34,11 +34,6 @@ func TestImportEndpoints(t *testing.T) {
 			buyer:  uc("0088", "5790000000002"),
 			want:   [2]cbc.URI{"iso6523-actorid-upis::0088:5790000000001", "iso6523-actorid-upis::0088:5790000000002"},
 		},
-		"email": {
-			seller: uc(goblcii.SchemeIDEmail, "seller@example.com"),
-			buyer:  uc(goblcii.SchemeIDEmail, "buyer@example.com"),
-			want:   [2]cbc.URI{"mailto:seller@example.com", "mailto:buyer@example.com"},
-		},
 		"empty scheme": {
 			seller: uc("", "123456789"),
 			buyer:  uc("", "987654321"),

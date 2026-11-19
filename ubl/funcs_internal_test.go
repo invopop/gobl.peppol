@@ -43,22 +43,15 @@ func TestImportPartyTaxID(t *testing.T) {
 func TestSetEndpoint(t *testing.T) {
 	t.Run("keeps an endpoint for the same URI scheme", func(t *testing.T) {
 		party := &org.Party{Endpoints: []*org.Endpoint{{URI: "iso6523-actorid-upis::0088:5790000000001"}}}
-		setEndpoint(party, &goblubl.EndpointID{SchemeID: "0002", Value: "123456789"})
+		importPartyEndpoint(party, &goblubl.EndpointID{SchemeID: "0002", Value: "123456789"})
 		require.Len(t, party.Endpoints, 1)
 		assert.Equal(t, cbc.URI("iso6523-actorid-upis::0088:5790000000001"), party.Endpoints[0].URI)
 	})
 
-	t.Run("adds a mailto next to an ISO 6523 endpoint", func(t *testing.T) {
-		party := &org.Party{Endpoints: []*org.Endpoint{{URI: "iso6523-actorid-upis::0088:5790000000001"}}}
-		setEndpoint(party, &goblubl.EndpointID{SchemeID: goblubl.SchemeIDEmail, Value: "seller@example.com"})
-		require.Len(t, party.Endpoints, 2)
-		assert.Equal(t, cbc.URI("mailto:seller@example.com"), party.Endpoints[1].URI)
-	})
-
 	t.Run("skips a missing or empty address", func(t *testing.T) {
 		party := new(org.Party)
-		setEndpoint(party, nil)
-		setEndpoint(party, &goblubl.EndpointID{SchemeID: "0002"})
+		importPartyEndpoint(party, nil)
+		importPartyEndpoint(party, &goblubl.EndpointID{SchemeID: "0002"})
 		assert.Empty(t, party.Endpoints)
 	})
 }

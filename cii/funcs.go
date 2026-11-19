@@ -60,15 +60,12 @@ func importEndpoints(_ *goblcii.Format, doc goblcii.Document, env *gobl.Envelope
 }
 
 // importPartyEndpoint adds the party's endpoint for an EAS scheme and address,
-// mailto for EM and ISO 6523 otherwise, unless it has one for that URI scheme.
+// as an ISO 6523 URI, unless it already has one for that URI scheme.
 func importPartyEndpoint(party *org.Party, uc *goblcii.URIUniversalCommunication) {
 	if uc == nil || uc.ID == nil || uc.ID.SchemeID == "" || uc.ID.Value == "" {
 		return
 	}
 	uri := cbc.URI(fmt.Sprintf("%s::%s:%s", iso.ActorIDScheme, uc.ID.SchemeID, uc.ID.Value))
-	if uc.ID.SchemeID == goblcii.SchemeIDEmail {
-		uri = cbc.URI("mailto:" + uc.ID.Value)
-	}
 	if party.Endpoint(uri.Scheme()) == nil {
 		party.Endpoints = append(party.Endpoints, &org.Endpoint{URI: uri})
 	}

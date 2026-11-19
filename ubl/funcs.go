@@ -72,24 +72,21 @@ func importEndpoints(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope
 		return nil
 	}
 	if p := in.AccountingSupplierParty.Party; p != nil && inv.Supplier != nil {
-		setEndpoint(inv.Supplier, p.EndpointID)
+		importPartyEndpoint(inv.Supplier, p.EndpointID)
 	}
 	if p := in.AccountingCustomerParty.Party; p != nil && inv.Customer != nil {
-		setEndpoint(inv.Customer, p.EndpointID)
+		importPartyEndpoint(inv.Customer, p.EndpointID)
 	}
 	return nil
 }
 
-// setEndpoint adds the party's endpoint for an EAS scheme and address, mailto
-// for EM and ISO 6523 otherwise, unless it has one for that URI scheme.
-func setEndpoint(party *org.Party, eID *goblubl.EndpointID) {
+// importPartyEndpoint adds the party's endpoint for an EAS scheme and address,
+// as an ISO 6523 URI, unless it already has one for that URI scheme.
+func importPartyEndpoint(party *org.Party, eID *goblubl.EndpointID) {
 	if eID == nil || eID.SchemeID == "" || eID.Value == "" {
 		return
 	}
 	uri := cbc.URI(fmt.Sprintf("%s::%s:%s", iso.ActorIDScheme, eID.SchemeID, eID.Value))
-	if eID.SchemeID == goblubl.SchemeIDEmail {
-		uri = cbc.URI("mailto:" + eID.Value)
-	}
 	if party.Endpoint(uri.Scheme()) == nil {
 		party.Endpoints = append(party.Endpoints, &org.Endpoint{URI: uri})
 	}

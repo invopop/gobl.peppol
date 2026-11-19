@@ -39,11 +39,6 @@ func TestImportEndpoints(t *testing.T) {
 			customer: &ubl.EndpointID{SchemeID: "0088", Value: "5790000000002"},
 			want:     [2]cbc.URI{"iso6523-actorid-upis::0088:5790000000001", "iso6523-actorid-upis::0088:5790000000002"},
 		},
-		"email": {
-			supplier: &ubl.EndpointID{SchemeID: ubl.SchemeIDEmail, Value: "seller@example.com"},
-			customer: &ubl.EndpointID{SchemeID: ubl.SchemeIDEmail, Value: "buyer@example.com"},
-			want:     [2]cbc.URI{"mailto:seller@example.com", "mailto:buyer@example.com"},
-		},
 		"empty scheme": {
 			supplier: &ubl.EndpointID{Value: "123456789"},
 			customer: &ubl.EndpointID{Value: "987654321"},
