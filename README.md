@@ -54,46 +54,24 @@ $addons:
 
 See the [`examples`](./examples) directory for complete invoices.
 
-### PINT
-
-Documents with the PINT addon, in any regime:
-
-- Have supplier and customer electronic addresses, and no email address as
-  an endpoint or inbox. gobl.ubl writes an email address as `cbc:EndpointID`
-  with the scheme `EM`, which PINT does not accept, so a party can't have one
-  next to its Peppol endpoint either.
-- Have at most one customer identity written as `cac:PartyIdentification`
-  (any identity other than the tax ones and the first legal one, including a
-  UAE customer's TIN), and at most one customer tax registration (the tax ID
-  or a `tax` identity).
-- Give the payee a name, and a payee that differs from the supplier in its
-  legal identity, identity or name.
-
 ### PINT AE
 
-UAE documents with the PINT addon follow the PINT AE rules:
+UAE documents with the PINT addon are modelled as usual in GOBL, plus:
 
-- They can only be invoices and credit notes, without the `partial`,
-  `prepayment` or `factoring` tags, as PINT AE has no document type for
-  anything else. Documents out of scope of VAT take the `outside-tax-scope`
-  tag, which sets the document type to 480 on invoices and 81 on credit notes.
-- Trade licences carry their issuing authority in the description, and
-  passports their issuing country.
-- The supplier's and customer's UAE identities without a scope get the one
-  PINT AE reads them from: `legal` for the first trade licence, Emirates ID,
-  passport or Cabinet Decision of a party that has no legal identity yet, and
-  `tax` for the supplier's TIN.
-- A supplier with a UAE TRN gets the TIN it starts with as a `tax` identity,
-  and the UAE Peppol endpoint `0235:<TIN>`, when it has neither.
-- The PINT AE transaction type comes from the tags `free-trade-zone`,
+- **Transaction type** (BTAE-02): set from the tags `free-trade-zone`,
   `deemed-supply`, `margin-scheme`, `summary`, `continuous-supply`,
   `disclosed-agent`, `e-commerce` and `export`.
-- PINT AE predefines three customer endpoints: `0235:9900000097` on deemed
-  supplies, which the addon checks, and `0235:9900000099` for exports to a
-  receiver not on Peppol and `0235:9900000098` for a buyer not subject to UAE
-  e-invoicing, which the user sets.
-- Supplies under the profit margin scheme take the AE regime's
-  `margin-scheme` tag; see [Conversion](#conversion) for how they are written.
+- **Out of scope documents**: the `outside-tax-scope` tag (type codes 480
+  and 81).
+- **Profit margin scheme**: the AE regime's `margin-scheme` tag with the
+  `exempt` VAT key on every line; the lines are written in category `N`.
+- **Exemption reasons**: `cef-vatex` on exempt VAT combos, with the UAE codes
+  `DL8.46.1` to `DL8.46.4`.
+- **Deemed supplies** go to the predefined endpoint `0235:9900000097`.
+
+PINT allows one note on the document and one per line, and only the payment
+due date (IBT-009) is written, so invoices with more notes, more than one due
+date or a due date for part of the amount are rejected.
 
 ## Layout
 
@@ -144,65 +122,9 @@ and `urn:peppol:bis:selfbilling`. Documents carrying either are imported with
 `FormatAUNZ`. `FormatAE` does the same with `SpecificationAESelfBilling`
 (`urn:peppol:pint:selfbilling-1@ae-1`).
 
-`FormatAE` also adjusts the output to the PINT AE rules: it writes the invoice
-UUID, the price base quantity and gross price, the UAE TRN without its country
-prefix, the standard rate on reverse charge lines, breakdowns, allowances and
-charges, no rate on exempt lines and breakdowns, one VAT breakdown per
-category, and each line's amount with VAT and VAT amount in AED. For invoices not in AED, it also writes the exchange rate to
-AED and the total with VAT in AED, and converts the line amounts with that
-rate. The seller and buyer legal identities get their PINT AE type (`TL`,
-`EID`, `PAS` or `CD`, from the AE regime's identity keys and `passport`), with
-the trade licence authority (the identity's description) or the passport's
-issuing country, and the seller's TIN goes under the `TIN` tax scheme. It also
-writes the transaction type as `cbc:ProfileExecutionID`, with the free trade
-zone beneficiary and the disclosed agent's principal as the buyer and seller
-parties, and the credit note reason as `cac:DiscrepancyResponse`, the VAT exemption reason (`cef-vatex`, one of the UAE codes `DL8.46.1` to `DL8.46.4`) of
-exempt lines, and each item's type of goods or services subject to the reverse charge
-as its `cbc:NatureCode`, with its GTIN as the standard identifier. Items keyed
-`goods`, `services` or `goods-services` get the item type `G`, `S` or `B`, and
-identities labelled `SAC` are written as service accounting codes. The
-delivery's ICC Incoterms (`icc-incoterms-2020` or `-2010`) are written as the
-delivery terms, and the delivery receiver's UAE TRN, or its TIN without one,
-as the delivery party's identification (BTAE-23). PINT allows a single note
-on the document and on each line (ibr-sr-51, ibr-sr-34), so the PINT addon
-rejects invoices with more, in every PINT format, instead of joining them.
-Only the payment due date (IBT-009) is written, so the addon also rejects
-more than one due date, or one for part of the amount due. That is a
-limitation of this library, not a PINT rule: PINT can carry instalments
-(IBG-33).
-
-**Profit margin scheme.** A UAE supply under the profit margin scheme takes the AE regime's
-`margin-scheme` tag, with the `exempt` VAT key on every line:
-
-- Issue one invoice per margin scheme sale, with no other VAT treatments and
-  no document-level discounts or charges (IBR-116-AE).
-- The lines go out in the `N` category at the standard rate, with no VAT
-  amount.
-- The statement that VAT is charged under the scheme, which the regime's
-  scenario adds as a VAT note, goes out as the VAT exemption reason text of
-  the `N` breakdown and lines.
-- The margin VAT is reported in the VAT return, not on the invoice.
-
-Without the tag, `exempt` lines are a normal exempt supply (`E`). Anyone
-reading GOBL data must identify margin scheme lines by the tag together with
-the `exempt` key, never by the key alone.
-
-It also writes the PINT fields gobl.ubl leaves out: the issue time; each
-contract's description, where PINT AE puts the contract value; the `IBAN`
-scheme of the payee account and the address of its branch;
-`cbc:TaxIncludedIndicator` as `false`; and the tax note of a line's VAT category as its exemption reason text. On import, it reads
-the invoice UUID, the out-of-scope type codes 480 and 81 back as the
-`outside-tax-scope` tag, and
-the identity types, authorities, passport countries and seller TIN back as
-identity keys and fields, the transaction type back as its extension and
-tags, and the credit note reason, line exemption
-reasons and item goods types back as their extensions, and the item
-types and service accounting codes back as item keys and identities, and
-the `N` category back as the `exempt` key with the `margin-scheme` tag, and
-the delivery terms back
-as the `icc-incoterms-2020` extension, and the seller and buyer electronic
-addresses as endpoints, and the discount and charge exemption reasons and
-line exemption reason texts back as their extensions and tax notes.
+`FormatAE` also writes the PINT AE fields and adjustments the rules ask for
+(such as the invoice UUID, the transaction type, line amounts with VAT in AED
+and the exchange rate to AED) and reads them back.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,
