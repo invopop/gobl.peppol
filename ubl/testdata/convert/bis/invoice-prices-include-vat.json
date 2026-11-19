@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "aaeaea29a3231d54cd3381443895f7f95c8f0156da53f8c5aa0d1395d280f5cc"
+			"val": "1573b083a8514cb2d5ecda16cf1c5e7e12e3b1761e187c284e3a5c8c807b8936"
 		},
 		"from": "iso6523-actorid-upis::0208:0123456749",
 		"to": "iso6523-actorid-upis::0208:0987654394"
@@ -13,7 +13,8 @@
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "BE",
 		"$addons": [
-			"eu-en16931-v2017"
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",
@@ -40,6 +41,13 @@
 					"uri": "iso6523-actorid-upis::0208:0123456749"
 				}
 			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0208",
+					"code": "0123456749"
+				}
+			],
 			"addresses": [
 				{
 					"street": "Sample Street 10",
@@ -63,6 +71,13 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0208:0987654394"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0208",
+					"code": "0987654394"
 				}
 			],
 			"addresses": [
@@ -147,6 +162,9 @@
 				"total": "61.56"
 			}
 		],
+		"ordering": {
+			"code": "PO-2024-003"
+		},
 		"payment": {
 			"terms": {
 				"due_dates": [

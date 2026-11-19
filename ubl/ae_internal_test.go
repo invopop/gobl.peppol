@@ -197,23 +197,6 @@ func TestExportAEPartyIdentities(t *testing.T) {
 	})
 }
 
-func TestImportAEPartyEndpoint(t *testing.T) {
-	t.Run("an email address is read as a mailto endpoint", func(t *testing.T) {
-		in := &goblubl.Party{EndpointID: &goblubl.EndpointID{SchemeID: goblubl.SchemeIDEmail, Value: "billing@example.ae"}}
-		p := &org.Party{Inboxes: []*org.Inbox{{Email: "billing@example.ae"}}}
-		importAEPartyEndpoint(in, p)
-		require.Len(t, p.Endpoints, 1)
-		assert.Equal(t, cbc.URI("mailto:billing@example.ae"), p.Endpoints[0].URI)
-		assert.Empty(t, p.Inboxes)
-	})
-
-	t.Run("parties without an electronic address are left alone", func(t *testing.T) {
-		p := &org.Party{}
-		importAEPartyEndpoint(&goblubl.Party{}, p)
-		assert.Empty(t, p.Endpoints)
-	})
-}
-
 func TestImportAETransactionType(t *testing.T) {
 	t.Run("existing tags are not repeated", func(t *testing.T) {
 		inv := &bill.Invoice{Tags: tax.WithTags(tax.TagExport)}

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "07fe54e846c66905b22ad743cdc69254c0e8b99c3e3321c9b9648d9d4109dad1"
+			"val": "00d656e3354bb011406df5b52dd1dd95827b3141d1a470f85b97f97d7cb27782"
 		},
 		"from": "iso6523-actorid-upis::0235:1278906543",
 		"to": "iso6523-actorid-upis::0235:1347809543"
@@ -55,6 +55,12 @@
 					"uri": "iso6523-actorid-upis::0235:1278906543"
 				}
 			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1278906543"
+				}
+			],
 			"addresses": [
 				{
 					"street": "Street Name",
@@ -101,6 +107,12 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0235:1347809543"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1347809543"
 				}
 			],
 			"addresses": [

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "4945256620be53d6edb9b1be8d73fbdc996532f92c2358670209ab530e53d07b"
+			"val": "2ec095412e3d6c6982beaf88b5b9ddf39109717d330d6e89a538dbe12e4856e4"
 		},
 		"from": "iso6523-actorid-upis::0184:10000009",
 		"to": "iso6523-actorid-upis::0088:5790000000005"
@@ -13,7 +13,8 @@
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "DK",
 		"$addons": [
-			"eu-en16931-v2017"
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",
@@ -56,6 +57,13 @@
 					"uri": "iso6523-actorid-upis::0184:10000009"
 				}
 			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0184",
+					"code": "10000009"
+				}
+			],
 			"addresses": [
 				{
 					"street": "Eksempelvej 1",
@@ -90,6 +98,13 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0088:5790000000005"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "0088",
+					"code": "5790000000005"
 				}
 			],
 			"addresses": [

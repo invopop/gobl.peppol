@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "dab84aedaed8ae421f79f91695890c143c9c19578014afab6f26b9302c555c6f"
+			"val": "0f11b7af4b8dbd1776a91b5f8dafed226104322a4a6fc8c53603aa3cd941a39d"
 		},
 		"from": "iso6523-actorid-upis::0235:1987654321",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -56,6 +56,12 @@
 					"uri": "iso6523-actorid-upis::0235:1987654321"
 				}
 			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1987654321"
+				}
+			],
 			"addresses": [
 				{
 					"street": "Al Maktoum Road",
@@ -103,6 +109,12 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0235:1345678901"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1345678901"
 				}
 			],
 			"addresses": [

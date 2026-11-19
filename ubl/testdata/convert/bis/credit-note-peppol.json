@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "57726d95e56c01b6b3c5eeabe8e17a34b2a1856a39a06b3e9c0e0eb246ee384e"
+			"val": "e2cf9a93af2791f491e7ea0d4c3c4ca1536b4981dbfd785250e599d0d5e241f8"
 		},
 		"from": "iso6523-actorid-upis::9930:111111125",
 		"to": "iso6523-actorid-upis::9930:282741168"
@@ -13,7 +13,8 @@
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "DE",
 		"$addons": [
-			"eu-en16931-v2017"
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "credit-note",
@@ -45,6 +46,13 @@
 					"uri": "iso6523-actorid-upis::9930:111111125"
 				}
 			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "9930",
+					"code": "111111125"
+				}
+			],
 			"addresses": [
 				{
 					"num": "16",
@@ -74,6 +82,13 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::9930:282741168"
+				}
+			],
+			"inboxes": [
+				{
+					"key": "peppol",
+					"scheme": "9930",
+					"code": "282741168"
 				}
 			],
 			"addresses": [

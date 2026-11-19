@@ -4,14 +4,17 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "862070aa6babf0def1b60da20fe462f5d912827eea573bfa0e03f75b1b6d83f0"
-		}
+			"val": "4213fad02c2644abc6051ecd5b25e99354de8b84100f0ba608f4926631b9a76a"
+		},
+		"from": "iso6523-actorid-upis::9925:BE0123456789",
+		"to": "iso6523-actorid-upis::0208:0987654321"
 	},
 	"doc": {
 		"$schema": "https://gobl.org/draft-0/bill/invoice",
 		"$regime": "BE",
 		"$addons": [
-			"eu-en16931-v2017"
+			"eu-en16931-v2017",
+			"peppol-bis-v3"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",
@@ -54,6 +57,11 @@
 					"ext": {
 						"iso-scheme-id": "0208"
 					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::9925:BE0123456789"
 				}
 			],
 			"inboxes": [
@@ -107,6 +115,11 @@
 					"name": {
 						"given": "John Doe"
 					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0208:0987654321"
 				}
 			],
 			"inboxes": [

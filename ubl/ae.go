@@ -2,7 +2,6 @@ package ubl
 
 import (
 	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/invopop/gobl"
@@ -97,8 +96,6 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAELineItems(in.CreditNoteLines, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
-	importAEPartyEndpoint(in.AccountingSupplierParty.Party, inv.Supplier)
-	importAEPartyEndpoint(in.AccountingCustomerParty.Party, inv.Customer)
 	return nil
 }
 
@@ -968,23 +965,6 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 			}
 		}
 	}
-}
-
-// importAEPartyEndpoint reads cbc:EndpointID as an endpoint, replacing the inbox
-// gobl.ubl imports it as.
-func importAEPartyEndpoint(in *goblubl.Party, p *org.Party) {
-	if in == nil || p == nil || in.EndpointID == nil || in.EndpointID.Value == "" {
-		return
-	}
-	scheme, value := in.EndpointID.SchemeID, in.EndpointID.Value
-	uri := cbc.URI(iso.ActorIDScheme + "::" + scheme + ":" + value)
-	if scheme == goblubl.SchemeIDEmail {
-		uri = cbc.URI("mailto:" + value)
-	}
-	p.Inboxes = slices.DeleteFunc(p.Inboxes, func(ib *org.Inbox) bool {
-		return ib.Email == value || (ib.Scheme.String() == scheme && ib.Code.String() == value)
-	})
-	p.Endpoints = append(p.Endpoints, &org.Endpoint{URI: uri})
 }
 
 // importAELegalIdentity sets the identity's key or type and, from
