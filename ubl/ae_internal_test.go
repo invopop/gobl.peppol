@@ -332,7 +332,7 @@ func TestExportAEExchangeRate(t *testing.T) {
 
 func TestExportAECreditTransfer(t *testing.T) {
 	t.Run("writes the branch address on a new branch", func(t *testing.T) {
-		acc := &goblubl.FinancialAccount{ID: &goblubl.IDType{Value: "AE070331234567890123456"}}
+		acc := &goblubl.FinancialAccount{ID: strPtr("AE070331234567890123456")}
 		exportAECreditTransfer(acc, &pay.CreditTransfer{
 			IBAN:   "AE070331234567890123456",
 			Branch: &org.Address{Street: "Baniyas Road", Locality: "Dubai", Region: "DXB", Country: "AE"},

@@ -78,7 +78,7 @@
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
     <cac:PayeeFinancialAccount>
-      <cbc:ID schemeID="IBAN">AE070331234567890123456</cbc:ID>
+      <cbc:ID>AE070331234567890123456</cbc:ID>
       <cbc:Name>Emirates NBD</cbc:Name>
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>

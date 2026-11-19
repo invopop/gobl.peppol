@@ -35,10 +35,6 @@ const (
 // document reference that carries the total with VAT in AED (BTAE-20).
 const aedTotalDocumentType = "aedtotal-incl-vat"
 
-// accountSchemeIBAN is the scheme PINT AE gives the ID of an IBAN account
-// (IBT-084-1), as the official examples do.
-const accountSchemeIBAN = "IBAN"
-
 // deliveryTermsSchemeIncoterms is the scheme of the Incoterms code (BTAE-22),
 // which the syntax binding requires and the official examples write.
 const deliveryTermsSchemeIncoterms = "Incoterms"
@@ -210,15 +206,11 @@ func exportAEPayment(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// exportAECreditTransfer writes the IBAN scheme of the payee account (IBT-084-1) and the address of
-// its branch (IBT-169 to IBT-175), which gobl.ubl already reads back.
+// exportAECreditTransfer writes the address of the payee account's branch (IBG-34), which gobl.ubl
+// already reads back.
 func exportAECreditTransfer(acc *goblubl.FinancialAccount, ct *pay.CreditTransfer) {
 	if acc == nil || ct == nil {
 		return
-	}
-	if acc.ID != nil && ct.IBAN != "" && acc.ID.Value == ct.IBAN.String() {
-		scheme := accountSchemeIBAN
-		acc.ID.SchemeID = &scheme
 	}
 	// TODO: FormatPINT should write the branch address too (IBG-34); gobl.ubl can't (UBL-CR-432).
 	if addr := aeAddress(ct.Branch); addr != nil {
