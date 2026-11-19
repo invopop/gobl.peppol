@@ -1,0 +1,253 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "869618c64d041c34958b76b03d8647fd374d8fcfcb376b15462b8cf50ffa8190"
+		},
+		"from": "iso6523-actorid-upis::0235:1987654321",
+		"to": "iso6523-actorid-upis::0235:1345678901"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "AE-ALLOW-AE-01",
+		"issue_date": "2025-03-15",
+		"value_date": "2025-03-10",
+		"currency": "AED",
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"peppol-pint-ae-transaction-type": "00000000",
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Seller Legal Name",
+			"alias": "Seller Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "198765432102003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1987654321"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1987654321"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Al Maktoum Road",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "seller@example.ae"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+971501234567"
+				}
+			],
+			"registration": {
+				"other": "Merchant"
+			}
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"alias": "Buyer Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890123003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Buyer Contact"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1345678901"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1345678901"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Khalifa Street",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "buyer@example.ae"
+				}
+			],
+			"telephones": [
+				{
+					"num": "+971502345678"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "10",
+				"item": {
+					"name": "Consulting Services",
+					"identities": [
+						{
+							"code": "9876543210",
+							"ext": {
+								"iso-scheme-id": "0160"
+							}
+						}
+					],
+					"description": "Consulting services subject to reverse charge",
+					"list": "100",
+					"price": "100.00",
+					"unit": "piece",
+					"ext": {
+						"peppol-pint-ae-goods-type": "DL8.48.3.1",
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "1000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "reverse-charge",
+						"ext": {
+							"untdid-tax-category": "AE"
+						}
+					}
+				],
+				"total": "1000.00"
+			}
+		],
+		"discounts": [
+			{
+				"i": 1,
+				"reason": "Discount",
+				"amount": "100.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "reverse-charge",
+						"ext": {
+							"untdid-tax-category": "AE"
+						}
+					}
+				],
+				"ext": {
+					"untdid-allowance": "95"
+				}
+			}
+		],
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-03-30",
+						"amount": "900.00",
+						"percent": "100%"
+					}
+				],
+				"notes": "Net 15 days"
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"detail": "Credit transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"bic": "ABORAEADXXX",
+						"name": "current account"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "1000.00",
+			"discount": "100.00",
+			"total": "900.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "reverse-charge",
+								"ext": {
+									"untdid-tax-category": "AE"
+								},
+								"base": "900.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "900.00",
+			"payable": "900.00"
+		},
+		"notes": [
+			{
+				"text": "Tax invoice"
+			}
+		]
+	}
+}

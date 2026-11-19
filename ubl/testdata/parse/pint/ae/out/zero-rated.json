@@ -1,0 +1,226 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "62f2c887df133158832a40fbaea30939c121caac7f0365a23e75485007efaace"
+		},
+		"from": "iso6523-actorid-upis::0235:1987654321",
+		"to": "iso6523-actorid-upis::0235:1347809543"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "AE-001-ZeroRated-TEST",
+		"issue_date": "2025-02-07",
+		"issue_time": "17:31:00",
+		"value_date": "2025-01-31",
+		"currency": "AED",
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"peppol-pint-ae-transaction-type": "00000000",
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"alias": "Seller Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "132654987101003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1987654321"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1987654321"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Email Address"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact Number"
+				}
+			],
+			"registration": {
+				"other": "Merchant"
+			}
+		},
+		"customer": {
+			"name": "Buyer legal Name",
+			"alias": "Buyer Legal Name",
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1347809543"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "1347809543"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"street_extra": "Additional Street Name",
+					"locality": "Dubai",
+					"region": "DXB",
+					"code": "Postal code",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Email Address"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "5000",
+				"item": {
+					"name": "Item Name",
+					"description": "Item Description",
+					"list": "50",
+					"discount": "0.25",
+					"price": "49.75",
+					"unit": "piece",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "248750.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "zero",
+						"percent": "0%",
+						"ext": {
+							"untdid-tax-category": "Z"
+						}
+					}
+				],
+				"total": "248750.00"
+			}
+		],
+		"ordering": {
+			"purchases": [
+				{
+					"code": "EXP-09"
+				}
+			],
+			"sales": [
+				{
+					"code": "EC-24-25-1001"
+				}
+			]
+		},
+		"payment": {
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-02-22",
+						"amount": "248750.00",
+						"percent": "100%"
+					}
+				],
+				"notes": "within 15 days"
+			},
+			"instructions": {
+				"key": "any",
+				"detail": "Instrument Not Defined",
+				"ext": {
+					"untdid-payment-means": "1"
+				}
+			}
+		},
+		"totals": {
+			"sum": "248750.00",
+			"total": "248750.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "zero",
+								"ext": {
+									"untdid-tax-category": "Z"
+								},
+								"base": "248750.00",
+								"percent": "0%",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "248750.00",
+			"payable": "248750.00"
+		},
+		"notes": [
+			{
+				"text": "Tax invoice"
+			}
+		]
+	}
+}

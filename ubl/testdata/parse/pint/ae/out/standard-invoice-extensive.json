@@ -1,0 +1,812 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "ba4aa4653e5217dee968b65a60673e18e2d14243b866772a83703d748c03c531"
+		},
+		"from": "iso6523-actorid-upis::0235:112345678900003",
+		"to": "iso6523-actorid-upis::0235:112345679000003"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"$tags": [
+			"free-trade-zone",
+			"continuous-supply",
+			"e-commerce"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "INV-001/2025",
+		"issue_date": "2025-01-30",
+		"issue_time": "18:24:10",
+		"value_date": "2025-01-29",
+		"currency": "AED",
+		"preceding": [
+			{
+				"issue_date": "2025-01-30",
+				"code": "INV-1001/2022"
+			}
+		],
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"peppol-pint-ae-beneficiary-id": "189098765401003",
+				"peppol-pint-ae-transaction-type": "10001010",
+				"untdid-document-type": "380"
+			},
+			"notes": [
+				{
+					"cat": "VAT",
+					"key": "exempt",
+					"text": "Supply of residential units (lease or sale)",
+					"ext": {
+						"untdid-tax-category": "E"
+					}
+				}
+			]
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"alias": "Supplier Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "112345678900003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contct Name"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:112345678900003"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "112345678900003"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Al Bateen Street",
+					"street_extra": "Additional Street Name",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"code": "Postal Zone",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Email Address"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact Number"
+				}
+			],
+			"registration": {
+				"other": "Merchant"
+			}
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"alias": "Buyer Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "112345679000003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:112345679000003"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "112345679000003"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Khalifa street",
+					"street_extra": "Additional Street Name",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"code": "Postal Zone",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Email Address"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact Number"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "5",
+				"period": {
+					"start": "2025-01-30",
+					"end": "2025-01-30"
+				},
+				"order": "st-nar-1",
+				"cost": "ABC-001",
+				"item": {
+					"ref": "art-p-001",
+					"key": "goods",
+					"name": "Item Name",
+					"identities": [
+						{
+							"code": "art-to-001"
+						},
+						{
+							"code": "04012345123456",
+							"ext": {
+								"iso-scheme-id": "0160"
+							}
+						},
+						{
+							"label": "HS",
+							"code": "88098432324"
+						}
+					],
+					"attributes": [
+						{
+							"label": "colour",
+							"text": "red"
+						}
+					],
+					"description": "Item Description",
+					"list": "1000",
+					"price": "1000.00",
+					"unit": "piece",
+					"origin": "AE",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "5000.00",
+				"discounts": [
+					{
+						"reason": "Discount",
+						"base": "5000.00",
+						"percent": "1%",
+						"amount": "50.00",
+						"ext": {
+							"untdid-allowance": "95"
+						}
+					}
+				],
+				"charges": [
+					{
+						"reason": "Technical Modification",
+						"amount": "10.00",
+						"ext": {
+							"untdid-charge": "AAC"
+						}
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "4960.00",
+				"notes": [
+					{
+						"text": "Please check the invoice"
+					}
+				]
+			},
+			{
+				"i": 2,
+				"quantity": "10",
+				"item": {
+					"key": "goods",
+					"name": "Item Name",
+					"identities": [
+						{
+							"label": "HS",
+							"code": "1101"
+						}
+					],
+					"description": "Item Description",
+					"list": "2000",
+					"discount": "20",
+					"price": "1980.00",
+					"per": "5",
+					"unit": "piece",
+					"origin": "AE",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "3960.00",
+				"discounts": [
+					{
+						"reason": "Discount",
+						"base": "4000.00",
+						"percent": "2%",
+						"amount": "80.00",
+						"ext": {
+							"untdid-allowance": "95"
+						}
+					}
+				],
+				"charges": [
+					{
+						"reason": "Special Construction",
+						"amount": "20.00",
+						"ext": {
+							"untdid-charge": "AAV"
+						}
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"cef-vatex": "DL8.46.2",
+							"untdid-tax-category": "E"
+						}
+					}
+				],
+				"total": "3900.00"
+			},
+			{
+				"i": 3,
+				"quantity": "15",
+				"period": {
+					"start": "2025-01-30",
+					"end": "2025-01-30"
+				},
+				"order": "st-nar-1",
+				"cost": "CS-024",
+				"item": {
+					"ref": "art-p-001",
+					"key": "goods",
+					"name": "Item Name",
+					"identities": [
+						{
+							"code": "art-to-001"
+						},
+						{
+							"label": "HS",
+							"code": "3450"
+						}
+					],
+					"attributes": [
+						{
+							"label": "Item Additional Name",
+							"text": "Item Additional Value"
+						}
+					],
+					"description": "Item Description",
+					"list": "3000",
+					"discount": "30",
+					"price": "2970.00",
+					"per": "10",
+					"unit": "piece",
+					"origin": "AE",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "4455.00",
+				"discounts": [
+					{
+						"reason": "Discount",
+						"amount": "135.00",
+						"ext": {
+							"untdid-allowance": "95"
+						}
+					}
+				],
+				"charges": [
+					{
+						"reason": "Technical Modification",
+						"amount": "112.50",
+						"ext": {
+							"untdid-charge": "AAC"
+						}
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "outside-scope",
+						"ext": {
+							"untdid-tax-category": "O"
+						}
+					}
+				],
+				"total": "4432.50",
+				"notes": [
+					{
+						"text": "Please check the invoice"
+					}
+				]
+			},
+			{
+				"i": 4,
+				"quantity": "20",
+				"period": {
+					"start": "2025-01-30",
+					"end": "2025-01-30"
+				},
+				"order": "st-nar-1",
+				"cost": "CS-024",
+				"item": {
+					"ref": "art-p-001",
+					"key": "goods",
+					"name": "Item Name",
+					"identities": [
+						{
+							"code": "art-to-001"
+						},
+						{
+							"code": "04012345123456",
+							"ext": {
+								"iso-scheme-id": "0160"
+							}
+						},
+						{
+							"label": "HS",
+							"code": "5000"
+						}
+					],
+					"attributes": [
+						{
+							"label": "Item Additional Name",
+							"text": "Item Additional Value"
+						}
+					],
+					"description": "Item Description",
+					"list": "158.4",
+					"price": "158.40",
+					"unit": "piece",
+					"origin": "AE",
+					"ext": {
+						"peppol-pint-ae-goods-type": "DL8.48.3.1",
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "3168.00",
+				"discounts": [
+					{
+						"reason": "Discount",
+						"base": "3200.00",
+						"percent": "4%",
+						"amount": "128.00",
+						"ext": {
+							"untdid-allowance": "95"
+						}
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "reverse-charge",
+						"ext": {
+							"untdid-tax-category": "AE"
+						}
+					}
+				],
+				"total": "3040.00",
+				"notes": [
+					{
+						"text": "Please check the invoice"
+					}
+				]
+			},
+			{
+				"i": 5,
+				"quantity": "25",
+				"period": {
+					"start": "2025-01-30",
+					"end": "2025-01-30"
+				},
+				"order": "st-nar-1",
+				"cost": "CS-024",
+				"item": {
+					"ref": "art-p-001",
+					"key": "goods",
+					"name": "Item Name",
+					"identities": [
+						{
+							"code": "art-to-001"
+						},
+						{
+							"code": "04012345123456",
+							"ext": {
+								"iso-scheme-id": "0160"
+							}
+						},
+						{
+							"label": "HS",
+							"code": "8680"
+						}
+					],
+					"attributes": [
+						{
+							"label": "Item Additional Name",
+							"text": "Item Additional Value"
+						}
+					],
+					"description": "Item Description",
+					"list": "5000",
+					"discount": "50",
+					"price": "4950.00",
+					"per": "50",
+					"unit": "piece",
+					"origin": "AE",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "2475.00",
+				"discounts": [
+					{
+						"reason": "Discount",
+						"amount": "625.00",
+						"ext": {
+							"untdid-allowance": "95"
+						}
+					}
+				],
+				"charges": [
+					{
+						"reason": "Technical Modification",
+						"base": "2500.00",
+						"percent": "5%",
+						"amount": "125.00",
+						"ext": {
+							"untdid-charge": "AAC"
+						}
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "zero",
+						"percent": "0%",
+						"ext": {
+							"untdid-tax-category": "Z"
+						}
+					}
+				],
+				"total": "1975.00",
+				"notes": [
+					{
+						"text": "Please check the invoice"
+					}
+				]
+			}
+		],
+		"discounts": [
+			{
+				"i": 1,
+				"reason": "Discount",
+				"amount": "273.75",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"ext": {
+					"untdid-allowance": "95"
+				}
+			},
+			{
+				"i": 2,
+				"reason": "Discount",
+				"amount": "2451.25",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"ext": {
+					"untdid-allowance": "95"
+				}
+			}
+		],
+		"charges": [
+			{
+				"i": 1,
+				"reason": "Technical Modification",
+				"base": "1975",
+				"percent": "4%",
+				"amount": "79",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"ext": {
+					"untdid-charge": "AAC"
+				}
+			}
+		],
+		"ordering": {
+			"code": "BR-001/23",
+			"cost": "4025:123:4343",
+			"period": {
+				"start": "2025-01-30",
+				"end": "2025-01-30"
+			},
+			"seller": {
+				"name": "Seller Tax Representative Party Name",
+				"tax_id": {
+					"country": "AE",
+					"code": "123349792700003"
+				},
+				"addresses": [
+					{
+						"street": "Al Bateen Street",
+						"street_extra": "Additional Street Name",
+						"locality": "Abu Dhabi",
+						"region": "AUH",
+						"code": "Postal Zonw",
+						"country": "AE"
+					}
+				]
+			},
+			"projects": [
+				{
+					"code": "BR-001/23"
+				}
+			],
+			"contracts": [
+				{
+					"code": "BR-001/23",
+					"description": "AED200000"
+				}
+			],
+			"purchases": [
+				{
+					"code": "PO-001/23"
+				}
+			],
+			"sales": [
+				{
+					"code": "SO-001/23"
+				}
+			],
+			"receiving": [
+				{
+					"code": "RAR-001/23"
+				}
+			],
+			"despatch": [
+				{
+					"code": "DAR-001/23"
+				}
+			],
+			"tender": [
+				{
+					"code": "LR-001/23"
+				}
+			]
+		},
+		"payment": {
+			"payee": {
+				"name": "Payee Party Name",
+				"identities": [
+					{
+						"scope": "legal",
+						"code": "112345679350001"
+					},
+					{
+						"code": "132345679670003",
+						"ext": {
+							"iso-scheme-id": "0060"
+						}
+					}
+				]
+			},
+			"advances": [
+				{
+					"description": "Prepaid Amount",
+					"amount": "10000.00"
+				}
+			],
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-02-13",
+						"amount": "5777.50",
+						"percent": "100%"
+					}
+				],
+				"notes": "15 days"
+			},
+			"instructions": {
+				"key": "any",
+				"detail": "Debit Card",
+				"credit_transfer": [
+					{
+						"iban": "AE0000000001",
+						"bic": "236000",
+						"name": "current account"
+					}
+				],
+				"card": {
+					"last4": "1234",
+					"holder": "Card Holder Name"
+				},
+				"direct_debit": {
+					"ref": "2025-01-30"
+				},
+				"ext": {
+					"untdid-payment-means": "1"
+				}
+			}
+		},
+		"delivery": {
+			"receiver": {
+				"name": "Delivery Party Name",
+				"addresses": [
+					{
+						"street": "Khalifa street",
+						"street_extra": "Additional Street Name",
+						"locality": "Abu Dhabi",
+						"region": "AUH",
+						"code": "Postal Zone",
+						"country": "AE"
+					}
+				]
+			},
+			"identities": [
+				{
+					"code": "112345679000003",
+					"ext": {
+						"iso-scheme-id": "0060"
+					}
+				}
+			],
+			"date": "2025-01-30"
+		},
+		"totals": {
+			"sum": "18307.50",
+			"discount": "2725.00",
+			"charge": "79.00",
+			"total": "15661.50",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "2314.00",
+								"percent": "5%",
+								"amount": "115.70"
+							},
+							{
+								"key": "exempt",
+								"ext": {
+									"cef-vatex": "DL8.46.2",
+									"untdid-tax-category": "E"
+								},
+								"base": "3900.00",
+								"amount": "0.00"
+							},
+							{
+								"key": "outside-scope",
+								"ext": {
+									"untdid-tax-category": "O"
+								},
+								"base": "4432.50",
+								"amount": "0.00"
+							},
+							{
+								"key": "reverse-charge",
+								"ext": {
+									"untdid-tax-category": "AE"
+								},
+								"base": "3040.00",
+								"amount": "0.00"
+							},
+							{
+								"key": "zero",
+								"ext": {
+									"untdid-tax-category": "Z"
+								},
+								"base": "1975.00",
+								"percent": "0%",
+								"amount": "0.00"
+							}
+						],
+						"amount": "115.70"
+					}
+				],
+				"sum": "115.70"
+			},
+			"tax": "115.70",
+			"total_with_tax": "15777.20",
+			"rounding": "0.30",
+			"payable": "15777.50",
+			"advance": "10000.00",
+			"due": "5777.50"
+		},
+		"notes": [
+			{
+				"text": "Tax invoice"
+			}
+		],
+		"attachments": [
+			{
+				"code": "DR-INV-001",
+				"description": "Invoice is enclosed",
+				"url": "https://www.site.ae/invoices.pdf"
+			}
+		]
+	}
+}

@@ -1,0 +1,46 @@
+package pint_test
+
+import (
+	"testing"
+
+	"github.com/invopop/gobl.peppol/addon/pint"
+	"github.com/invopop/gobl/l10n"
+	"github.com/invopop/gobl/rules"
+	"github.com/invopop/gobl/tax"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestTaxIdentityRulesAE(t *testing.T) {
+	const faultTRN = "GOBL-PEPPOL-PINT-TAX-IDENTITY-01"
+	validateIn := func(id *tax.Identity, regime l10n.TaxCountryCode) error {
+		return rules.Validate(id, tax.AddonContext(pint.V1), tax.RegimeContext(regime))
+	}
+	validate := func(id *tax.Identity) error { return validateIn(id, l10n.AE.Tax()) }
+
+	t.Run("valid TRN is accepted (IBR-132-AE)", func(t *testing.T) {
+		assert.NoError(t, validate(&tax.Identity{Country: "AE", Code: "100000001600003"}))
+	})
+
+	t.Run("TRN not ending with 03 is rejected (IBR-132-AE)", func(t *testing.T) {
+		err := validate(&tax.Identity{Country: "AE", Code: "100000001600004"})
+		assert.ErrorContains(t, err, faultTRN)
+	})
+
+	t.Run("identity without a code is accepted (IBR-132-AE)", func(t *testing.T) {
+		assert.NoError(t, validate(&tax.Identity{Country: "AE"}))
+	})
+
+	t.Run("non-UAE identities are not checked (IBR-132-AE)", func(t *testing.T) {
+		err := validate(&tax.Identity{Country: "DE", Code: "111111125"})
+		if err != nil {
+			assert.NotContains(t, err.Error(), faultTRN)
+		}
+	})
+
+	t.Run("the rule does not apply outside AE", func(t *testing.T) {
+		err := validateIn(&tax.Identity{Country: "AE", Code: "100000001600004"}, l10n.AU.Tax())
+		if err != nil {
+			assert.NotContains(t, err.Error(), faultTRN)
+		}
+	})
+}

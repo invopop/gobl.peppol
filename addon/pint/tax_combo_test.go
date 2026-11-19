@@ -5,6 +5,8 @@ import (
 
 	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/addons/eu/en16931"
+	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/catalogues/cef"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
@@ -61,6 +63,58 @@ func TestTaxComboNormalization(t *testing.T) {
 		norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1))
 		assert.Equal(t, "S", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
 	})
+
+	t.Run("exempt lines map to N only on UAE margin scheme invoices", func(t *testing.T) {
+		normalized := func(regime l10n.TaxCountryCode) *bill.Invoice {
+			inv := &bill.Invoice{
+				Tags:  tax.WithTags(pint.TagMarginScheme),
+				Lines: []*bill.Line{{Taxes: tax.Set{{Category: tax.CategoryVAT, Key: tax.KeyExempt}}}},
+				Tax: &bill.Tax{Notes: []*tax.Note{{
+					Category: tax.CategoryVAT,
+					Key:      pint.TagMarginScheme,
+					Text:     "VAT charged under the Profit Margin Scheme",
+				}}},
+			}
+			norm.Normalize(inv, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(regime))
+			return inv
+		}
+
+		inv := normalized(l10n.AE.Tax())
+		assert.Equal(t, "N", inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory).String())
+		assert.Equal(t, "N", inv.Tax.Notes[0].Ext.Get(untdid.ExtKeyTaxCategory).String())
+
+		inv = normalized(l10n.SG.Tax())
+		assert.Equal(t, "E", inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory).String())
+		assert.Empty(t, inv.Tax.Notes[0].Ext)
+	})
+}
+
+func TestMarginSchemeNoteNormalizationAE(t *testing.T) {
+	normalize := func(n *tax.Note) {
+		norm.Normalize(n, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(l10n.AE.Tax()))
+	}
+
+	t.Run("the statement gets the N category", func(t *testing.T) {
+		n := &tax.Note{Category: tax.CategoryVAT, Key: pint.TagMarginScheme, Text: "VAT charged under the Profit Margin Scheme"}
+		normalize(n)
+		assert.Equal(t, "N", n.Ext.Get(untdid.ExtKeyTaxCategory).String())
+	})
+
+	t.Run("an N note without a key gets the margin scheme key", func(t *testing.T) {
+		n := &tax.Note{
+			Category: tax.CategoryVAT,
+			Text:     "VAT charged under the Profit Margin Scheme",
+			Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: "N"}),
+		}
+		normalize(n)
+		assert.Equal(t, pint.TagMarginScheme, n.Key)
+	})
+
+	t.Run("other notes are left alone", func(t *testing.T) {
+		n := &tax.Note{Category: tax.CategoryVAT, Key: tax.KeyReverseCharge, Text: "Reverse Charge"}
+		normalize(n)
+		assert.Equal(t, "AE", n.Ext.Get(untdid.ExtKeyTaxCategory).String())
+	})
 }
 
 func gstCombo(category string) *tax.Combo {
@@ -92,5 +146,91 @@ func TestTaxComboRules(t *testing.T) {
 	t.Run("documents outside AU and NZ accept the full PINT set", func(t *testing.T) {
 		err := rules.Validate(gstCombo("K"), tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
 		assert.NoError(t, err)
+	})
+}
+
+func vatCombo(key cbc.Key, category string, percent *num.Percentage) *tax.Combo {
+	return &tax.Combo{
+		Category: tax.CategoryVAT,
+		Key:      key,
+		Percent:  percent,
+		Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: cbc.Code(category)}),
+	}
+}
+
+func validateComboIn(tc *tax.Combo, regime l10n.TaxCountryCode) error {
+	return rules.Validate(tc, tax.AddonContext(pint.V1), tax.RegimeContext(regime))
+}
+
+func TestTaxComboRulesAE(t *testing.T) {
+	ae := l10n.AE.Tax()
+
+	t.Run("AE subset categories are accepted (IBR-139-AE)", func(t *testing.T) {
+		for cat, key := range map[string]cbc.Key{
+			"E":  tax.KeyExempt,
+			"O":  tax.KeyOutsideScope,
+			"AE": tax.KeyReverseCharge,
+		} {
+			c := vatCombo(key, cat, nil)
+			if cat == "E" {
+				c.Ext = c.Ext.Set(cef.ExtKeyVATEX, "DL8.46.1")
+			}
+			assert.NoError(t, validateComboIn(c, ae), "category %s", cat)
+		}
+		assert.NoError(t, validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(5, 2)), ae))
+		assert.NoError(t, validateComboIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(0, 2)), ae))
+		assert.NoError(t, validateComboIn(vatCombo(tax.KeyExempt, "N", nil), ae))
+	})
+
+	t.Run("margin scheme category is rejected outside AE", func(t *testing.T) {
+		for _, regime := range []l10n.TaxCountryCode{l10n.SG.Tax(), l10n.AU.Tax()} {
+			err := validateComboIn(vatCombo(cbc.KeyEmpty, "N", nil), regime)
+			assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-01", "regime %s", regime)
+		}
+	})
+
+	t.Run("categories outside the AE subset are rejected (IBR-139-AE)", func(t *testing.T) {
+		for _, cat := range []string{"G", "K", "L", "M"} {
+			err := validateComboIn(vatCombo(cbc.KeyEmpty, cat, nil), ae)
+			assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-03", "category %s", cat)
+		}
+	})
+
+	t.Run("AE subset does not apply outside AE", func(t *testing.T) {
+		assert.NoError(t, validateComboIn(vatCombo(cbc.KeyEmpty, "K", nil), l10n.SG.Tax()))
+	})
+
+	t.Run("standard rate must be 5% (IBR-190-AE, ALIGNED-IBRP-S-05/06/07)", func(t *testing.T) {
+		for _, rate := range []int64{0, 10} {
+			err := validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(rate, 2)), ae)
+			assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-04", "rate %d", rate)
+		}
+	})
+
+	t.Run("5% check compares numbers, not strings", func(t *testing.T) {
+		assert.NoError(t, validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(50, 3)), ae))
+	})
+
+	t.Run("zero rate must be 0% (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)", func(t *testing.T) {
+		err := validateComboIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(5, 2)), ae)
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-TAX-COMBO-05")
+	})
+
+	t.Run("exempt VAT needs an exemption reason (IBR-167-AE, IBR-168-AE, IBR-169-AE)", func(t *testing.T) {
+		const faultExemption = "GOBL-PEPPOL-PINT-TAX-COMBO-06"
+		assert.ErrorContains(t, validateComboIn(vatCombo(tax.KeyExempt, "E", nil), ae), faultExemption)
+		for _, code := range []cbc.Code{"DL8.46.1", "DL8.46.4"} {
+			c := vatCombo(tax.KeyExempt, "E", nil)
+			c.Ext = c.Ext.Set(cef.ExtKeyVATEX, code)
+			assert.NoError(t, validateComboIn(c, ae), code)
+		}
+	})
+
+	t.Run("rate rules do not apply outside AE", func(t *testing.T) {
+		for _, regime := range []l10n.TaxCountryCode{l10n.SG.Tax(), l10n.AU.Tax()} {
+			assert.NoError(t, validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(0, 2)), regime), regime)
+			assert.NoError(t, validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(10, 2)), regime), regime)
+			assert.NoError(t, validateComboIn(vatCombo(tax.KeyZero, "Z", num.NewPercentage(5, 2)), regime), regime)
+		}
 	})
 }
