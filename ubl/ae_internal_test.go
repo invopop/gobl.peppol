@@ -1048,12 +1048,6 @@ func TestExportAEExchangeRate(t *testing.T) {
 	})
 }
 
-func TestAEJoinNotes(t *testing.T) {
-	assert.Nil(t, aeJoinNotes(nil))
-	assert.Equal(t, []string{"First"}, aeJoinNotes([]string{"First"}))
-	assert.Equal(t, []string{"First\n\nSecond"}, aeJoinNotes([]string{"First", "Second"}))
-}
-
 func TestExportAEIssueTime(t *testing.T) {
 	out := new(goblubl.Invoice)
 	exportAEIssueTime(out, &bill.Invoice{})
@@ -1095,18 +1089,10 @@ func TestExportAEPayment(t *testing.T) {
 			PayeeFinancialAccount: &goblubl.FinancialAccount{ID: &goblubl.IDType{Value: iban.String()}},
 		}}}
 	}
-	goblInvoice := func(ct *pay.CreditTransfer, dd *pay.DueDate) *bill.Invoice {
-		inv := &bill.Invoice{Currency: currency.AED, Payment: &bill.PaymentDetails{
+	goblInvoice := func(ct *pay.CreditTransfer) *bill.Invoice {
+		return &bill.Invoice{Currency: currency.AED, Payment: &bill.PaymentDetails{
 			Instructions: &pay.Instructions{CreditTransfer: []*pay.CreditTransfer{ct}},
 		}}
-		if dd != nil {
-			inv.Payment.Terms = &pay.Terms{DueDates: []*pay.DueDate{dd}}
-		}
-		return inv
-	}
-	amount := num.MakeAmount(105000, 2)
-	dueDate := func() *pay.DueDate {
-		return &pay.DueDate{Date: cal.NewDate(2025, 2, 6), Amount: &amount}
 	}
 
 	t.Run("writes the IBAN scheme and the branch address", func(t *testing.T) {
@@ -1114,7 +1100,7 @@ func TestExportAEPayment(t *testing.T) {
 		exportAEPayment(out, goblInvoice(&pay.CreditTransfer{
 			IBAN:   iban,
 			Branch: &org.Address{Street: "Baniyas Road", StreetExtra: "Deira", Locality: "Dubai", Region: "DXB", Code: "777", Country: "AE"},
-		}, nil))
+		}))
 		acc := out.PaymentMeans[0].PayeeFinancialAccount
 		assert.Equal(t, "IBAN", *acc.ID.SchemeID)
 		addr := acc.FinancialInstitutionBranch.Address
@@ -1125,44 +1111,21 @@ func TestExportAEPayment(t *testing.T) {
 		assert.Equal(t, "DXB", *addr.CountrySubentity)
 		assert.Equal(t, "777", *addr.PostalZone)
 		assert.Equal(t, "AE", addr.Country.IdentificationCode)
-		assert.Nil(t, out.PaymentMeans[0].ID, "no terms to refer to the instructions")
-		assert.Nil(t, out.PaymentTerms)
 	})
 
 	t.Run("an account number has no scheme, and no branch no address", func(t *testing.T) {
 		out := ublInvoice()
-		exportAEPayment(out, goblInvoice(&pay.CreditTransfer{Number: iban}, nil))
+		exportAEPayment(out, goblInvoice(&pay.CreditTransfer{Number: iban}))
 		acc := out.PaymentMeans[0].PayeeFinancialAccount
 		assert.Nil(t, acc.ID.SchemeID)
 		assert.Nil(t, acc.FinancialInstitutionBranch)
 	})
 
-	t.Run("writes the first due date as the terms of the instructions", func(t *testing.T) {
-		out := ublInvoice()
-		out.PaymentTerms = &goblubl.PaymentTerms{Note: "Net 15 days"}
-		exportAEPayment(out, goblInvoice(&pay.CreditTransfer{IBAN: iban}, dueDate()))
-		assert.Equal(t, "1", *out.PaymentMeans[0].ID)
-		assert.Equal(t, "1", out.PaymentTerms.PaymentMeansID)
-		assert.Equal(t, "Net 15 days", out.PaymentTerms.Note)
-		assert.Equal(t, aedAmount("1050.00"), *out.PaymentTerms.Amount)
-		assert.Equal(t, "2025-02-06", out.PaymentTerms.InstallmentDueDate)
-	})
-
-	t.Run("no terms for a due date in another currency", func(t *testing.T) {
-		out := ublInvoice()
-		dd := dueDate()
-		dd.Currency = currency.USD
-		exportAEPayment(out, goblInvoice(&pay.CreditTransfer{IBAN: iban}, dd))
-		assert.Nil(t, out.PaymentTerms)
-		assert.Nil(t, out.PaymentMeans[0].ID)
-	})
-
 	t.Run("nothing without payment instructions", func(t *testing.T) {
 		out := new(goblubl.Invoice)
-		exportAEPayment(out, goblInvoice(&pay.CreditTransfer{IBAN: iban}, dueDate()))
-		assert.Nil(t, out.PaymentTerms)
+		exportAEPayment(out, goblInvoice(&pay.CreditTransfer{IBAN: iban}))
+		assert.Empty(t, out.PaymentMeans)
 	})
-
 }
 
 func TestAEChargeExemptions(t *testing.T) {

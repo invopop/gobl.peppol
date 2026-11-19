@@ -1,14 +1,18 @@
 package ubl_test
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"regexp"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
 	peppolubl "github.com/invopop/gobl.peppol/ubl"
 	ubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/convert"
 	"github.com/invopop/gobl/l10n"
@@ -193,7 +197,8 @@ func TestImportAEFaults(t *testing.T) {
 
 // TestRoundTripAE checks that each AE convert example gives the same XML
 // after an import and a second export, so whatever FormatAE writes it also
-// reads back.
+// reads back, and that the imported invoice is the one exported, but for the
+// known differences roundTripKnownDifferences lists.
 func TestRoundTripAE(t *testing.T) {
 	examples, err := filepath.Glob(filepath.Join("testdata", "convert", "pint", "ae", "*.json"))
 	require.NoError(t, err)
@@ -213,6 +218,20 @@ func TestRoundTripAE(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, out.Calculate())
 			require.NoError(t, out.Validate())
+
+			sent, ok := env.Extract().(*bill.Invoice)
+			require.True(t, ok)
+			got, ok := out.Extract().(*bill.Invoice)
+			require.True(t, ok)
+			want := cloneInvoice(t, sent)
+			got = cloneInvoice(t, got)
+			roundTripKnownDifferences(want, got)
+			wantJSON, err := json.Marshal(want)
+			require.NoError(t, err)
+			gotJSON, err := json.Marshal(got)
+			require.NoError(t, err)
+			assert.JSONEq(t, string(wantJSON), string(gotJSON))
+
 			doc, err = ubl.ExportInvoice(out, ubl.WithFormat(peppolubl.FormatAE))
 			require.NoError(t, err)
 			second, err := ubl.Encode(doc)
@@ -221,6 +240,114 @@ func TestRoundTripAE(t *testing.T) {
 			assert.Equal(t, string(first), string(second))
 		})
 	}
+}
+
+// cloneInvoice provides a deep copy of an invoice.
+func cloneInvoice(t *testing.T, inv *bill.Invoice) *bill.Invoice {
+	t.Helper()
+	data, err := json.Marshal(inv)
+	require.NoError(t, err)
+	out := new(bill.Invoice)
+	require.NoError(t, json.Unmarshal(data, out))
+	return out
+}
+
+// roundTripKnownDifferences evens out what a GOBL invoice can't get back from
+// its UBL, in the invoice sent (want) or the one imported (got):
+//   - UBL has a single document number, so the series is joined to the code;
+//   - gobl.ubl imports invoices with currency rounding, which the amounts
+//     written already follow;
+//   - gobl.ubl gives an imported tax registration the party's country;
+//   - PINT AE needs a gross price on every line, so an item without a list
+//     price comes back with its price as one, and with the default unit code;
+//   - the base of a line charge or discount, which GOBL computes, comes back
+//     set;
+//   - a note's key isn't written, only the UNTDID text subject code the
+//     EN 16931 addon gives it;
+//   - tags and identities come back in the order UBL holds them.
+func roundTripKnownDifferences(want, got *bill.Invoice) {
+	joinSeries := func(series, code cbc.Code) cbc.Code {
+		if series == "" {
+			return code
+		}
+		return series + "-" + code
+	}
+	want.Code = joinSeries(want.Series, want.Code)
+	want.Series = ""
+	for _, ref := range want.Preceding {
+		ref.Code = joinSeries(ref.Series, ref.Code)
+		ref.Series = ""
+	}
+	if want.Tax != nil {
+		want.Tax.Rounding = tax.RoundingRuleCurrency
+	}
+
+	for _, pair := range [][2]*org.Party{{want.Supplier, got.Supplier}, {want.Customer, got.Customer}} {
+		if pair[0] == nil || pair[1] == nil {
+			continue
+		}
+		for _, g := range pair[1].Identities {
+			for _, w := range pair[0].Identities {
+				if g.Code == w.Code && w.Country == "" {
+					g.Country = ""
+				}
+			}
+		}
+		sortIdentities(pair[0].Identities)
+		sortIdentities(pair[1].Identities)
+	}
+
+	for i, gl := range got.Lines {
+		if i >= len(want.Lines) || gl.Item == nil || want.Lines[i].Item == nil {
+			continue
+		}
+		wi, gi := want.Lines[i].Item, gl.Item
+		if wi.List == nil && gi.List != nil && gi.Price != nil && gi.List.Equals(*gi.Price) {
+			gi.List = nil
+		}
+		if !wi.Ext.Has(untdid.ExtKeyUnit) && gi.Ext.Get(untdid.ExtKeyUnit) == "C62" {
+			gi.Ext = gi.Ext.Delete(untdid.ExtKeyUnit)
+		}
+		sortIdentities(wi.Identities)
+		sortIdentities(gi.Identities)
+		for j, c := range gl.Charges {
+			if j < len(want.Lines[i].Charges) && want.Lines[i].Charges[j].Base == nil {
+				c.Base = nil
+			}
+		}
+		for j, d := range gl.Discounts {
+			if j < len(want.Lines[i].Discounts) && want.Lines[i].Discounts[j].Base == nil {
+				d.Base = nil
+			}
+		}
+	}
+
+	clearNoteKeys(want.Notes)
+	for _, l := range want.Lines {
+		clearNoteKeys(l.Notes)
+	}
+
+	for _, inv := range []*bill.Invoice{want, got} {
+		tags := slices.Clone(inv.GetTags())
+		slices.Sort(tags)
+		inv.SetTags(tags...)
+	}
+}
+
+// clearNoteKeys removes the keys of notes that have a text subject code.
+func clearNoteKeys(notes []*org.Note) {
+	for _, n := range notes {
+		if n.Ext.Has(untdid.ExtKeyTextSubject) {
+			n.Key = ""
+		}
+	}
+}
+
+// sortIdentities orders identities by code.
+func sortIdentities(ids []*org.Identity) {
+	slices.SortFunc(ids, func(a, b *org.Identity) int {
+		return strings.Compare(a.Code.String(), b.Code.String())
+	})
 }
 
 // TestImportAESellerTIN checks that a seller with a TIN and no TRN, as out of

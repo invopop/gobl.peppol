@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "582b20df43826dc1267062417ecafa76335fffaf780c051f73a9e36ff0d7d83f"
+			"val": "f6f20769cf3497c7649a1e1150808a40d2fd9dabc764ca98ad1cd0c78d9050a1"
 		},
 		"from": "iso6523-actorid-upis::0088:9429044000004",
 		"to": "iso6523-actorid-upis::0088:9429044000011"
@@ -47,13 +47,6 @@
 					"uri": "iso6523-actorid-upis::0088:9429044000004"
 				}
 			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0088",
-					"code": "9429044000004"
-				}
-			],
 			"addresses": [
 				{
 					"num": "1",
@@ -82,13 +75,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0088:9429044000011"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0088",
-					"code": "9429044000011"
 				}
 			],
 			"addresses": [
@@ -130,7 +116,6 @@
 		},
 		"payment": {
 			"terms": {
-				"key": "due-date",
 				"due_dates": [
 					{
 						"date": "2024-06-15",

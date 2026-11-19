@@ -76,18 +76,12 @@
     </cac:Party>
   </cac:AccountingCustomerParty>
   <cac:PaymentMeans>
-    <cbc:ID>1</cbc:ID>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
     <cac:PayeeFinancialAccount>
       <cbc:ID schemeID="IBAN">AE070331234567890123456</cbc:ID>
       <cbc:Name>Emirates NBD</cbc:Name>
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
-  <cac:PaymentTerms>
-    <cbc:PaymentMeansID>1</cbc:PaymentMeansID>
-    <cbc:Amount currencyID="AED">1050.00</cbc:Amount>
-    <cbc:InstallmentDueDate>2025-02-06</cbc:InstallmentDueDate>
-  </cac:PaymentTerms>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="AED">50.00</cbc:TaxAmount>
     <cbc:TaxIncludedIndicator>false</cbc:TaxIncludedIndicator>

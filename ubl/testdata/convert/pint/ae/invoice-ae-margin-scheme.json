@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "193f975acb4d73d89551b498c2dbe98c4678386a49498e542c5466d3aa30917f"
+			"val": "e752ebb4294935c9d960e0f34bd0991f6557054c78584f6232c28aacaf9fd783"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -65,13 +65,6 @@
 					"uri": "iso6523-actorid-upis::0235:1357902467"
 				}
 			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1357902467"
-				}
-			],
 			"addresses": [
 				{
 					"street": "Sheikh Zayed Road",
@@ -98,13 +91,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0235:1345678906"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1345678906"
 				}
 			],
 			"addresses": [
@@ -148,7 +134,6 @@
 		],
 		"payment": {
 			"terms": {
-				"key": "due-date",
 				"due_dates": [
 					{
 						"date": "2025-02-06",

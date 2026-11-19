@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "40bc2e024dec9695857cd853ca5a52e981d15747a1590fe64bfd4c2d2e6fd80f"
+			"val": "3ce961ffec96d1ff9a093023168d48f5de4e2aa71fd35c6a61781587ad2f4160"
 		},
 		"from": "iso6523-actorid-upis::0235:1345678906",
 		"to": "iso6523-actorid-upis::0235:1357902467"
@@ -62,13 +62,6 @@
 					"uri": "iso6523-actorid-upis::0235:1357902467"
 				}
 			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1357902467"
-				}
-			],
 			"addresses": [
 				{
 					"street": "Sheikh Zayed Road",
@@ -95,13 +88,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0235:1345678906"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1345678906"
 				}
 			],
 			"addresses": [

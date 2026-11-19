@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "c5556348fbbfc482ae579b572ca67c1f574c2c7992fb3a630e5f04163ffa5e8b"
+			"val": "b14834d8d3931ec9c554408a2f4fe3839b37158ebc0d2725abd6eac142e4f5ea"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -57,13 +57,6 @@
 					"uri": "iso6523-actorid-upis::0235:1357902467"
 				}
 			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1357902467"
-				}
-			],
 			"addresses": [
 				{
 					"street": "Sheikh Zayed Road",
@@ -95,13 +88,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0235:1345678906"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1345678906"
 				}
 			],
 			"addresses": [
@@ -160,13 +146,6 @@
 					{
 						"key": "general",
 						"text": "Delivered in two batches.",
-						"ext": {
-							"untdid-text-subject": "AAI"
-						}
-					},
-					{
-						"key": "general",
-						"text": "Packed on pallets.",
 						"ext": {
 							"untdid-text-subject": "AAI"
 						}
@@ -269,7 +248,6 @@
 				]
 			},
 			"terms": {
-				"key": "due-date",
 				"due_dates": [
 					{
 						"date": "2025-02-28",
@@ -343,13 +321,6 @@
 			{
 				"key": "general",
 				"text": "Goods remain the property of the seller until paid in full.",
-				"ext": {
-					"untdid-text-subject": "AAI"
-				}
-			},
-			{
-				"key": "general",
-				"text": "Please quote the invoice number when paying.",
 				"ext": {
 					"untdid-text-subject": "AAI"
 				}

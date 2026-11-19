@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "919e125441380a4ffee381b9f80d13d148afeb894affd4ee3c8ef69db59f46c4"
+			"val": "1e53b470c245968389e753b227319747be7b78f0be70750bf4a0eedaf80dd089"
 		},
 		"from": "iso6523-actorid-upis::9930:de111111125",
 		"to": "iso6523-actorid-upis::9938:lu98765432"
@@ -59,13 +59,6 @@
 					"uri": "iso6523-actorid-upis::9930:de111111125"
 				}
 			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "9930",
-					"code": "de111111125"
-				}
-			],
 			"addresses": [
 				{
 					"street": "Example Street 123",
@@ -98,13 +91,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::9938:lu98765432"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "9938",
-					"code": "lu98765432"
 				}
 			],
 			"addresses": [

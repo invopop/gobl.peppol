@@ -163,10 +163,13 @@ as its `cbc:NatureCode`, with its GTIN as the standard identifier. Items keyed
 identities labelled `SAC` are written as service accounting codes. The
 delivery's ICC Incoterms (`icc-incoterms-2020` or `-2010`) are written as the
 delivery terms, and the delivery receiver's UAE TRN, or its TIN without one,
-as the delivery party's identification (BTAE-23). Several notes on the
-document, or on a line, are joined into one separated by a blank line, as PINT
-allows a single note on each (ibr-sr-51, ibr-sr-34), and are imported back as
-a single note.
+as the delivery party's identification (BTAE-23). PINT allows a single note
+on the document and on each line (ibr-sr-51, ibr-sr-34), so the PINT addon
+rejects invoices with more, in every PINT format, instead of joining them.
+Only the payment due date (IBT-009) is written, so the addon also rejects
+more than one due date, or one for part of the amount due. That is a
+limitation of this library, not a PINT rule: PINT can carry instalments
+(IBG-33).
 
 **Profit margin scheme.** A UAE supply under the profit margin scheme takes the AE regime's
 `margin-scheme` tag, with the `exempt` VAT key on every line:
@@ -186,10 +189,8 @@ the `exempt` key, never by the key alone.
 
 It also writes the PINT fields gobl.ubl leaves out: the issue time; each
 contract's description, where PINT AE puts the contract value; the `IBAN`
-scheme of the payee account and the address of its branch; the first due
-date's amount and date as the payment terms, which refer to the payment
-instructions by the ID `1`; `cbc:TaxIncludedIndicator` as `false`; and the
-tax note of a line's VAT category as its exemption reason text. On import, it reads
+scheme of the payee account and the address of its branch;
+`cbc:TaxIncludedIndicator` as `false`; and the tax note of a line's VAT category as its exemption reason text. On import, it reads
 the invoice UUID, the out-of-scope type codes 480 and 81 back as the
 `outside-tax-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as

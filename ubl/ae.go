@@ -52,11 +52,6 @@ const accountSchemeIBAN = "IBAN"
 // which the syntax binding requires and the official examples write.
 const deliveryTermsSchemeIncoterms = "Incoterms"
 
-// aePaymentMeansID identifies the invoice's payment instructions (IBT-178), so
-// that its payment terms can refer to them (IBT-187). GOBL has a single set of
-// instructions, so it needs no ID of its own.
-const aePaymentMeansID = "1"
-
 // exportAE applies the Peppol PINT AE rules to an exported invoice.
 func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error {
 	out, ok := doc.(*goblubl.Invoice)
@@ -66,7 +61,6 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	}
 	exportAEUUID(out, inv)
 	exportAEIssueTime(out, inv)
-	out.Note = aeJoinNotes(out.Note)
 	exportAETransactionType(out, inv)
 	exportAECreditNoteReason(out, inv)
 	exportAEIncoterms(out, inv)
@@ -228,18 +222,14 @@ func exportAEContractValue(out *goblubl.Invoice, inv *bill.Invoice) {
 }
 
 // exportAEPayment completes the payment instructions gobl.ubl writes, which
-// are the invoice's only ones, and the payment terms that go with them.
+// are the invoice's only ones.
 func exportAEPayment(out *goblubl.Invoice, inv *bill.Invoice) {
 	if len(out.PaymentMeans) == 0 || inv.Payment == nil {
 		return
 	}
-	pm := &out.PaymentMeans[0]
-	if instr := inv.Payment.Instructions; instr != nil {
-		if len(instr.CreditTransfer) > 0 {
-			exportAECreditTransfer(pm.PayeeFinancialAccount, instr.CreditTransfer[0])
-		}
+	if instr := inv.Payment.Instructions; instr != nil && len(instr.CreditTransfer) > 0 {
+		exportAECreditTransfer(out.PaymentMeans[0].PayeeFinancialAccount, instr.CreditTransfer[0])
 	}
-	exportAEPaymentTerms(out, pm, inv)
 }
 
 // exportAECreditTransfer writes the IBAN scheme of the payee account
@@ -253,9 +243,10 @@ func exportAECreditTransfer(acc *goblubl.FinancialAccount, ct *pay.CreditTransfe
 		scheme := accountSchemeIBAN
 		acc.ID.SchemeID = &scheme
 	}
-	// TODO: gobl.ubl reads the branch address for every UBL format, but only
-	// FormatAE writes it, so BIS, PINT and A-NZ drop it on export. Move this
-	// export into gobl.ubl, reusing its address builder, and remove aeAddress.
+	// TODO: generic PINT has the branch address too (IBG-34), so FormatPINT
+	// should write it, but it drops it on export, as it did before PINT AE.
+	// It doesn't belong in gobl.ubl: EN 16931 warns against it (UBL-CR-432),
+	// and A-NZ doesn't have it.
 	if addr := aeAddress(ct.Branch); addr != nil {
 		if acc.FinancialInstitutionBranch == nil {
 			acc.FinancialInstitutionBranch = new(goblubl.Branch)
@@ -285,34 +276,6 @@ func aeAddress(a *org.Address) *goblubl.PostalAddress {
 		addr.Country = &goblubl.Country{IdentificationCode: a.Country.String()}
 	}
 	return addr
-}
-
-// exportAEPaymentTerms writes the amount of the first due date and its date
-// as the amount and installment due date of the payment terms (IBT-176,
-// IBT-177), which refer to the payment instructions by their ID (IBT-187,
-// IBT-178). gobl.ubl writes a single cac:PaymentTerms, so later due dates are
-// left out, as they are from cbc:DueDate. A due date in another currency has
-// no amount to write, as every amount is in the invoice's (IBR-126).
-func exportAEPaymentTerms(out *goblubl.Invoice, pm *goblubl.PaymentMeans, inv *bill.Invoice) {
-	terms := inv.Payment.Terms
-	if terms == nil || len(terms.DueDates) == 0 {
-		return
-	}
-	dd := terms.DueDates[0]
-	def := inv.Currency.Def()
-	if dd == nil || dd.Date == nil || dd.Amount == nil || def == nil ||
-		(dd.Currency != "" && dd.Currency != inv.Currency) {
-		return
-	}
-	if out.PaymentTerms == nil {
-		out.PaymentTerms = new(goblubl.PaymentTerms)
-	}
-	id := aePaymentMeansID
-	pm.ID = &id
-	amount := aeAmount(def.Rescale(*dd.Amount), inv.Currency)
-	out.PaymentTerms.PaymentMeansID = id
-	out.PaymentTerms.Amount = &amount
-	out.PaymentTerms.InstallmentDueDate = dd.Date.String()
 }
 
 // exportAEChargeRates writes the rate of the reverse charge allowances and
@@ -788,23 +751,8 @@ func exportAELines(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 	}
 }
 
-// aeJoinNotes joins the notes into one, separated by a blank line, as PINT
-// allows a single note on the document and on each line (ibr-sr-51,
-// ibr-sr-34). A joined note is imported back as a single note.
-//
-// TODO: these are shared PINT rules, and EN 16931 has the line one too
-// (UBL-SR-34), so FormatPINT and FormatAUNZ need the same, and FormatBIS on
-// its lines.
-func aeJoinNotes(notes []string) []string {
-	if len(notes) < 2 {
-		return notes
-	}
-	return []string{strings.Join(notes, "\n\n")}
-}
-
-// exportAELine completes a line's notes, price details and VAT rate.
+// exportAELine completes a line's price details and VAT rate.
 func exportAELine(line *goblubl.InvoiceLine) {
-	line.Note = aeJoinNotes(line.Note)
 	exportAEPrice(line)
 	if line.Item != nil && line.Item.ClassifiedTaxCategory != nil {
 		c := line.Item.ClassifiedTaxCategory
@@ -821,7 +769,7 @@ func exportAELine(line *goblubl.InvoiceLine) {
 // document currency check as amounts in the tax currency, which IBR-140-AE
 // fixes to AED. No test checks their currency, and the official exports in
 // USD write them in AED too. Without a rate, which the PINT addon requires
-// (GOBL-PEPPOL-PINT-BILL-INVOICE-23), they stay in the document currency.
+// (GOBL-PEPPOL-PINT-BILL-INVOICE-27), they stay in the document currency.
 //
 // GOBL keeps no VAT per line, so it is the line total at the line's rate,
 // rounded to the document currency, then converted. Exempt lines get no VAT
@@ -875,7 +823,7 @@ func aeLineVAT(line *goblubl.InvoiceLine, l *bill.Line) (num.Amount, bool) {
 // to the tax currency (IBR-153-AE), and the total with VAT in AED (BTAE-20,
 // IBR-175-AE). gobl.ubl already writes the tax currency AED and the VAT total
 // in AED (ibt-006, ibt-111) when there is a rate. The PINT addon requires the
-// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-23) with at most 6 decimals (-24).
+// rate (GOBL-PEPPOL-PINT-BILL-INVOICE-27) with at most 6 decimals (-28).
 func exportAEExchangeRate(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Currency == currency.AED {
 		return
@@ -1057,6 +1005,11 @@ func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 // TODO: the BIS gives the seller TIN's scheme no code list, and the official
 // examples use TIN and TAX. A scheme like TAX is read as a TIN, and written
 // back as TIN.
+//
+// TODO: gobl.ubl gives every tax registration it imports the country of the
+// party's address, which UBL doesn't carry for the identity, so a TIN
+// identity without a country comes back with one (known round-trip
+// difference, to be looked at in gobl.ubl).
 func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 	if in == nil || p == nil {
 		return

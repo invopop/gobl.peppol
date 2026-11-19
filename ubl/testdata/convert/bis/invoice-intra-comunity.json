@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "25f10f037d27ad49f30b4080cc1e575262336ef082f9f231955f4639edee5e24"
+			"val": "476e99582d2f5d299297fd2b48b807bbc07fbf6ee70265b27647ae690dfc96af"
 		},
 		"to": "iso6523-actorid-upis::0208:0819258832"
 	},
@@ -80,13 +80,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0208:0819258832"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0208",
-					"code": "0819258832"
 				}
 			],
 			"addresses": [

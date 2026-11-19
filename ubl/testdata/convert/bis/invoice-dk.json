@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "dd732440a514f0007fc0c730ff6709e1cbaed47e5b830a4564bf20319b913c04"
+			"val": "4945256620be53d6edb9b1be8d73fbdc996532f92c2358670209ab530e53d07b"
 		},
 		"from": "iso6523-actorid-upis::0184:10000009",
 		"to": "iso6523-actorid-upis::0088:5790000000005"
@@ -56,13 +56,6 @@
 					"uri": "iso6523-actorid-upis::0184:10000009"
 				}
 			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0184",
-					"code": "10000009"
-				}
-			],
 			"addresses": [
 				{
 					"street": "Eksempelvej 1",
@@ -97,13 +90,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0088:5790000000005"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0088",
-					"code": "5790000000005"
 				}
 			],
 			"addresses": [

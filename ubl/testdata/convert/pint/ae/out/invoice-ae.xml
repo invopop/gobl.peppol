@@ -77,7 +77,6 @@
     </cac:Party>
   </cac:AccountingCustomerParty>
   <cac:PaymentMeans>
-    <cbc:ID>1</cbc:ID>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
     <cbc:PaymentID>INV-REM-0042</cbc:PaymentID>
     <cac:PayeeFinancialAccount>
@@ -98,11 +97,6 @@
       </cac:FinancialInstitutionBranch>
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
-  <cac:PaymentTerms>
-    <cbc:PaymentMeansID>1</cbc:PaymentMeansID>
-    <cbc:Amount currencyID="AED">1050.00</cbc:Amount>
-    <cbc:InstallmentDueDate>2025-02-06</cbc:InstallmentDueDate>
-  </cac:PaymentTerms>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="AED">50.00</cbc:TaxAmount>
     <cbc:TaxIncludedIndicator>false</cbc:TaxIncludedIndicator>
