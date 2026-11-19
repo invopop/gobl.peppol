@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/catalogues/cef"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
@@ -172,7 +173,7 @@ func TestTaxComboRulesAE(t *testing.T) {
 		} {
 			c := vatCombo(key, cat, nil)
 			if cat == "E" {
-				c.Ext = c.Ext.Set(pint.ExtKeyExemption, "DL8.46.1")
+				c.Ext = c.Ext.Set(cef.ExtKeyVATEX, "DL8.46.1")
 			}
 			assert.NoError(t, validateIn(c, ae), "category %s", cat)
 		}

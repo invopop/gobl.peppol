@@ -3,6 +3,7 @@ package pint
 import (
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
+	"github.com/invopop/gobl/catalogues/cef"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/num"
@@ -29,6 +30,17 @@ var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyExport:         en16931.TaxCategoryExport,
 	tax.KeyOutsideScope:   en16931.TaxCategoryOutsideScope,
 })
+
+// exemptionCodesAE are the UAE VAT exemption reasons PINT AE takes in the
+// CEF VATEX extension: the four exempt supplies of Article 46 of the UAE VAT
+// Decree-Law (Federal Decree-Law No. 8 of 2017), the only ones the law
+// allows.
+var exemptionCodesAE = []cbc.Code{
+	"DL8.46.1", // certain financial services
+	"DL8.46.2", // residential buildings
+	"DL8.46.3", // bare land
+	"DL8.46.4", // local passenger transport
+}
 
 // taxCategoryCodesAUNZ lists the subset of UNTDID 5305 tax category codes
 // accepted by the A-NZ PINT specification.
@@ -67,7 +79,7 @@ func normalizeTaxCombo(tc *tax.Combo) {
 // E from their key, as norm reaches them before the invoice, and get it back
 // once the tag is removed. Discounts and charges are left alone, so the
 // discount and charge rules 01 and invoice rule 44 reject them (IBR-114-AE,
-// IBR-115-AE, IBR-116-AE). Lines with a UAE exemption reason are a real
+// IBR-115-AE, IBR-116-AE). Lines with an exemption reason are a real
 // exempt supply, so they keep E and invoice rule 44 rejects the mixed invoice.
 func normalizeMarginSchemeAE(inv *bill.Invoice) {
 	if inv == nil || !inv.HasTags(TagMarginScheme) {
@@ -78,7 +90,7 @@ func normalizeMarginSchemeAE(inv *bill.Invoice) {
 			continue
 		}
 		for _, c := range l.Taxes {
-			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt && !c.Ext.Has(ExtKeyExemption) {
+			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt && !c.Ext.Has(cef.ExtKeyVATEX) {
 				c.Ext = c.Ext.Set(untdid.ExtKeyTaxCategory, TaxCategoryMarginScheme)
 			}
 		}
@@ -167,8 +179,19 @@ func taxComboRules() *rules.Set {
 			rules.When(
 				is.Func("exempt VAT", comboIsExemptVAT),
 				rules.Field("ext",
-					rules.Assert("06", "exempt VAT needs a UAE VAT exemption reason (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
-						tax.ExtensionsRequire(ExtKeyExemption),
+					rules.Assert("06", "exempt VAT needs a VAT exemption reason (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
+						tax.ExtensionsRequire(cef.ExtKeyVATEX),
+					),
+				),
+			),
+
+			// The UAE VAT law allows no other exemption reasons, though the
+			// Schematron doesn't check the code list.
+			rules.When(
+				is.Func("VAT", comboIsVAT),
+				rules.Field("ext",
+					rules.Assert("07", "VAT exemption reason must be a UAE one: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4",
+						tax.ExtensionsHasCodes(cef.ExtKeyVATEX, exemptionCodesAE...),
 					),
 				),
 			),

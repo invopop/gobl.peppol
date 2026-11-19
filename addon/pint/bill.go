@@ -399,15 +399,22 @@ func billInvoiceRules() *rules.Set {
 			),
 			rules.When(
 				is.Func("summary invoice", invoiceHasTags(TagSummary)),
-				rules.Assert("45", "ordering period or billing frequency is required on summary invoices (IBR-138-AE)",
-					is.Func("has invoice period", invoiceHasInvoicePeriod),
+				rules.Field("ordering",
+					rules.Assert("45", "ordering is required on summary invoices (IBR-138-AE)",
+						is.Present,
+					),
+					rules.Field("period",
+						rules.Assert("46", "ordering period is required on summary invoices (IBR-138-AE)",
+							is.Present,
+						),
+					),
 				),
 			),
 			rules.When(
 				is.Func("disclosed agent billing", invoiceHasTags(TagDisclosedAgent)),
 				rules.Field("tax",
 					rules.Field("ext",
-						rules.Assert("46", "principal ID is required on disclosed agent billing (IBR-137-AE)",
+						rules.Assert("47", "principal ID is required on disclosed agent billing (IBR-137-AE)",
 							tax.ExtensionsRequire(ExtKeyPrincipalID),
 						),
 					),
@@ -423,7 +430,7 @@ func billInvoiceRules() *rules.Set {
 					rules.When(
 						is.Not(org.PartyHasTaxIDCode()),
 						rules.Field("identities",
-							rules.Assert("47", "supplier TRN or TIN is required on outside scope documents or credit notes related to goods and services (IBR-177-AE)",
+							rules.Assert("48", "supplier TRN or TIN is required on outside scope documents or credit notes related to goods and services (IBR-177-AE)",
 								is.Func("has tax scope identity", identitiesScopeIn(org.IdentityScopeTax)),
 							),
 						),
@@ -440,11 +447,11 @@ func billInvoiceRules() *rules.Set {
 					is.Func("export", invoiceHasTags(tax.TagExport)),
 				),
 				rules.Field("delivery",
-					rules.Assert("48", "delivery is required on e-commerce supplies and exports (IBR-142-AE, IBR-152-AE)", is.Present),
+					rules.Assert("49", "delivery is required on e-commerce supplies and exports (IBR-142-AE, IBR-152-AE)", is.Present),
 					rules.Field("receiver",
-						rules.Assert("49", "delivery receiver is required on e-commerce supplies and exports (IBR-142-AE, IBR-152-AE)", is.Present),
+						rules.Assert("50", "delivery receiver is required on e-commerce supplies and exports (IBR-142-AE, IBR-152-AE)", is.Present),
 						rules.Field("addresses",
-							rules.Assert("50", "delivery address is required on e-commerce supplies and exports (IBR-142-AE, IBR-152-AE)", is.Present),
+							rules.Assert("51", "delivery address is required on e-commerce supplies and exports (IBR-142-AE, IBR-152-AE)", is.Present),
 						),
 					),
 				),
@@ -456,13 +463,13 @@ func billInvoiceRules() *rules.Set {
 						rules.Field("addresses",
 							rules.Each(
 								rules.Field("street",
-									rules.Assert("51", "e-commerce delivery address street is required (IBR-142-AE)", is.Present),
+									rules.Assert("52", "e-commerce delivery address street is required (IBR-142-AE)", is.Present),
 								),
 								rules.Field("locality",
-									rules.Assert("52", "e-commerce delivery address city is required (IBR-142-AE)", is.Present),
+									rules.Assert("53", "e-commerce delivery address city is required (IBR-142-AE)", is.Present),
 								),
 								rules.Field("region",
-									rules.Assert("53", "e-commerce delivery address region is required (IBR-142-AE)", is.Present),
+									rules.Assert("54", "e-commerce delivery address region is required (IBR-142-AE)", is.Present),
 								),
 							),
 						),
@@ -482,13 +489,13 @@ func billInvoiceRules() *rules.Set {
 								rules.When(
 									is.Not(is.Func("UAE address", addressIsAE)),
 									rules.Field("street",
-										rules.Assert("54", "export delivery address street is required (IBR-152-AE)", is.Present),
+										rules.Assert("55", "export delivery address street is required (IBR-152-AE)", is.Present),
 									),
 									rules.Field("locality",
-										rules.Assert("55", "export delivery address city is required (IBR-152-AE)", is.Present),
+										rules.Assert("56", "export delivery address city is required (IBR-152-AE)", is.Present),
 									),
 									rules.Field("region",
-										rules.Assert("56", "export delivery address region is required (IBR-152-AE)", is.Present),
+										rules.Assert("57", "export delivery address region is required (IBR-152-AE)", is.Present),
 									),
 								),
 							),
@@ -507,7 +514,7 @@ func billInvoiceRules() *rules.Set {
 						rules.When(
 							is.Not(org.PartyHasTaxIDCode()),
 							rules.Field("identities",
-								rules.Assert("57", "customer identity or tax registration is required with a UAE Peppol endpoint that is not a TIN, except on exports (IBR-135-AE)",
+								rules.Assert("58", "customer identity or tax registration is required with a UAE Peppol endpoint that is not a TIN, except on exports (IBR-135-AE)",
 									is.Func("has tax scope or unscoped identity", identitiesScopeIn(org.IdentityScopeTax, cbc.KeyEmpty)),
 								),
 							),
@@ -523,7 +530,7 @@ func billInvoiceRules() *rules.Set {
 					rules.When(
 						is.Not(org.PartyHasTaxIDCode()),
 						rules.Field("identities",
-							rules.Assert("58", "customer tax registration is required with reverse charge (IBR-103-AE)",
+							rules.Assert("59", "customer tax registration is required with reverse charge (IBR-103-AE)",
 								is.Func("has tax scope identity", identitiesScopeIn(org.IdentityScopeTax)),
 							),
 						),
@@ -534,11 +541,8 @@ func billInvoiceRules() *rules.Set {
 			// AE tax extensions
 			rules.Field("tax",
 				rules.Field("ext",
-					rules.Assert("59", "credit note reason must be from the Reasons for credit note code list (IBR-001-AE)",
+					rules.Assert("60", "credit note reason must be from the Reasons for credit note code list (IBR-001-AE)",
 						tax.ExtensionHasValidCode(ExtKeyCreditNoteReason),
-					),
-					rules.Assert("60", "billing frequency must be from the frequency of billing code list (IBR-005-AE)",
-						tax.ExtensionHasValidCode(ExtKeyBillingFrequency),
 					),
 					rules.Assert("61", "principal ID must be a TRN of 15 digits starting with 1 (IBR-132-AE)",
 						tax.ExtensionHasValidCode(ExtKeyPrincipalID),
@@ -547,20 +551,13 @@ func billInvoiceRules() *rules.Set {
 						is.Func("principal ID ends with 03", extensionMatches(ExtKeyPrincipalID, vatTRNSuffixPattern)),
 					),
 				),
-				// PINT AE writes the billing frequency where EN writes the VAT
-				// point date code (BT-8), cac:InvoicePeriod/cbc:DescriptionCode,
-				// and IBR-005-AE only accepts frequencies there.
+				// PINT AE uses the element EN writes the VAT point date code
+				// (BT-8) in, cac:InvoicePeriod/cbc:DescriptionCode, for the
+				// billing frequency, and IBR-005-AE only accepts frequencies
+				// there.
 				rules.Field("point",
-					rules.Assert("63", "tax point must not be set, as its code goes where the billing frequency does (IBR-005-AE)",
+					rules.Assert("63", "tax point must not be set, as PINT AE uses its element for the billing frequency (IBR-005-AE)",
 						is.Not(is.Present),
-					),
-				),
-			),
-			rules.When(
-				is.Func("billing frequency is Others", invoiceExtIn(ExtKeyBillingFrequency, BillingFrequencyOthers)),
-				rules.Field("notes",
-					rules.Assert("64", "a note is required with the billing frequency Others (IBR-160-AE)",
-						is.Present,
 					),
 				),
 			),
@@ -574,7 +571,7 @@ func billInvoiceRules() *rules.Set {
 			// tags, fail ibr-cl-01.
 			rules.Field("tax",
 				rules.Field("ext",
-					rules.Assert("65", "document type must be 380, 480, 381, 81, 389 or 261 (ibr-cl-01)",
+					rules.Assert("64", "document type must be 380, 480, 381, 81, 389 or 261 (ibr-cl-01)",
 						tax.ExtensionsHasCodes(untdid.ExtKeyDocumentType, docTypesAE...),
 					),
 				),
@@ -596,7 +593,7 @@ func billInvoiceRules() *rules.Set {
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			rules.Field("currency",
-				rules.Assert("66", "currency must not have more decimals than PINT allows for it (ibr-091, ibr-121, ibr-122, ibr-123, ibr-124, ibr-125)",
+				rules.Assert("65", "currency must not have more decimals than PINT allows for it (ibr-091, ibr-121, ibr-122, ibr-123, ibr-124, ibr-125)",
 					is.Func("currency decimals within the PINT precision", currencyHasPINTDecimals),
 				),
 			),
@@ -604,7 +601,7 @@ func billInvoiceRules() *rules.Set {
 		rules.When(
 			is.Not(is.InContext(tax.RegimeIn(regimesAE...))),
 			rules.Field("currency",
-				rules.Assert("66", "currency must have at most 2 decimals (ibr-091, ibr-121, ibr-122, ibr-123, ibr-124, ibr-125)",
+				rules.Assert("65", "currency must have at most 2 decimals (ibr-091, ibr-121, ibr-122, ibr-123, ibr-124, ibr-125)",
 					is.Func("currency has at most 2 decimals", currencyHasAtMost2Decimals),
 				),
 			),
@@ -618,7 +615,7 @@ func billInvoiceRules() *rules.Set {
 		// addon had tags.
 		rules.When(
 			is.Not(is.InContext(tax.RegimeIn(regimesAE...))),
-			rules.Assert("67", "PINT AE tags can only be used on UAE documents",
+			rules.Assert("66", "PINT AE tags can only be used on UAE documents",
 				is.Func("has no PINT AE tags", invoiceHasNoAETags),
 			),
 		),
@@ -906,19 +903,6 @@ func partyTaxIDIsNotVAT(p *org.Party) bool {
 	}
 	scheme := p.TaxID.GetScheme()
 	return scheme != "" && scheme != tax.CategoryVAT
-}
-
-// invoiceHasInvoicePeriod reports whether the invoice has what is written as
-// cac:InvoicePeriod: an ordering period or a billing frequency. IBR-138-AE's
-// text asks for the invoicing period, but its test only checks the element
-// is there, so the frequency alone passes.
-func invoiceHasInvoicePeriod(val any) bool {
-	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil {
-		return false
-	}
-	return (inv.Ordering != nil && inv.Ordering.Period != nil) ||
-		inv.Tax.GetExt(ExtKeyBillingFrequency) != ""
 }
 
 // invoiceTaxesAreMarginScheme reports whether every tax combo of an invoice's

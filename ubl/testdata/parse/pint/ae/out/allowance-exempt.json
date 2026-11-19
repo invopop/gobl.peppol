@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "f48f5993b43bdc897ba9fcd15a4295ccbae0a9bafb6ab93b54718dee47016c91"
+			"val": "8a8dfc7fa80b619fd2e05950066026c27dfb9a7b246e40dc5ef2ef208e6dc1c5"
 		},
 		"from": "iso6523-actorid-upis::0235:1987654321",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -147,7 +147,7 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"peppol-pint-ae-exemption": "DL8.46.4",
+							"cef-vatex": "DL8.46.4",
 							"untdid-tax-category": "E"
 						}
 					}
@@ -165,7 +165,7 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"peppol-pint-ae-exemption": "DL8.46.4",
+							"cef-vatex": "DL8.46.4",
 							"untdid-tax-category": "E"
 						}
 					}
@@ -213,7 +213,7 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"peppol-pint-ae-exemption": "DL8.46.4",
+									"cef-vatex": "DL8.46.4",
 									"untdid-tax-category": "E"
 								},
 								"base": "900.00",

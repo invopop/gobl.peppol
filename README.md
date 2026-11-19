@@ -156,9 +156,8 @@ the trade licence authority (the identity's description) or the passport's
 issuing country, and the seller's TIN goes under the `TIN` tax scheme. It also
 writes the transaction type as `cbc:ProfileExecutionID`, with the free trade
 zone beneficiary and the disclosed agent's principal as the buyer and seller
-parties, and the credit note reason as `cac:DiscrepancyResponse`, the billing
-frequency in `cac:InvoicePeriod`, the UAE VAT exemption reason of exempt
-lines, and each item's type of goods or services subject to the reverse charge
+parties, and the credit note reason as `cac:DiscrepancyResponse`, the VAT exemption reason (`cef-vatex`, one of the UAE codes `DL8.46.1` to `DL8.46.4`) of
+exempt lines, and each item's type of goods or services subject to the reverse charge
 as its `cbc:NatureCode`, with its GTIN as the standard identifier. Items keyed
 `goods`, `services` or `goods-services` get the item type `G`, `S` or `B`, and
 identities labelled `SAC` are written as service accounting codes. The
@@ -185,35 +184,24 @@ Without the tag, `exempt` lines are a normal exempt supply (`E`). Anyone
 reading GOBL data must identify margin scheme lines by the tag together with
 the `exempt` key, never by the key alone.
 
-It also writes the PINT fields gobl.ubl leaves out: the issue time; the
-customs reference number (`peppol-pint-ae-customs-reference`) as
-`cac:StatementDocumentReference`; each contract's value
-(`peppol-pint-ae-contract-value`); the `IBAN` scheme of the payee account
-and the address of its branch; the scheme of the remittance reference
-(`peppol-pint-ae-remittance-scheme`); the first due date's amount and date
-as the payment terms, which refer to the payment instructions by the ID `1`;
-each line's purchase order (`peppol-pint-ae-purchase-order`) and despatch
-advice (`peppol-pint-ae-despatch-advice`), with `NA` as the line of either
-when there is none; `cbc:TaxIncludedIndicator` as `false`;
-the UAE VAT exemption reason of exempt discounts and charges; the tax note
-of a line's VAT category as its exemption reason text; each item's batch
-number (`peppol-pint-ae-batch-number`) as its lot; and the scheme version
-(`peppol-pint-ae-scheme-version`) of the item's classification and service
-accounting codes. On import, it reads
+It also writes the PINT fields gobl.ubl leaves out: the issue time; each
+contract's description, where PINT AE puts the contract value; the `IBAN`
+scheme of the payee account and the address of its branch; the first due
+date's amount and date as the payment terms, which refer to the payment
+instructions by the ID `1`; `cbc:TaxIncludedIndicator` as `false`; and the
+tax note of a line's VAT category as its exemption reason text. On import, it reads
 the invoice UUID, the out-of-scope type codes 480 and 81 back as the
 `outside-tax-scope` tag, and
 the identity types, authorities, passport countries and seller TIN back as
 identity keys and fields, the transaction type back as its extension and
-tags, and the credit note reason, billing frequency, line exemption
+tags, and the credit note reason, line exemption
 reasons and item goods types back as their extensions, and the item
 types and service accounting codes back as item keys and identities, and
 the `N` category back as the `exempt` key with the `margin-scheme` tag, and
 the delivery terms back
 as the `icc-incoterms-2020` extension, and the seller and buyer electronic
-addresses as endpoints, and the customs reference, discount and charge
-exemption reasons, line exemption reason texts, batch numbers, scheme
-versions, contract values, remittance reference schemes and line purchase
-orders and despatch advices back as their extensions and tax notes.
+addresses as endpoints, and the discount and charge exemption reasons and
+line exemption reason texts back as their extensions and tax notes.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,

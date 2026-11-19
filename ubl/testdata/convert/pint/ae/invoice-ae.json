@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "a3f7cf956a8dc25227ae11efe23cc96474566e24f9d0b51395e5a8294f2efcf1"
+			"val": "17e56b6dc606745d5477f1751efcf93cddf5d0f45fa8846fd64c8ff17825b1a4"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -127,20 +127,14 @@
 						}
 					}
 				],
-				"total": "1000.00",
-				"ext": {
-					"peppol-pint-ae-despatch-advice": "DA-2025-031",
-					"peppol-pint-ae-purchase-order": "PO-2025-118"
-				}
+				"total": "1000.00"
 			}
 		],
 		"ordering": {
 			"contracts": [
 				{
 					"code": "CT-2025-014",
-					"ext": {
-						"peppol-pint-ae-contract-value": "AED 200000"
-					}
+					"description": "AED 200000"
 				}
 			]
 		},
@@ -174,7 +168,6 @@
 					}
 				],
 				"ext": {
-					"peppol-pint-ae-remittance-scheme": "ABA",
 					"untdid-payment-means": "30"
 				}
 			}

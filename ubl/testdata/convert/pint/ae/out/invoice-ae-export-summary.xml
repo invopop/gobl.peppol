@@ -16,9 +16,6 @@
   <cac:OrderReference>
     <cbc:ID>NA</cbc:ID>
   </cac:OrderReference>
-  <cac:StatementDocumentReference>
-    <cbc:ID>EXP010101234</cbc:ID>
-  </cac:StatementDocumentReference>
   <cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="0235">1357902467</cbc:EndpointID>
@@ -149,11 +146,6 @@
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
       </cac:ClassifiedTaxCategory>
-      <cac:ItemInstance>
-        <cac:LotIdentification>
-          <cbc:LotNumberID>Lot 1</cbc:LotNumberID>
-        </cac:LotIdentification>
-      </cac:ItemInstance>
     </cac:Item>
     <cac:Price>
       <cbc:PriceAmount currencyID="AED">10.00</cbc:PriceAmount>

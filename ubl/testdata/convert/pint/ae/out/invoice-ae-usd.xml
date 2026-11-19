@@ -124,6 +124,7 @@
       <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
       <cac:TaxCategory>
         <cbc:ID>E</cbc:ID>
+        <cbc:TaxExemptionReasonCode>DL8.46.3</cbc:TaxExemptionReasonCode>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
@@ -158,11 +159,11 @@
       <cbc:Description>Item Description</cbc:Description>
       <cbc:Name>Item Name</cbc:Name>
       <cac:AdditionalItemIdentification>
-        <cbc:ID schemeID="SAC" schemeVersionID="1.0">998713</cbc:ID>
+        <cbc:ID schemeID="SAC">998713</cbc:ID>
       </cac:AdditionalItemIdentification>
       <cac:CommodityClassification>
         <cbc:CommodityCode>B</cbc:CommodityCode>
-        <cbc:ItemClassificationCode listID="HS" listVersionID="1.0">8471</cbc:ItemClassificationCode>
+        <cbc:ItemClassificationCode listID="HS">8471</cbc:ItemClassificationCode>
       </cac:CommodityClassification>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>S</cbc:ID>

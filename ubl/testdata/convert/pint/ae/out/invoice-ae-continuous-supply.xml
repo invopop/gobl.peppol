@@ -13,7 +13,6 @@
   <cac:InvoicePeriod>
     <cbc:StartDate>2025-01-01</cbc:StartDate>
     <cbc:EndDate>2025-01-21</cbc:EndDate>
-    <cbc:DescriptionCode>OTH</cbc:DescriptionCode>
   </cac:InvoicePeriod>
   <cac:OrderReference>
     <cbc:ID>NA</cbc:ID>

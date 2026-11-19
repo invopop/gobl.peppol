@@ -79,7 +79,7 @@
   <cac:PaymentMeans>
     <cbc:ID>1</cbc:ID>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
-    <cbc:PaymentID schemeID="ABA">INV-REM-0042</cbc:PaymentID>
+    <cbc:PaymentID>INV-REM-0042</cbc:PaymentID>
     <cac:PayeeFinancialAccount>
       <cbc:ID schemeID="IBAN">AE070331234567890123456</cbc:ID>
       <cbc:Name>Emirates NBD</cbc:Name>
@@ -129,18 +129,6 @@
     <cbc:InvoicedQuantity unitCode="C62">100</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="AED">1000.00</cbc:LineExtensionAmount>
     <cbc:AccountingCost>CS-024</cbc:AccountingCost>
-    <cac:OrderLineReference>
-      <cbc:LineID>NA</cbc:LineID>
-      <cac:OrderReference>
-        <cbc:ID>PO-2025-118</cbc:ID>
-      </cac:OrderReference>
-    </cac:OrderLineReference>
-    <cac:DespatchLineReference>
-      <cbc:LineID>NA</cbc:LineID>
-      <cac:DocumentReference>
-        <cbc:ID>DA-2025-031</cbc:ID>
-      </cac:DocumentReference>
-    </cac:DespatchLineReference>
     <cac:Item>
       <cbc:Description>Item Description</cbc:Description>
       <cbc:Name>Item Name</cbc:Name>

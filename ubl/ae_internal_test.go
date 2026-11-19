@@ -7,6 +7,7 @@ import (
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
+	"github.com/invopop/gobl/catalogues/cef"
 	"github.com/invopop/gobl/catalogues/icc"
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/catalogues/untdid"
@@ -613,44 +614,6 @@ func TestAECreditNoteReason(t *testing.T) {
 	})
 }
 
-func TestAEBillingFrequency(t *testing.T) {
-	invoice := func(freq cbc.Code) *bill.Invoice {
-		return &bill.Invoice{Tax: &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyBillingFrequency: freq})}}
-	}
-
-	t.Run("writes the frequency on the ordering period", func(t *testing.T) {
-		out := &goblubl.Invoice{InvoicePeriod: []goblubl.Period{{StartDate: "2025-01-01", EndDate: "2025-01-31"}}}
-		exportAEBillingFrequency(out, invoice("MTH"))
-		require.Len(t, out.InvoicePeriod, 1)
-		assert.Equal(t, "MTH", out.InvoicePeriod[0].DescriptionCode)
-		assert.Equal(t, "2025-01-01", out.InvoicePeriod[0].StartDate)
-	})
-
-	t.Run("writes a period of its own without an ordering period", func(t *testing.T) {
-		out := new(goblubl.Invoice)
-		exportAEBillingFrequency(out, invoice("QTR"))
-		require.Len(t, out.InvoicePeriod, 1)
-		assert.Equal(t, "QTR", out.InvoicePeriod[0].DescriptionCode)
-	})
-
-	t.Run("nothing without a frequency", func(t *testing.T) {
-		out := new(goblubl.Invoice)
-		exportAEBillingFrequency(out, new(bill.Invoice))
-		assert.Empty(t, out.InvoicePeriod)
-	})
-
-	t.Run("reads the frequency back", func(t *testing.T) {
-		in := &goblubl.Invoice{InvoicePeriod: []goblubl.Period{{DescriptionCode: " OTH "}}}
-		inv := new(bill.Invoice)
-		importAEBillingFrequency(in, inv)
-		assert.Equal(t, cbc.Code("OTH"), inv.Tax.GetExt(pint.ExtKeyBillingFrequency))
-
-		inv = new(bill.Invoice)
-		importAEBillingFrequency(new(goblubl.Invoice), inv)
-		assert.Nil(t, inv.Tax)
-	})
-}
-
 func TestAELineExemption(t *testing.T) {
 	ublLine := func() goblubl.InvoiceLine {
 		return goblubl.InvoiceLine{Item: &goblubl.Item{ClassifiedTaxCategory: &goblubl.ClassifiedTaxCategory{
@@ -660,7 +623,7 @@ func TestAELineExemption(t *testing.T) {
 	goblLine := func(code cbc.Code) *bill.Line {
 		c := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt}
 		if code != "" {
-			c.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyExemption: code})
+			c.Ext = tax.ExtensionsOf(cbc.CodeMap{cef.ExtKeyVATEX: code})
 		}
 		return &bill.Line{Taxes: tax.Set{c}}
 	}
@@ -686,8 +649,8 @@ func TestAELineExemption(t *testing.T) {
 		with.Item.ClassifiedTaxCategory.TaxExemptionReasonCode = &code
 		inv := &bill.Invoice{Lines: []*bill.Line{goblLine(""), goblLine("")}}
 		importAELineExemptions([]goblubl.InvoiceLine{ublLine(), with}, inv)
-		assert.Empty(t, inv.Lines[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
-		assert.Equal(t, cbc.Code("DL8.46.4"), inv.Lines[1].Taxes[0].Ext.Get(pint.ExtKeyExemption))
+		assert.Empty(t, inv.Lines[0].Taxes[0].Ext.Get(cef.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.4"), inv.Lines[1].Taxes[0].Ext.Get(cef.ExtKeyVATEX))
 	})
 
 	t.Run("lines that don't match are skipped", func(t *testing.T) {
@@ -696,7 +659,7 @@ func TestAELineExemption(t *testing.T) {
 		with.Item.ClassifiedTaxCategory.TaxExemptionReasonCode = &code
 		inv := &bill.Invoice{Lines: []*bill.Line{goblLine(""), goblLine("")}}
 		importAELineExemptions([]goblubl.InvoiceLine{with}, inv)
-		assert.Empty(t, inv.Lines[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
+		assert.Empty(t, inv.Lines[0].Taxes[0].Ext.Get(cef.ExtKeyVATEX))
 	})
 }
 
@@ -1100,40 +1063,13 @@ func TestExportAEIssueTime(t *testing.T) {
 	assert.Equal(t, "17:31:00", out.IssueTime)
 }
 
-func TestAECustomsReference(t *testing.T) {
-	t.Run("writes the customs reference as the statement reference", func(t *testing.T) {
-		inv := &bill.Invoice{Tax: &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyCustomsReference: "EXP010101234"})}}
-		out := new(goblubl.Invoice)
-		exportAECustomsReference(out, inv)
-		require.Len(t, out.StatementDocumentReference, 1)
-		assert.Equal(t, "EXP010101234", out.StatementDocumentReference[0].ID.Value)
-	})
-
-	t.Run("nothing without one", func(t *testing.T) {
-		out := new(goblubl.Invoice)
-		exportAECustomsReference(out, &bill.Invoice{})
-		assert.Empty(t, out.StatementDocumentReference)
-	})
-
-	t.Run("reads the first one back", func(t *testing.T) {
-		in := &goblubl.Invoice{StatementDocumentReference: []goblubl.Reference{
-			{ID: goblubl.IDType{Value: " "}},
-			{ID: goblubl.IDType{Value: " EXP010101234 "}},
-			{ID: goblubl.IDType{Value: "EXP2"}},
-		}}
-		inv := new(bill.Invoice)
-		importAECustomsReference(in, inv)
-		assert.Equal(t, cbc.Code("EXP010101234"), inv.Tax.GetExt(pint.ExtKeyCustomsReference))
-	})
-}
-
 func TestExportAEContractValue(t *testing.T) {
 	inv := &bill.Invoice{Ordering: &bill.Ordering{Contracts: []*org.DocumentRef{
-		{Code: "CT-1", Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyContractValue: "AED 200000"})},
-		{Code: "CT-2", Description: "Framework agreement"},
+		{Code: "CT-1", Description: "AED 200000"},
+		{Code: "CT-2"},
 	}}}
 
-	t.Run("writes the value of each contract", func(t *testing.T) {
+	t.Run("writes the description of each contract", func(t *testing.T) {
 		out := &goblubl.Invoice{ContractDocumentReference: []goblubl.Reference{
 			{ID: goblubl.IDType{Value: "CT-1"}},
 			{ID: goblubl.IDType{Value: "CT-2"}},
@@ -1149,21 +1085,6 @@ func TestExportAEContractValue(t *testing.T) {
 		assert.Empty(t, out.ContractDocumentReference[0].DocumentDescription)
 		exportAEContractValue(out, &bill.Invoice{})
 		assert.Empty(t, out.ContractDocumentReference[0].DocumentDescription)
-	})
-
-	t.Run("reads it back from the description gobl.ubl imports", func(t *testing.T) {
-		in := &goblubl.Invoice{ContractDocumentReference: []goblubl.Reference{
-			{ID: goblubl.IDType{Value: "CT-1"}, DocumentDescription: " AED 200000 "},
-			{ID: goblubl.IDType{Value: "CT-2"}},
-		}}
-		got := &bill.Invoice{Ordering: &bill.Ordering{Contracts: []*org.DocumentRef{
-			{Code: "CT-1", Description: "AED 200000"},
-			{Code: "CT-2"},
-		}}}
-		importAEContractValue(in, got)
-		assert.Equal(t, cbc.Code("AED 200000"), got.Ordering.Contracts[0].Ext.Get(pint.ExtKeyContractValue))
-		assert.Empty(t, got.Ordering.Contracts[0].Description)
-		assert.True(t, got.Ordering.Contracts[1].Ext.IsZero())
 	})
 }
 
@@ -1242,97 +1163,19 @@ func TestExportAEPayment(t *testing.T) {
 		assert.Nil(t, out.PaymentTerms)
 	})
 
-	t.Run("writes the scheme of the remittance reference and reads it back", func(t *testing.T) {
-		out := ublInvoice()
-		out.PaymentMeans[0].PaymentID = &goblubl.IDType{Value: "REM-1"}
-		inv := goblInvoice(&pay.CreditTransfer{IBAN: iban}, nil)
-		inv.Payment.Instructions.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyRemittanceScheme: "ABA"})
-		exportAEPayment(out, inv)
-		assert.Equal(t, "ABA", *out.PaymentMeans[0].PaymentID.SchemeID)
-
-		got := goblInvoice(&pay.CreditTransfer{IBAN: iban}, nil)
-		importAERemittanceScheme(out, got)
-		assert.Equal(t, cbc.Code("ABA"), got.Payment.Instructions.Ext.Get(pint.ExtKeyRemittanceScheme))
-	})
-
-	t.Run("no scheme without one on the reference", func(t *testing.T) {
-		out := ublInvoice()
-		out.PaymentMeans[0].PaymentID = &goblubl.IDType{Value: "REM-1"}
-		got := goblInvoice(&pay.CreditTransfer{IBAN: iban}, nil)
-		exportAEPayment(out, got)
-		assert.Nil(t, out.PaymentMeans[0].PaymentID.SchemeID)
-		importAERemittanceScheme(out, got)
-		assert.True(t, got.Payment.Instructions.Ext.IsZero())
-	})
-}
-
-func TestAELineReferences(t *testing.T) {
-	ext := tax.ExtensionsOf(cbc.CodeMap{
-		pint.ExtKeyPurchaseOrder:  "PO-1",
-		pint.ExtKeyDespatchAdvice: "DA-1",
-	})
-
-	t.Run("writes the purchase order next to the order line", func(t *testing.T) {
-		line := goblubl.InvoiceLine{OrderLineReference: &goblubl.OrderLineReference{LineID: "3"}}
-		exportAELineReferences(&line, &bill.Line{Order: "3", Ext: ext})
-		assert.Equal(t, "3", line.OrderLineReference.LineID)
-		assert.Equal(t, "PO-1", line.OrderLineReference.OrderReference.ID)
-		assert.Equal(t, "NA", line.DespatchLineReference.LineID)
-		assert.Equal(t, "DA-1", line.DespatchLineReference.DocumentReference.ID.Value)
-	})
-
-	t.Run("without an order line, NA stands for it and is dropped on import", func(t *testing.T) {
-		line := goblubl.InvoiceLine{}
-		exportAELineReferences(&line, &bill.Line{Ext: ext})
-		assert.Equal(t, "NA", line.OrderLineReference.LineID)
-
-		inv := &bill.Invoice{Lines: []*bill.Line{{Order: "NA"}}}
-		importAELineReferences([]goblubl.InvoiceLine{line}, inv)
-		assert.Empty(t, inv.Lines[0].Order)
-		assert.Equal(t, cbc.Code("PO-1"), inv.Lines[0].Ext.Get(pint.ExtKeyPurchaseOrder))
-		assert.Equal(t, cbc.Code("DA-1"), inv.Lines[0].Ext.Get(pint.ExtKeyDespatchAdvice))
-	})
-
-	t.Run("nothing without the extensions", func(t *testing.T) {
-		line := goblubl.InvoiceLine{OrderLineReference: &goblubl.OrderLineReference{LineID: "3"}}
-		exportAELineReferences(&line, &bill.Line{Order: "3"})
-		assert.Nil(t, line.OrderLineReference.OrderReference)
-		assert.Nil(t, line.DespatchLineReference)
-
-		inv := &bill.Invoice{Lines: []*bill.Line{{Order: "3"}}}
-		importAELineReferences([]goblubl.InvoiceLine{line}, inv)
-		assert.Equal(t, cbc.Code("3"), inv.Lines[0].Order)
-		assert.True(t, inv.Lines[0].Ext.IsZero())
-	})
 }
 
 func TestAEChargeExemptions(t *testing.T) {
 	combo := func(code cbc.Code) tax.Set {
 		c := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt}
 		if code != "" {
-			c.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyExemption: code})
+			c.Ext = tax.ExtensionsOf(cbc.CodeMap{cef.ExtKeyVATEX: code})
 		}
 		return tax.Set{c}
 	}
 	category := func(code *string) []*goblubl.TaxCategory {
 		return []*goblubl.TaxCategory{{ID: &goblubl.IDType{Value: "E"}, TaxExemptionReasonCode: code}}
 	}
-
-	t.Run("writes the reasons of the charges, then the discounts", func(t *testing.T) {
-		inv := &bill.Invoice{
-			Charges:   []*bill.Charge{{Taxes: combo("DL8.46.3")}},
-			Discounts: []*bill.Discount{{Taxes: combo("")}, {Taxes: combo("DL8.46.1")}},
-		}
-		out := &goblubl.Invoice{AllowanceCharge: []goblubl.AllowanceCharge{
-			{ChargeIndicator: true, TaxCategory: category(nil)},
-			{TaxCategory: category(nil)},
-			{TaxCategory: category(nil)},
-		}}
-		exportAEChargeExemptions(out, inv)
-		assert.Equal(t, "DL8.46.3", *out.AllowanceCharge[0].TaxCategory[0].TaxExemptionReasonCode)
-		assert.Nil(t, out.AllowanceCharge[1].TaxCategory[0].TaxExemptionReasonCode)
-		assert.Equal(t, "DL8.46.1", *out.AllowanceCharge[2].TaxCategory[0].TaxExemptionReasonCode)
-	})
 
 	t.Run("reads them back in the order of the document", func(t *testing.T) {
 		in := &goblubl.Invoice{AllowanceCharge: []goblubl.AllowanceCharge{
@@ -1345,21 +1188,19 @@ func TestAEChargeExemptions(t *testing.T) {
 			Discounts: []*bill.Discount{{Taxes: combo("")}, {Taxes: combo("")}},
 		}
 		importAEChargeExemptions(in, inv)
-		assert.Equal(t, cbc.Code("DL8.46.3"), inv.Charges[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
-		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
-		assert.Empty(t, inv.Discounts[1].Taxes[0].Ext.Get(pint.ExtKeyExemption))
+		assert.Equal(t, cbc.Code("DL8.46.3"), inv.Charges[0].Taxes[0].Ext.Get(cef.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(cef.ExtKeyVATEX))
+		assert.Empty(t, inv.Discounts[1].Taxes[0].Ext.Get(cef.ExtKeyVATEX))
 	})
 
 	t.Run("charges that don't match are skipped", func(t *testing.T) {
 		inv := &bill.Invoice{Discounts: []*bill.Discount{{Taxes: combo("DL8.46.1")}}}
-		out := new(goblubl.Invoice)
-		exportAEChargeExemptions(out, inv)
 		in := &goblubl.Invoice{AllowanceCharge: []goblubl.AllowanceCharge{
 			{TaxCategory: category(strPtr("DL8.46.2"))},
 			{TaxCategory: category(strPtr("DL8.46.2"))},
 		}}
 		importAEChargeExemptions(in, inv)
-		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
+		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(cef.ExtKeyVATEX))
 	})
 }
 
@@ -1426,79 +1267,5 @@ func TestAELineExemptionReason(t *testing.T) {
 		require.Len(t, inv.Tax.Notes, 1)
 		assert.Equal(t, "Exempt supply", inv.Tax.Notes[0].Text)
 		assert.Equal(t, cbc.Code("E"), inv.Tax.Notes[0].Ext.Get(untdid.ExtKeyTaxCategory))
-	})
-}
-
-func TestAELineSchemeVersions(t *testing.T) {
-	version := func(v cbc.Code) tax.Extensions {
-		return tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeySchemeVersion: v})
-	}
-	hs, sac := pint.IdentityLabelHS, pint.IdentityLabelSAC
-
-	t.Run("writes the versions of the classification and the service accounting code", func(t *testing.T) {
-		line := goblubl.InvoiceLine{Item: &goblubl.Item{
-			CommodityClassification: &[]goblubl.CommodityClassification{
-				{ItemClassificationCode: &goblubl.IDType{ListID: &hs, Value: "8471"}},
-				{ItemClassificationCode: &goblubl.IDType{ListID: &hs, Value: "8472"}},
-			},
-			AdditionalItemIdentification: []goblubl.ItemIdentification{
-				{ID: &goblubl.IDType{SchemeID: &sac, Value: "998713"}},
-			},
-		}}
-		exportAELineSchemeVersions(&line, &bill.Line{Item: &org.Item{Identities: []*org.Identity{
-			{Label: hs, Code: "8471", Ext: version("2022")},
-			{Label: hs, Code: "8472"},
-			{Label: sac, Code: "998713", Ext: version("1.0")},
-		}}})
-		ccs := *line.Item.CommodityClassification
-		assert.Equal(t, "2022", *ccs[0].ItemClassificationCode.ListVersionID)
-		assert.Nil(t, ccs[1].ItemClassificationCode.ListVersionID)
-		assert.Equal(t, "1.0", *line.Item.AdditionalItemIdentification[0].ID.SchemeVersionID)
-	})
-
-	t.Run("reads them back onto the identities", func(t *testing.T) {
-		line := goblubl.InvoiceLine{Item: &goblubl.Item{
-			CommodityClassification: &[]goblubl.CommodityClassification{
-				{ItemClassificationCode: &goblubl.IDType{ListID: &hs, ListVersionID: strPtr("2022"), Value: "8471"}},
-			},
-			AdditionalItemIdentification: []goblubl.ItemIdentification{
-				{ID: &goblubl.IDType{SchemeID: &sac, SchemeVersionID: strPtr("1.0"), Value: "998713"}},
-			},
-		}}
-		inv := &bill.Invoice{Lines: []*bill.Line{{Item: &org.Item{Identities: []*org.Identity{
-			{Label: hs, Code: "8471"},
-		}}}}}
-		importAELineItems([]goblubl.InvoiceLine{line}, inv)
-		ids := inv.Lines[0].Item.Identities
-		require.Len(t, ids, 2)
-		assert.Equal(t, cbc.Code("2022"), ids[0].Ext.Get(pint.ExtKeySchemeVersion))
-		assert.Equal(t, cbc.Code("1.0"), ids[1].Ext.Get(pint.ExtKeySchemeVersion))
-	})
-}
-
-func TestAELineBatch(t *testing.T) {
-	t.Run("writes the batch number as the lot of the item", func(t *testing.T) {
-		line := goblubl.InvoiceLine{Item: &goblubl.Item{}}
-		exportAELineBatch(&line, &bill.Line{Item: &org.Item{
-			Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyBatchNumber: "Lot 1"}),
-		}})
-		require.Len(t, line.Item.ItemInstance, 1)
-		assert.Equal(t, "Lot 1", line.Item.ItemInstance[0].LotIdentification.LotNumberID)
-	})
-
-	t.Run("nothing without one", func(t *testing.T) {
-		line := goblubl.InvoiceLine{Item: &goblubl.Item{}}
-		exportAELineBatch(&line, &bill.Line{Item: &org.Item{}})
-		assert.Empty(t, line.Item.ItemInstance)
-	})
-
-	t.Run("reads it back onto the item", func(t *testing.T) {
-		line := goblubl.InvoiceLine{Item: &goblubl.Item{ItemInstance: []goblubl.ItemInstance{
-			{},
-			{LotIdentification: &goblubl.LotIdentification{LotNumberID: " Lot 1 "}},
-		}}}
-		inv := &bill.Invoice{Lines: []*bill.Line{{Item: &org.Item{}}}}
-		importAELineGoods([]goblubl.InvoiceLine{line}, inv)
-		assert.Equal(t, cbc.Code("Lot 1"), inv.Lines[0].Item.Ext.Get(pint.ExtKeyBatchNumber))
 	})
 }

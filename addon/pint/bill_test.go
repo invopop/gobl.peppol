@@ -7,6 +7,7 @@ import (
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
+	"github.com/invopop/gobl/catalogues/cef"
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
@@ -457,7 +458,7 @@ func aeFaults(t *testing.T, inv *bill.Invoice) string {
 func TestBillDocumentRulesAE(t *testing.T) {
 	const (
 		faultSellerTRN       = "GOBL-PEPPOL-PINT-BILL-INVOICE-30"
-		faultReverseCharge   = "GOBL-PEPPOL-PINT-BILL-INVOICE-58"
+		faultReverseCharge   = "GOBL-PEPPOL-PINT-BILL-INVOICE-59"
 		faultBuyerLegalID    = "GOBL-PEPPOL-PINT-BILL-INVOICE-31"
 		faultLineCategory    = "GOBL-PEPPOL-PINT-BILL-INVOICE-32"
 		faultDiscountCat     = "GOBL-PEPPOL-PINT-BILL-INVOICE-33"
@@ -468,7 +469,7 @@ func TestBillDocumentRulesAE(t *testing.T) {
 		faultPayment         = "GOBL-PEPPOL-PINT-BILL-INVOICE-26"
 		faultDueTerms        = "GOBL-PEPPOL-PINT-BILL-INVOICE-28"
 		faultDueDate         = "GOBL-PEPPOL-PINT-BILL-INVOICE-29"
-		faultDocumentType    = "GOBL-PEPPOL-PINT-BILL-INVOICE-65"
+		faultDocumentType    = "GOBL-PEPPOL-PINT-BILL-INVOICE-64"
 	)
 	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
 	outsideScope := func() *bill.Invoice {
@@ -694,7 +695,7 @@ func TestBillDocumentRulesAE(t *testing.T) {
 }
 
 func TestBillCurrencyDecimalsRules(t *testing.T) {
-	const fault = "GOBL-PEPPOL-PINT-BILL-INVOICE-66"
+	const fault = "GOBL-PEPPOL-PINT-BILL-INVOICE-65"
 	ae := func(cur currency.Code) *bill.Invoice {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		inv.Currency = cur
@@ -983,18 +984,19 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 		faultTransactionType     = "GOBL-PEPPOL-PINT-BILL-INVOICE-41"
 		faultBeneficiary         = "GOBL-PEPPOL-PINT-BILL-INVOICE-42"
 		faultDeemedEndpoint      = "GOBL-PEPPOL-PINT-BILL-INVOICE-43"
-		faultSummaryPeriod       = "GOBL-PEPPOL-PINT-BILL-INVOICE-45"
-		faultPrincipal           = "GOBL-PEPPOL-PINT-BILL-INVOICE-46"
+		faultSummaryOrdering     = "GOBL-PEPPOL-PINT-BILL-INVOICE-45"
+		faultSummaryPeriod       = "GOBL-PEPPOL-PINT-BILL-INVOICE-46"
+		faultPrincipal           = "GOBL-PEPPOL-PINT-BILL-INVOICE-47"
 		faultPrincipalTRN        = "GOBL-PEPPOL-PINT-BILL-INVOICE-61"
 		faultPrincipalVAT        = "GOBL-PEPPOL-PINT-BILL-INVOICE-62"
-		faultSupplierTax         = "GOBL-PEPPOL-PINT-BILL-INVOICE-47"
-		faultDelivery            = "GOBL-PEPPOL-PINT-BILL-INVOICE-48"
-		faultDeliveryAddress     = "GOBL-PEPPOL-PINT-BILL-INVOICE-50"
-		faultECommerceStreet     = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
-		faultExportStreet        = "GOBL-PEPPOL-PINT-BILL-INVOICE-54"
-		faultExportRegion        = "GOBL-PEPPOL-PINT-BILL-INVOICE-56"
+		faultSupplierTax         = "GOBL-PEPPOL-PINT-BILL-INVOICE-48"
+		faultDelivery            = "GOBL-PEPPOL-PINT-BILL-INVOICE-49"
+		faultDeliveryAddress     = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
+		faultECommerceStreet     = "GOBL-PEPPOL-PINT-BILL-INVOICE-52"
+		faultExportStreet        = "GOBL-PEPPOL-PINT-BILL-INVOICE-55"
+		faultExportRegion        = "GOBL-PEPPOL-PINT-BILL-INVOICE-57"
 		faultOutsideScopeFlags   = "GOBL-PEPPOL-PINT-BILL-INVOICE-35"
-		faultCustomerIdentifier  = "GOBL-PEPPOL-PINT-BILL-INVOICE-57"
+		faultCustomerIdentifier  = "GOBL-PEPPOL-PINT-BILL-INVOICE-58"
 	)
 	setExt := func(inv *bill.Invoice, key cbc.Key, code cbc.Code) {
 		if inv.Tax == nil {
@@ -1067,16 +1069,13 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 		assert.Empty(t, aeFaults(t, inv))
 	})
 
-	t.Run("summary invoice needs the ordering period or billing frequency (IBR-138-AE)", func(t *testing.T) {
+	t.Run("summary invoice needs the ordering period (IBR-138-AE)", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard, pint.TagSummary)
+		assert.Contains(t, aeFaults(t, inv), faultSummaryOrdering)
+		inv.Ordering = &bill.Ordering{Code: "PO-1"}
 		assert.Contains(t, aeFaults(t, inv), faultSummaryPeriod)
 		start, end := cal.MakeDate(2026, 10, 1), cal.MakeDate(2026, 10, 31)
-		inv.Ordering = &bill.Ordering{Period: &cal.Period{Start: &start, End: &end}}
-		assert.Empty(t, aeFaults(t, inv))
-
-		// The billing frequency alone is written as cac:InvoicePeriod too.
-		inv = aeDocument(bill.InvoiceTypeStandard, pint.TagSummary)
-		setExt(inv, pint.ExtKeyBillingFrequency, "MTH")
+		inv.Ordering.Period = &cal.Period{Start: &start, End: &end}
 		assert.Empty(t, aeFaults(t, inv))
 	})
 
@@ -1192,7 +1191,7 @@ func TestBillCreditNoteReasonRulesAE(t *testing.T) {
 		faultReasonRequired   = "GOBL-PEPPOL-PINT-BILL-INVOICE-38"
 		faultPrecedingMissing = "GOBL-PEPPOL-PINT-BILL-INVOICE-39"
 		faultPrecedingVD      = "GOBL-PEPPOL-PINT-BILL-INVOICE-40"
-		faultReasonCode       = "GOBL-PEPPOL-PINT-BILL-INVOICE-59"
+		faultReasonCode       = "GOBL-PEPPOL-PINT-BILL-INVOICE-60"
 	)
 	withReason := func(inv *bill.Invoice, code cbc.Code) *bill.Invoice {
 		if inv.Tax == nil {
@@ -1251,82 +1250,49 @@ func TestBillCreditNoteReasonRulesAE(t *testing.T) {
 	})
 }
 
-func TestBillBillingFrequencyRulesAE(t *testing.T) {
-	const (
-		faultFrequencyCode = "GOBL-PEPPOL-PINT-BILL-INVOICE-60"
-		faultTaxPoint      = "GOBL-PEPPOL-PINT-BILL-INVOICE-63"
-		faultOthersNote    = "GOBL-PEPPOL-PINT-BILL-INVOICE-64"
-	)
-	withFrequency := func(code cbc.Code) *bill.Invoice {
-		inv := aeDocument(bill.InvoiceTypeStandard)
-		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyBillingFrequency: code})}
-		return inv
-	}
-
-	t.Run("frequency must be from the code list (IBR-005-AE)", func(t *testing.T) {
-		for _, code := range []cbc.Code{"DLY", "WKY", "Q15", "MTH", "Q45", "Q60", "QTR", "YRL", "HYR"} {
-			assert.Empty(t, aeFaults(t, withFrequency(code)), code)
-		}
-		assert.Contains(t, aeFaults(t, withFrequency("FTN")), faultFrequencyCode)
-	})
-
-	t.Run("Others needs a note (IBR-160-AE)", func(t *testing.T) {
-		inv := withFrequency(pint.BillingFrequencyOthers)
-		assert.Contains(t, aeFaults(t, inv), faultOthersNote)
-		inv.Notes = []*org.Note{{Text: "Every 3 weeks"}}
-		assert.Empty(t, aeFaults(t, inv))
-	})
-
-	t.Run("tax point can't be set, as it would take the frequency's place (IBR-005-AE)", func(t *testing.T) {
-		inv := aeDocument(bill.InvoiceTypeStandard)
-		inv.Tax = &bill.Tax{Point: tax.PointIssue}
-		assert.Contains(t, aeFaults(t, inv), faultTaxPoint)
-	})
-
-	t.Run("tax point is fine outside the UAE", func(t *testing.T) {
-		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)
-		inv.Tax = &bill.Tax{Point: tax.PointIssue}
-		require.NoError(t, inv.Calculate())
-		err := rules.Validate(inv, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
-		if err != nil {
-			assert.NotContains(t, err.Error(), faultTaxPoint)
-		}
-	})
-}
-
 func TestBillExemptionRulesAE(t *testing.T) {
 	const (
 		faultLineExemption     = "GOBL-PEPPOL-PINT-TAX-COMBO-06"
 		faultDiscountExemption = "GOBL-PEPPOL-PINT-TAX-COMBO-06"
 		faultChargeExemption   = "GOBL-PEPPOL-PINT-TAX-COMBO-06"
+		faultExemptionCode     = "GOBL-PEPPOL-PINT-TAX-COMBO-07"
 	)
 	exempt := func(code cbc.Code) *tax.Combo {
 		c := lineCombo(tax.KeyExempt)
 		if code != "" {
-			c.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyExemption: code})
+			c.Ext = tax.ExtensionsOf(cbc.CodeMap{cef.ExtKeyVATEX: code})
 		}
 		return c
 	}
 
-	t.Run("exempt line needs a UAE exemption reason (IBR-167-AE)", func(t *testing.T) {
+	t.Run("exempt line needs an exemption reason (IBR-167-AE)", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		inv.Lines[0].Taxes = tax.Set{exempt("")}
 		assert.Contains(t, aeFaults(t, inv), faultLineExemption)
 
-		// IBR-167-AE only checks a code is there, so codes outside the AE
-		// list are accepted.
-		for _, code := range []cbc.Code{"DL8.46.1", "DL8.46.4", "VATEX-AE-EDU"} {
+		for _, code := range []cbc.Code{"DL8.46.1", "DL8.46.4"} {
 			inv = aeDocument(bill.InvoiceTypeStandard)
 			inv.Lines[0].Taxes = tax.Set{exempt(code)}
 			assert.NotContains(t, aeFaults(t, inv), faultLineExemption, code)
 		}
 	})
 
+	t.Run("exemption reason must be a UAE one", func(t *testing.T) {
+		for _, code := range []cbc.Code{"DL8.46.5", "VATEX-EU-132"} {
+			inv := aeDocument(bill.InvoiceTypeStandard)
+			inv.Lines[0].Taxes = tax.Set{exempt(code)}
+			assert.Contains(t, aeFaults(t, inv), faultExemptionCode, code)
+		}
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Lines[0].Taxes = tax.Set{exempt("DL8.46.2")}
+		assert.NotContains(t, aeFaults(t, inv), faultExemptionCode)
+	})
+
 	t.Run("other categories need no exemption reason", func(t *testing.T) {
 		assert.NotContains(t, aeFaults(t, aeDocument(bill.InvoiceTypeStandard)), faultLineExemption)
 	})
 
-	t.Run("exempt discount needs a UAE exemption reason (IBR-168-AE)", func(t *testing.T) {
+	t.Run("exempt discount needs an exemption reason (IBR-168-AE)", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		inv.Discounts = []*bill.Discount{{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{exempt("")}}}
 		inv.Discounts[0].Ext = tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyAllowance: "95"})
@@ -1337,7 +1303,7 @@ func TestBillExemptionRulesAE(t *testing.T) {
 		assert.NotContains(t, aeFaults(t, inv), faultDiscountExemption)
 	})
 
-	t.Run("exempt charge needs a UAE exemption reason (IBR-169-AE)", func(t *testing.T) {
+	t.Run("exempt charge needs an exemption reason (IBR-169-AE)", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		inv.Charges = []*bill.Charge{{Reason: "Handling", Amount: num.MakeAmount(100, 2), Taxes: tax.Set{exempt("")}}}
 		inv.Charges[0].Ext = tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyCharge: "AAT"})
@@ -1466,7 +1432,7 @@ func TestBillMarginSchemeRulesAE(t *testing.T) {
 		// A line with a UAE exemption reason is a real exempt supply, not a
 		// margin scheme one.
 		inv = margin(pint.TagMarginScheme)
-		inv.Lines[0].Taxes[0].Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyExemption: "DL8.46.1"})
+		inv.Lines[0].Taxes[0].Ext = tax.ExtensionsOf(cbc.CodeMap{cef.ExtKeyVATEX: "DL8.46.1"})
 		assert.Contains(t, aeFaults(t, inv), faultOnlyMargin)
 		assert.Equal(t, cbc.Code("E"), inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory))
 
@@ -1480,7 +1446,7 @@ func TestBillMarginSchemeRulesAE(t *testing.T) {
 }
 
 func TestBillTagsOutsideAE(t *testing.T) {
-	const faultTags = "GOBL-PEPPOL-PINT-BILL-INVOICE-67"
+	const faultTags = "GOBL-PEPPOL-PINT-BILL-INVOICE-66"
 	faults := func(t *testing.T, inv *bill.Invoice) string {
 		t.Helper()
 		require.NoError(t, inv.Calculate())

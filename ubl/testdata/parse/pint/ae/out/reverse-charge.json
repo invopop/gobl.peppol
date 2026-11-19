@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "d5bd0299239dc50f49c03c6be1025562f72afecf17f41023bbdfb198d3c2b1ec"
+			"val": "07fe54e846c66905b22ad743cdc69254c0e8b99c3e3321c9b9648d9d4109dad1"
 		},
 		"from": "iso6523-actorid-upis::0235:1278906543",
 		"to": "iso6523-actorid-upis::0235:1347809543"
@@ -137,10 +137,7 @@
 						},
 						{
 							"label": "HS",
-							"code": "88098432324",
-							"ext": {
-								"peppol-pint-ae-scheme-version": "1.0"
-							}
+							"code": "88098432324"
 						}
 					],
 					"description": "Item Description",

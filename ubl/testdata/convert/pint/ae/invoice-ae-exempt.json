@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "7c8153e46a7d5643db38f51697101a8139c522a5f0fb947d35cdc79611a7296c"
+			"val": "55dac23e9f0a9dca6087b50c0e9e2ea5051bae2faa27fb297be23f70c05aff40"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -151,7 +151,7 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"peppol-pint-ae-exemption": "DL8.46.1",
+							"cef-vatex": "DL8.46.1",
 							"untdid-tax-category": "E"
 						}
 					}
@@ -173,7 +173,7 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"peppol-pint-ae-exemption": "DL8.46.2",
+							"cef-vatex": "DL8.46.2",
 							"untdid-tax-category": "E"
 						}
 					}
@@ -191,7 +191,7 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"peppol-pint-ae-exemption": "DL8.46.1",
+							"cef-vatex": "DL8.46.1",
 							"untdid-tax-category": "E"
 						}
 					}
@@ -264,7 +264,7 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"peppol-pint-ae-exemption": "DL8.46.1",
+									"cef-vatex": "DL8.46.1",
 									"untdid-tax-category": "E"
 								},
 								"base": "180.00",
@@ -273,7 +273,7 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"peppol-pint-ae-exemption": "DL8.46.2",
+									"cef-vatex": "DL8.46.2",
 									"untdid-tax-category": "E"
 								},
 								"base": "300.00",

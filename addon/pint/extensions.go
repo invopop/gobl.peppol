@@ -5,10 +5,8 @@ import (
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
 	"github.com/invopop/gobl/org"
-	"github.com/invopop/gobl/pay"
 	"github.com/invopop/gobl/pkg/here"
 	"github.com/invopop/gobl/regimes/ae"
-	"github.com/invopop/gobl/tax"
 )
 
 // PINT AE extension keys, for the BTAE fields GOBL has no place for.
@@ -23,43 +21,14 @@ const (
 	ExtKeyPrincipalID cbc.Key = "peppol-pint-ae-principal-id"
 	// ExtKeyCreditNoteReason is the reason for a PINT AE credit note (BTAE-03).
 	ExtKeyCreditNoteReason cbc.Key = "peppol-pint-ae-credit-note-reason"
-	// ExtKeyBillingFrequency is the frequency of billing (IBT-008).
-	ExtKeyBillingFrequency cbc.Key = "peppol-pint-ae-billing-frequency"
-	// ExtKeyExemption is the UAE VAT exemption reason of an exempt tax combo
-	// (IBT-186 on lines, IBT-196 and IBT-198 on allowances and charges).
-	ExtKeyExemption cbc.Key = "peppol-pint-ae-exemption"
 	// ExtKeyGoodsType is the type of goods or services subject to the reverse
 	// charge mechanism, on the item (BTAE-09).
 	ExtKeyGoodsType cbc.Key = "peppol-pint-ae-goods-type"
-	// ExtKeyCustomsReference is the customs reference number of an export or
-	// import (BTAE-21).
-	ExtKeyCustomsReference cbc.Key = "peppol-pint-ae-customs-reference"
-	// ExtKeyBatchNumber is the production batch or lot the items come from,
-	// on the item (BTAE-24).
-	ExtKeyBatchNumber cbc.Key = "peppol-pint-ae-batch-number"
-	// ExtKeySchemeVersion is the version of the scheme an item identity's code
-	// is from, such as an HS or SAC code (IBT-158-2, BTAE-17-2).
-	ExtKeySchemeVersion cbc.Key = "peppol-pint-ae-scheme-version"
-	// ExtKeyContractValue is the value of a contract, on its reference
-	// (BTAE-05).
-	ExtKeyContractValue cbc.Key = "peppol-pint-ae-contract-value"
-	// ExtKeyPurchaseOrder is the purchase order a line belongs to (IBT-183).
-	ExtKeyPurchaseOrder cbc.Key = "peppol-pint-ae-purchase-order"
-	// ExtKeyDespatchAdvice is the despatch advice a line was sent with
-	// (IBT-184).
-	ExtKeyDespatchAdvice cbc.Key = "peppol-pint-ae-despatch-advice"
-	// ExtKeyRemittanceScheme is the scheme of the payment instructions'
-	// remittance reference, such as "ABA" (IBT-083-1).
-	ExtKeyRemittanceScheme cbc.Key = "peppol-pint-ae-remittance-scheme"
 )
 
 // CreditNoteReasonVolumeDiscount is the credit note reason for a volume
 // discount, the only one that needs no preceding invoice (IBR-055-AE).
 const CreditNoteReasonVolumeDiscount cbc.Code = "VD"
-
-// BillingFrequencyOthers is the billing frequency "Others", whose value goes
-// in an invoice note (IBR-160-AE).
-const BillingFrequencyOthers cbc.Code = "OTH"
 
 // Usages of the PINT AE extensions: offered by the PINT addon under the AE
 // regime, on the object each one goes on.
@@ -69,35 +38,10 @@ var (
 		Codes:   []cbc.Code{ae.CountryCode},
 		Schemas: []string{bill.ShortSchemaTax},
 	}
-	usageAETaxCombo = &cbc.Usage{
-		Keys:    []cbc.Key{V1},
-		Codes:   []cbc.Code{ae.CountryCode},
-		Schemas: []string{tax.ShortSchemaCombo},
-	}
 	usageAEItem = &cbc.Usage{
 		Keys:    []cbc.Key{V1},
 		Codes:   []cbc.Code{ae.CountryCode},
 		Schemas: []string{org.ShortSchemaItem},
-	}
-	usageAEIdentity = &cbc.Usage{
-		Keys:    []cbc.Key{V1},
-		Codes:   []cbc.Code{ae.CountryCode},
-		Schemas: []string{org.ShortSchemaIdentity},
-	}
-	usageAEDocumentRef = &cbc.Usage{
-		Keys:    []cbc.Key{V1},
-		Codes:   []cbc.Code{ae.CountryCode},
-		Schemas: []string{org.ShortSchemaDocumentRef},
-	}
-	usageAELine = &cbc.Usage{
-		Keys:    []cbc.Key{V1},
-		Codes:   []cbc.Code{ae.CountryCode},
-		Schemas: []string{bill.ShortSchemaLine},
-	}
-	usageAEInstructions = &cbc.Usage{
-		Keys:    []cbc.Key{V1},
-		Codes:   []cbc.Code{ae.CountryCode},
-		Schemas: []string{pay.ShortSchemaInstructions},
 	}
 )
 
@@ -208,60 +152,6 @@ var extensions = []*cbc.Definition{
 		},
 	},
 	{
-		Key:   ExtKeyBillingFrequency,
-		Usage: usageAEInvoiceTax,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: Frequency of Billing",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Frequency of billing (IBT-008), from the frequency of billing code list
-				(IBR-005-AE). With "OTH" (Others), the frequency is given in an invoice
-				note (IBR-160-AE).
-			`),
-		},
-		Sources: []*cbc.Source{
-			{
-				Title: i18n.NewString("PINT AE Frequency of billing codes"),
-				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/codelist/FreqBilling/",
-			},
-		},
-		Values: []*cbc.Definition{
-			{Code: "DLY", Name: i18n.String{i18n.EN: "Daily"}},
-			{Code: "WKY", Name: i18n.String{i18n.EN: "Weekly"}},
-			{Code: "Q15", Name: i18n.String{i18n.EN: "Once in 15 days"}},
-			{Code: "MTH", Name: i18n.String{i18n.EN: "Monthly"}},
-			{Code: "Q45", Name: i18n.String{i18n.EN: "Once in 45 days"}},
-			{Code: "Q60", Name: i18n.String{i18n.EN: "Once in 60 days"}},
-			{Code: "QTR", Name: i18n.String{i18n.EN: "Quarterly"}},
-			{Code: "YRL", Name: i18n.String{i18n.EN: "Yearly"}},
-			{Code: "HYR", Name: i18n.String{i18n.EN: "Half-Yearly"}},
-			{Code: BillingFrequencyOthers, Name: i18n.String{i18n.EN: "Others"}},
-		},
-	},
-	{
-		Key:   ExtKeyExemption,
-		Usage: usageAETaxCombo,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: VAT Exemption Reason",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Reason a supply is exempt from UAE VAT, such as one of the PINT AE
-				"Reasons for exemption from tax" codes (DL8.46.1 to DL8.46.4).
-				Required on exempt lines (IBR-167-AE), discounts (IBR-168-AE) and
-				charges (IBR-169-AE), where it is written as their exemption reason
-				code.
-			`),
-		},
-		Sources: []*cbc.Source{
-			{
-				Title: i18n.NewString("PINT AE Reasons for exemption from tax"),
-				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/codelist/Aligned-TaxExemptionCodes/",
-			},
-		},
-	},
-	{
 		Key:   ExtKeyGoodsType,
 		Usage: usageAEItem,
 		Name: i18n.String{
@@ -287,96 +177,6 @@ var extensions = []*cbc.Definition{
 			{Code: "DL8.48.3.1", Name: i18n.String{i18n.EN: "Crude or refined oil"}},
 			{Code: "DL8.48.3.2", Name: i18n.String{i18n.EN: "Unprocessed or processed natural gas"}},
 			{Code: "DL8.48.3.3", Name: i18n.String{i18n.EN: "Pure hydrocarbons"}},
-		},
-	},
-	{
-		Key:   ExtKeyCustomsReference,
-		Usage: usageAEInvoiceTax,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: Customs Reference Number",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Customs reference number of an export or import transaction
-				(BTAE-21).
-			`),
-		},
-	},
-	{
-		Key:   ExtKeyBatchNumber,
-		Usage: usageAEItem,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: Batch Number",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Production batch or lot the items come from (BTAE-24).
-			`),
-		},
-	},
-	{
-		Key:   ExtKeySchemeVersion,
-		Usage: usageAEIdentity,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: Scheme Version",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Version of the scheme the code of an item identity is from, for the
-				item classifications and service accounting codes of an item
-				(IBT-158-2, BTAE-17-2).
-			`),
-		},
-	},
-	{
-		Key:   ExtKeyContractValue,
-		Usage: usageAEDocumentRef,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: Contract Value",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Value of a contract, on its reference in the invoice's ordering
-				details, such as "AED 200000" (BTAE-05).
-			`),
-		},
-	},
-	{
-		Key:   ExtKeyPurchaseOrder,
-		Usage: usageAELine,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: Line Purchase Order Reference",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Identifier of the purchase order a line belongs to, issued by the
-				buyer (IBT-183). The line's "order" is the line of that order.
-			`),
-		},
-	},
-	{
-		Key:   ExtKeyDespatchAdvice,
-		Usage: usageAELine,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: Line Despatch Advice Reference",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Identifier of the despatch advice a line was sent with (IBT-184).
-			`),
-		},
-	},
-	{
-		Key:   ExtKeyRemittanceScheme,
-		Usage: usageAEInstructions,
-		Name: i18n.String{
-			i18n.EN: "PINT AE: Remittance Reference Scheme",
-		},
-		Desc: i18n.String{
-			i18n.EN: here.Doc(`
-				Scheme of the payment instructions' reference, the remittance
-				information, such as "ABA" (IBT-083-1).
-			`),
 		},
 	},
 }
