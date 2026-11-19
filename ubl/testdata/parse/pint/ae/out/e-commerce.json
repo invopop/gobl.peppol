@@ -1,0 +1,360 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "b0523c01e5d7bdceaca8bfac980a250585e86e8340bf1d95bea22a6b94d257f3"
+		},
+		"from": "iso6523-actorid-upis::0235:112345678900003",
+		"to": "iso6523-actorid-upis::0235:112345679000003"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"$tags": [
+			"e-commerce"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"code": "AE-001-E-Commerce-TEST",
+		"issue_date": "2025-02-11",
+		"issue_time": "11:35:10",
+		"currency": "AED",
+		"tax": {
+			"rounding": "currency",
+			"ext": {
+				"peppol-pint-ae-transaction-type": "00000010",
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"alias": "Supplier Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "112345678900003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:112345678900003"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "112345678900003"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"street_extra": "Additional Street Name",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"code": "Postal Zone",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Contact Email address"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact Number"
+				}
+			],
+			"registration": {
+				"other": "Merchant"
+			}
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"alias": "Buyer Trade Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "112345679000003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345679000001",
+					"description": "Trade License issuing Authority"
+				}
+			],
+			"people": [
+				{
+					"name": {
+						"given": "Contact Name"
+					}
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:112345679000003"
+				}
+			],
+			"inboxes": [
+				{
+					"scheme": "0235",
+					"code": "112345679000003"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Street Name",
+					"street_extra": "Additional Street Name",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"code": "Postal Zone",
+					"country": "AE"
+				}
+			],
+			"emails": [
+				{
+					"addr": "Contact Email address"
+				}
+			],
+			"telephones": [
+				{
+					"num": "Contact Number"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"key": "goods",
+					"name": "Item Name",
+					"identities": [
+						{
+							"label": "HS",
+							"code": "11223355"
+						}
+					],
+					"description": "Item Description",
+					"list": "101",
+					"discount": "1",
+					"price": "100.00",
+					"unit": "piece",
+					"ext": {
+						"untdid-unit": "H87"
+					}
+				},
+				"sum": "100.00",
+				"discounts": [
+					{
+						"reason": "Discount",
+						"amount": "2.50",
+						"ext": {
+							"untdid-allowance": "95"
+						}
+					}
+				],
+				"charges": [
+					{
+						"reason": "Technical Modification",
+						"base": "100.00",
+						"percent": "5%",
+						"amount": "5.00",
+						"ext": {
+							"untdid-charge": "AAC"
+						}
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "102.50",
+				"notes": [
+					{
+						"text": "Please check the invoice"
+					}
+				]
+			}
+		],
+		"discounts": [
+			{
+				"i": 1,
+				"reason": "Discount",
+				"base": "100",
+				"percent": "5%",
+				"amount": "5",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"ext": {
+					"untdid-allowance": "95"
+				}
+			}
+		],
+		"charges": [
+			{
+				"i": 1,
+				"reason": "Technical Modification",
+				"amount": "2.50",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"ext": {
+					"untdid-charge": "AAC"
+				}
+			}
+		],
+		"payment": {
+			"payee": {
+				"name": "Payee Party Name",
+				"identities": [
+					{
+						"scope": "legal",
+						"code": "112345679350001"
+					},
+					{
+						"code": "132345679670003",
+						"ext": {
+							"iso-scheme-id": "0066"
+						}
+					}
+				]
+			},
+			"advances": [
+				{
+					"description": "Prepaid Amount",
+					"amount": "0.00"
+				}
+			],
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-02-11",
+						"amount": "105.00",
+						"percent": "100%"
+					}
+				],
+				"notes": "Instant Payment"
+			},
+			"instructions": {
+				"key": "any",
+				"detail": "Debit Card",
+				"card": {
+					"last4": "1234",
+					"holder": "Card Holder Name"
+				},
+				"ext": {
+					"untdid-payment-means": "1"
+				}
+			}
+		},
+		"delivery": {
+			"receiver": {
+				"name": "Delivery Party Name",
+				"addresses": [
+					{
+						"street": "Street Name",
+						"street_extra": "Additional Street Name",
+						"locality": "Abu Dhabi",
+						"region": "AUH",
+						"code": "Postal Zone",
+						"country": "AE"
+					}
+				]
+			},
+			"identities": [
+				{
+					"code": "112345679000003",
+					"ext": {
+						"iso-scheme-id": "0066"
+					}
+				}
+			],
+			"date": "2025-02-11"
+		},
+		"totals": {
+			"sum": "102.50",
+			"discount": "5.00",
+			"charge": "2.50",
+			"total": "100.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "100.00",
+								"percent": "5%",
+								"amount": "5.00"
+							}
+						],
+						"amount": "5.00"
+					}
+				],
+				"sum": "5.00"
+			},
+			"tax": "5.00",
+			"total_with_tax": "105.00",
+			"payable": "105.00",
+			"advance": "0.00",
+			"due": "105.00"
+		},
+		"notes": [
+			{
+				"text": "Tax invoice"
+			}
+		],
+		"attachments": [
+			{
+				"code": "DR-INV-001",
+				"url": "https://www.site.ae/invoices.pdf"
+			}
+		]
+	}
+}
