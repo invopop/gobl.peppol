@@ -146,44 +146,43 @@ func TestDetectAndImportAE(t *testing.T) {
 
 // importFaultsAE are the faults the official PINT AE examples give once
 // imported. They pass the PINT AE Schematron, but their data is made up: the
-// TRNs and TINs fail the check digit the Federal Tax Authority defines (the
-// supplier gets no TIN from such a TRN), and some email addresses are
-// placeholders. Any other fault is a defect in the
+// TRNs and TINs fail the AE regime's checks, and so does the TIN the supplier
+// gets from its endpoint or TRN; some email addresses are placeholders. Any other fault is a defect in the
 // import. margin-scheme-credit-note.xml is the official margin scheme
 // example turned into a credit note, as there is no official one.
 var importFaultsAE = map[string][]string{
-	"allowance-exempt.xml":                     {"GOBL-AE-TAX-IDENTITY-02"},
-	"allowance-outside-scope.xml":              {"GOBL-AE-TAX-IDENTITY-02"},
-	"allowance-reverse-charge.xml":             {"GOBL-AE-TAX-IDENTITY-02"},
-	"allowance-zero-rated.xml":                 {"GOBL-AE-TAX-IDENTITY-02"},
-	"buyer-pas-identifier.xml":                 {"GOBL-AE-TAX-IDENTITY-02"},
-	"charge-exempt.xml":                        {"GOBL-AE-TAX-IDENTITY-02"},
-	"charge-outside-scope.xml":                 {"GOBL-AE-TAX-IDENTITY-02"},
-	"charge-reverse-charge.xml":                {"GOBL-AE-TAX-IDENTITY-02"},
-	"charge-zero-rated.xml":                    {"GOBL-AE-TAX-IDENTITY-02"},
-	"commercial-invoice.xml":                   {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"continuous-supplies.xml":                  {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"credit-note-disclosed-agent.xml":          {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"credit-note-standard.xml":                 {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"credit-note-volume-discount.xml":          {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"deemed-supply.xml":                        {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"disclosed-agent-billing.xml":              {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"e-commerce.xml":                           {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"exports-predefined-endpoint.xml":          {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"exports.xml":                              {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"margin-scheme-credit-note.xml":            {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"margin-scheme.xml":                        {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"reverse-charge.xml":                       {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"seller-pas-identifier.xml":                {"GOBL-AE-TAX-IDENTITY-02"},
+	"allowance-exempt.xml":                     {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"allowance-outside-scope.xml":              {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"allowance-reverse-charge.xml":             {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"allowance-zero-rated.xml":                 {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"buyer-pas-identifier.xml":                 {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"charge-exempt.xml":                        {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"charge-outside-scope.xml":                 {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"charge-reverse-charge.xml":                {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"charge-zero-rated.xml":                    {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"commercial-invoice.xml":                   {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"continuous-supplies.xml":                  {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"credit-note-disclosed-agent.xml":          {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"credit-note-standard.xml":                 {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"credit-note-volume-discount.xml":          {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"deemed-supply.xml":                        {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"disclosed-agent-billing.xml":              {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"e-commerce.xml":                           {"GOBL-AE-ORG-IDENTITY-01", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"exports-predefined-endpoint.xml":          {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"exports.xml":                              {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"margin-scheme-credit-note.xml":            {"GOBL-AE-ORG-IDENTITY-01", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"margin-scheme.xml":                        {"GOBL-AE-ORG-IDENTITY-01", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"reverse-charge.xml":                       {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"seller-pas-identifier.xml":                {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
 	"seller-tin-identifier.xml":                {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
 	"seller-trn-tin-identifiers.xml":           {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
-	"standard-invoice-extensive.xml":           {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"standard-invoice-predefined-endpoint.xml": {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"standard-invoice.xml":                     {"GOBL-AE-TAX-IDENTITY-02"},
-	"standard-tax-invoice.xml":                 {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"summary-invoice.xml":                      {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"supply-free-trade-zone.xml":               {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
-	"zero-rated.xml":                           {"GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"standard-invoice-extensive.xml":           {"GOBL-AE-ORG-IDENTITY-01", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"standard-invoice-predefined-endpoint.xml": {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"standard-invoice.xml":                     {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02"},
+	"standard-tax-invoice.xml":                 {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"summary-invoice.xml":                      {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"supply-free-trade-zone.xml":               {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
+	"zero-rated.xml":                           {"GOBL-AE-ORG-IDENTITY-02", "GOBL-AE-TAX-IDENTITY-02", "GOBL-ORG-EMAIL-02"},
 }
 
 // faultCodePattern matches the fault codes in a validation error.

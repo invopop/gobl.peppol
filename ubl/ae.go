@@ -59,6 +59,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	exportAELines(out.CreditNoteLines, inv)
 	for _, p := range goblubl.InvoiceParties(inv, out) {
 		exportAEPartyTaxID(p.UBL, p.GOBL.TaxID)
+		exportAETINIdentification(p.UBL)
 	}
 	exportAEPartyIdentities(out.AccountingSupplierParty.Party, inv.Supplier)
 	exportAEPartyIdentities(out.AccountingCustomerParty.Party, inv.Customer)
@@ -92,6 +93,9 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAELineItems(in.CreditNoteLines, inv)
 	importAEPartyIdentities(in.AccountingSupplierParty.Party, inv.Supplier, true)
 	importAEPartyIdentities(in.AccountingCustomerParty.Party, inv.Customer, false)
+	for _, p := range goblubl.InvoiceParties(inv, in) {
+		importAETINIdentification(p.GOBL)
+	}
 	return nil
 }
 
@@ -859,17 +863,16 @@ func exportAEPartyTaxID(out *goblubl.Party, tID *tax.Identity) {
 }
 
 // exportAEPartyIdentities writes the PINT AE details of the seller and buyer
-// identities that gobl.ubl has no place for.
+// legal identities that gobl.ubl has no place for.
 func exportAEPartyIdentities(out *goblubl.Party, p *org.Party) {
 	if out == nil || p == nil {
 		return
 	}
 	exportAELegalIdentity(out, p)
-	exportAETINIdentification(out)
 }
 
 // exportAETINIdentification writes the scheme of a TIN identity in cac:PartyIdentification as its
-// ISO 6523 ICD, 0235, where gobl.ubl writes its type, TIN, which is not an ICD.
+// ISO 6523 ICD, 0235, where gobl.ubl writes its type, TIN, which is not an ICD (ibr-cl-10).
 func exportAETINIdentification(out *goblubl.Party) {
 	for i := range out.PartyIdentification {
 		id := out.PartyIdentification[i].ID
@@ -936,12 +939,6 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 			break
 		}
 	}
-	for _, id := range p.Identities {
-		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == ae.TINScheme {
-			id.Type = ae.IdentityTypeTIN
-			id.Ext = id.Ext.Delete(iso.ExtKeySchemeID)
-		}
-	}
 	if !supplier {
 		return
 	}
@@ -955,6 +952,16 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 				id.Type = ae.IdentityTypeTIN
 				break
 			}
+		}
+	}
+}
+
+// importAETINIdentification reads back the TIN identities exportAETINIdentification writes.
+func importAETINIdentification(p *org.Party) {
+	for _, id := range p.Identities {
+		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == ae.TINScheme {
+			id.Type = ae.IdentityTypeTIN
+			id.Ext = id.Ext.Delete(iso.ExtKeySchemeID)
 		}
 	}
 }

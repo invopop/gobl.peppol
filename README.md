@@ -61,6 +61,11 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
 - **Transaction type** (BTAE-02): set from the tags `free-trade-zone`,
   `deemed-supply`, `margin-scheme`, `summary`, `continuous-supply`,
   `disclosed-agent`, `e-commerce` and `export`.
+- **Supplier TIN and Peppol address**: when missing, the `TIN` identity and
+  the `0235:<TIN>` endpoint are filled in from the supplier's own TIN, given
+  as either of the two, or else from the first 10 digits of its TRN. A member
+  of a VAT tax group invoices with the group's TRN, so it must give its own
+  TIN, as the identity or as the endpoint.
 - **Out of scope documents**: the `outside-tax-scope` tag (type codes 480
   and 81).
 - **Profit margin scheme**: the AE regime's `margin-scheme` tag with the
@@ -72,6 +77,12 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
 PINT allows one note on the document and one per line, and only the payment
 due date (IBT-009) is written, so invoices with more notes, more than one due
 date or a due date for part of the amount are rejected.
+
+PINT only accepts ISO 6523 schemes on party identifiers: the identities other
+than the first legal one and the tax ones. A `TIN` is written as `0235`, but
+any other identity with a `type` and no `iso-scheme-id` extension is written
+with its type as the scheme and fails validation, so give it the
+`iso-scheme-id` or leave the type out.
 
 ## Layout
 

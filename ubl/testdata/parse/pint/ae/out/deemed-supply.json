@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "7989551e884c34ff7ee65fe3c1786ba4abb06bc5731963a0dccd0e937d3a8af5"
+			"val": "d0605ea9aaccc320e88d6d9960e6662ba7647ef3471664311057063c50ab5808"
 		},
 		"from": "iso6523-actorid-upis::0235:1246801357",
 		"to": "iso6523-actorid-upis::0235:9900000097"
@@ -43,6 +43,11 @@
 					"type": "TL",
 					"code": "112345678900003",
 					"description": "Trade License issuing Authority"
+				},
+				{
+					"scope": "tax",
+					"type": "TIN",
+					"code": "1246801357"
 				}
 			],
 			"people": [

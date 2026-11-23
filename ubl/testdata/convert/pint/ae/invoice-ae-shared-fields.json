@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "b14834d8d3931ec9c554408a2f4fe3839b37158ebc0d2725abd6eac142e4f5ea"
+			"val": "e68b22bc71d0cc87beff33d3f41e88ac3e734b062ff663bc525a307e99ae5612"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -244,6 +244,10 @@
 					{
 						"scope": "legal",
 						"code": "112345679100002"
+					},
+					{
+						"type": "TIN",
+						"code": "1234567897"
 					}
 				]
 			},

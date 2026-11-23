@@ -48,6 +48,29 @@ func TestNormalizeSupplierAE(t *testing.T) {
 		}
 	})
 
+	t.Run("the supplier's own TIN comes before its TRN's, which a tax group shares", func(t *testing.T) {
+		own := &org.Identity{Type: ae.IdentityTypeTIN, Code: "1234567897", Scope: org.IdentityScopeTax}
+		ownEndpoint := &org.Endpoint{URI: "iso6523-actorid-upis::0235:1234567897"}
+
+		p := trn()
+		p.Identities = []*org.Identity{{Type: ae.IdentityTypeTIN, Code: "1234567897"}}
+		assert.Equal(t, []*org.Endpoint{ownEndpoint}, normalize(l10n.AE.Tax(), p).Endpoints, "from the TIN identity")
+
+		p = trn()
+		p.Endpoints = []*org.Endpoint{ownEndpoint}
+		assert.Equal(t, []*org.Identity{own}, normalize(l10n.AE.Tax(), p).Identities, "from the endpoint")
+
+		p = trn()
+		p.Inboxes = []*org.Inbox{{Scheme: "0235", Code: "1234567897"}}
+		assert.Equal(t, []*org.Identity{own}, normalize(l10n.AE.Tax(), p).Identities, "from the inbox")
+	})
+
+	t.Run("an endpoint under another scheme leaves the TRN's", func(t *testing.T) {
+		p := trn()
+		p.Endpoints = []*org.Endpoint{{URI: "iso6523-actorid-upis::0088:5790000435975"}}
+		assert.Equal(t, []*org.Identity{tinIdentity}, normalize(l10n.AE.Tax(), p).Identities)
+	})
+
 	t.Run("a Peppol endpoint is kept", func(t *testing.T) {
 		p := trn()
 		p.Endpoints = []*org.Endpoint{{URI: "iso6523-actorid-upis::0088:5790000435975"}}
@@ -70,16 +93,14 @@ func TestNormalizeSupplierAE(t *testing.T) {
 		assert.Empty(t, normalize(l10n.AE.Tax(), p).Endpoints)
 	})
 
-	t.Run("a tax ID that is not a valid TRN gives nothing", func(t *testing.T) {
-		// The last one has the TRN format, but its TIN fails the check digit.
-		for _, code := range []cbc.Code{"", "10000000160000", "200000001600003", "1000000016000A3", "100000001700003"} {
-			p := trn()
-			p.TaxID.Code = code
-			p = normalize(l10n.AE.Tax(), p)
-			assert.Empty(t, p.Identities, code)
-			assert.Empty(t, p.Endpoints, code)
-		}
+	t.Run("a tax ID without a code or from another country gives nothing", func(t *testing.T) {
 		p := trn()
+		p.TaxID.Code = ""
+		p = normalize(l10n.AE.Tax(), p)
+		assert.Empty(t, p.Identities)
+		assert.Empty(t, p.Endpoints)
+
+		p = trn()
 		p.TaxID = &tax.Identity{Country: "SA", Code: "100000001600003"}
 		p = normalize(l10n.AE.Tax(), p)
 		assert.Empty(t, p.Identities)

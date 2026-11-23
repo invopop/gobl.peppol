@@ -10,7 +10,6 @@ import (
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/org"
-	"github.com/invopop/gobl/pkg/luhn"
 	"github.com/invopop/gobl/regimes/ae"
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/rules/is"
@@ -196,19 +195,15 @@ func partyFirstLegalIdentity(val any) *org.Identity {
 	return nil
 }
 
-// trnRegexpAE matches a UAE TRN, in the AE regime's format. Its first 10
-// digits are the TIN.
-var trnRegexpAE = regexp.MustCompile(ae.TRNPattern)
-
-// normalizeSupplierAE adds the TIN identity (IBT-032) and 0235:<TIN> endpoint a UAE supplier's TRN implies,
-// unless it already has a TIN or tax identity, or any endpoint or inbox.
+// normalizeSupplierAE adds the TIN identity (IBT-032) and 0235:<TIN> endpoint of a UAE supplier, unless it
+// already has a TIN or tax identity, or any endpoint or inbox.
 // TODO: derive the customer's endpoint from its TRN too.
 func normalizeSupplierAE(inv *bill.Invoice) {
 	if inv == nil || inv.Supplier == nil {
 		return
 	}
 	p := inv.Supplier
-	tin := partyTINFromTRN(p)
+	tin := supplierTIN(p)
 	if tin == "" {
 		return
 	}
@@ -228,15 +223,19 @@ func normalizeSupplierAE(inv *bill.Invoice) {
 	}
 }
 
-// partyTINFromTRN returns the TIN a valid UAE TRN starts with, or "", so an invalid TRN gives one error,
-// not a second one on a derived TIN.
-func partyTINFromTRN(p *org.Party) cbc.Code {
-	if p.TaxID == nil || p.TaxID.Country != l10n.AE.Tax() {
+// supplierTIN returns the supplier's TIN: the one it gives as a TIN identity or as its UAE Peppol endpoint, or
+// else the first 10 digits of its TRN. A tax group member must give its own, as its TRN is the group's.
+func supplierTIN(p *org.Party) cbc.Code {
+	for _, id := range p.Identities {
+		if id != nil && id.Type == ae.IdentityTypeTIN {
+			return id.Code
+		}
+	}
+	if scheme, code := partyEndpointID(p); scheme == ae.TINScheme {
+		return cbc.Code(code)
+	}
+	if p.TaxID == nil || p.TaxID.Country != l10n.AE.Tax() || len(p.TaxID.Code) < 10 {
 		return ""
 	}
-	code := p.TaxID.Code.String()
-	if !trnRegexpAE.MatchString(code) || !luhn.Check(cbc.Code(code[:10])) {
-		return ""
-	}
-	return cbc.Code(code[:10])
+	return p.TaxID.Code[:10]
 }

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "478bc168ea771d750d62cc0bd7ee23f43d21823442b420cf6e40b83f4f3a23d8"
+			"val": "1e30055b8e1762e69897662f1035b947b003e12c2fd25e1a74cecb02b508ba45"
 		},
 		"from": "iso6523-actorid-upis::0235:1987654321",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -42,6 +42,11 @@
 					"country": "GB",
 					"key": "passport",
 					"code": "P9876543210"
+				},
+				{
+					"scope": "tax",
+					"type": "TIN",
+					"code": "1987654321"
 				}
 			],
 			"people": [
