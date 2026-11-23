@@ -28,7 +28,8 @@ var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyOutsideScope:   en16931.TaxCategoryOutsideScope,
 })
 
-// exemptionCodesAE are the UAE VAT exemptions of Article 46 of Federal Decree-Law No. 8 of 2017.
+// exemptionCodesAE are PINT AE's reasons for exemption from tax (code list Aligned-TaxExemptionCodes): the
+// UAE VAT exemptions of Article 46 of Federal Decree-Law No. 8 of 2017.
 var exemptionCodesAE = []cbc.Code{
 	"DL8.46.1", // certain financial services
 	"DL8.46.2", // residential buildings
@@ -157,15 +158,15 @@ func taxComboRules() *rules.Set {
 						tax.ExtensionsRequire(untdid.ExtKeyTaxCategory),
 						tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, en16931.TaxCategoryExempt),
 					),
-					rules.Assert("06", "exempt VAT needs a VAT exemption reason (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
+					rules.Assert("06", "exempt VAT needs a cef-vatex exemption reason: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
 						tax.ExtensionsRequire(cef.ExtKeyVATEX),
 					),
 				),
 			),
 
-			// The Schematron doesn't check the code list, but UAE VAT law allows no other reasons.
+			// The Schematron doesn't check PINT AE's code list.
 			rules.Field("ext",
-				rules.Assert("07", "VAT exemption reason must be a UAE one: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4",
+				rules.Assert("07", "VAT exemption reason must be one of PINT AE's: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (code list Aligned-TaxExemptionCodes)",
 					tax.ExtensionsHasCodes(cef.ExtKeyVATEX, exemptionCodesAE...),
 				),
 			),

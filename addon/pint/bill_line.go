@@ -31,7 +31,7 @@ func billLineRules() *rules.Set {
 				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
 				rules.Field("item",
 					rules.Field("ext",
-						rules.Assert("03", "reverse charge line item needs the type of goods or services (IBR-166-AE)",
+						rules.Assert("03", "reverse charge line item needs the type of goods or services in the peppol-pint-ae-goods-type extension (IBR-166-AE)",
 							tax.ExtensionsRequire(ExtKeyGoodsType),
 						),
 					),

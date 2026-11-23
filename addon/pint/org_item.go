@@ -62,7 +62,7 @@ func orgItemRules() *rules.Set {
 			rules.When(
 				is.Func("goods", itemKeyIs(org.ItemKeyGoods)),
 				rules.Field("identities",
-					rules.Assert("01", "goods item needs an HS item classification (IBR-184-AE)",
+					rules.Assert("01", "goods item needs an HS item classification, an identity with the label HS (IBR-184-AE)",
 						is.Func("has HS", identitiesHaveLabel(IdentityLabelHS)),
 					),
 				),
@@ -70,7 +70,7 @@ func orgItemRules() *rules.Set {
 			rules.When(
 				is.Func("goods and services", itemKeyIs(ItemKeyGoodsServices)),
 				rules.Field("identities",
-					rules.Assert("02", "goods and services item needs an HS item classification (IBR-186-AE)",
+					rules.Assert("02", "goods and services item needs an HS item classification, an identity with the label HS (IBR-186-AE)",
 						is.Func("has HS", identitiesHaveLabel(IdentityLabelHS)),
 					),
 				),

@@ -122,7 +122,7 @@ func billInvoiceRules() *rules.Set {
 						),
 					),
 				),
-				// IBR-150-AE only applies with a 0235 endpoint, which every UAE supplier gets (normalizeSupplierAE).
+				// IBR-150-AE only applies with a 0235 endpoint, which every UAE Peppol participant has (UAE PASR).
 				rules.Field("identities",
 					rules.Assert("18", "supplier legal identity is required (IBR-150-AE)",
 						is.Func("has legal scope identity", identitiesScopeIn(org.IdentityScopeLegal)),
@@ -282,24 +282,28 @@ func billInvoiceRules() *rules.Set {
 			rules.When(
 				is.Func("document type is 380 or 381",
 					invoiceExtIn(untdid.ExtKeyDocumentType, docTypeCommercialInvoice, docTypeCreditNote)),
-				rules.Assert("37", "at least one line combo must be something other than E or O (IBR-151-AE)",
+				rules.Assert("37", "at least one line combo must be something other than E or O, or the invoice needs the outside-tax-scope tag (IBR-151-AE)",
 					is.Func("has at least one line combo other than E or O", invoiceHasLineComboOtherThanEorO),
 				),
 			),
 
 			// AE credit notes
+			// IBR-124-AE names 381 and 81, but gobl.ubl writes a credit note's VAT point date where UBL doesn't allow it.
+			rules.When(
+				bill.InvoiceTypeIn(bill.InvoiceTypeCreditNote),
+				rules.Field("value_date",
+					rules.Assert("38", "VAT point date must not be there on credit notes (IBR-124-AE)",
+						is.Not(is.Present),
+					),
+				),
+			),
 			// IBR-158-AE names only 381, but the IBR-055-AE test also fails 81 without a reason.
 			rules.When(
 				is.Func("document type is credit note or credit note related to goods and services",
 					invoiceExtIn(untdid.ExtKeyDocumentType, docTypeCreditNote, docTypeCreditNoteGoodsServices)),
-				rules.Field("value_date",
-					rules.Assert("38", "VAT point date must not be there on credit notes or credit notes related to goods and services (IBR-124-AE)",
-						is.Not(is.Present),
-					),
-				),
 				rules.Field("tax",
 					rules.Field("ext",
-						rules.Assert("39", "credit note reason is required (IBR-158-AE, IBR-055-AE)",
+						rules.Assert("39", "credit note reason is required in the peppol-pint-ae-credit-note-reason extension (IBR-158-AE, IBR-055-AE)",
 							tax.ExtensionsRequire(ExtKeyCreditNoteReason),
 						),
 					),
@@ -467,7 +471,7 @@ func billInvoiceRules() *rules.Set {
 						rules.When(
 							is.Not(org.PartyHasTaxIDCode()),
 							rules.Field("identities",
-								rules.Assert("60", "customer identity or tax registration is required with a UAE Peppol endpoint that is not a TIN, except on exports (IBR-135-AE)",
+								rules.Assert("60", "customer tax ID, TIN or other identity besides the legal one is required with a UAE Peppol endpoint that is not a TIN, except on exports (IBR-135-AE)",
 									is.Func("has tax scope or unscoped identity", identitiesScopeIn(org.IdentityScopeTax, cbc.KeyEmpty)),
 								),
 							),

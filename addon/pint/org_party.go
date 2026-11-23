@@ -40,7 +40,7 @@ func orgPartyRules() *rules.Set {
 						rules.When(
 							is.Not(is.Func("UAE address", addressIsAE)),
 							rules.Field("region",
-								rules.Assert("02", "region must be an emirate code with a UAE tax ID (IBR-128-AE)",
+								rules.Assert("02", "region must be an emirate code (AUH, DXB, SHJ, UAQ, FUJ, AJM or RAK) with a UAE tax ID (IBR-128-AE)",
 									is.Present, is.Matches(emiratePattern),
 								),
 							),

@@ -19,7 +19,7 @@ func orgAddressRules() *rules.Set {
 			rules.When(
 				is.Func("UAE address", addressIsAE),
 				rules.Field("region",
-					rules.Assert("01", "region must be an emirate code when the country is AE (IBR-128-AE)",
+					rules.Assert("01", "region must be an emirate code (AUH, DXB, SHJ, UAQ, FUJ, AJM or RAK) when the country is AE (IBR-128-AE)",
 						is.Present, is.Matches(emiratePattern),
 					),
 				),

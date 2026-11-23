@@ -620,8 +620,9 @@ func TestBillDocumentRulesAE(t *testing.T) {
 		assert.NotContains(t, aeFaults(t, inv), faultOnlyExempt)
 	})
 
-	t.Run("381 and 81 reject a VAT point date (IBR-124-AE)", func(t *testing.T) {
-		for _, inv := range []*bill.Invoice{aeDocument(bill.InvoiceTypeCreditNote), outsideScopeCredit()} {
+	t.Run("credit notes reject a VAT point date (IBR-124-AE)", func(t *testing.T) {
+		// 261 too: gobl.ubl writes a credit note's VAT point date where UBL doesn't allow it.
+		for _, inv := range []*bill.Invoice{aeDocument(bill.InvoiceTypeCreditNote), outsideScopeCredit(), aeDocument(bill.InvoiceTypeCreditNote, tax.TagSelfBilled)} {
 			vd := cal.MakeDate(2026, 11, 1)
 			inv.ValueDate = &vd
 			assert.Contains(t, aeFaults(t, inv), faultCreditPointDate)

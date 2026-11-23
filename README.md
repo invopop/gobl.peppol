@@ -60,19 +60,35 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
 
 - **Transaction type** (BTAE-02): set from the tags `free-trade-zone`,
   `deemed-supply`, `margin-scheme`, `summary`, `continuous-supply`,
-  `disclosed-agent`, `e-commerce` and `export`.
+  `disclosed-agent`, `e-commerce` and `export`. The
+  `peppol-pint-ae-transaction-type` extension is always built from them: a
+  code set there directly is replaced.
 - **Supplier TIN and Peppol address**: when missing, the `TIN` identity and
   the `0235:<TIN>` endpoint are filled in from the supplier's own TIN, given
   as either of the two, or else from the first 10 digits of its TRN. A member
   of a VAT tax group invoices with the group's TRN, so it must give its own
   TIN, as the identity or as the endpoint.
+- **Legal registrations**: identities of type `TL` (trade licence, with the
+  issuing authority as its `description`), `EID` or `CD`, or the `passport`
+  key.
+- **Emirates**: UAE addresses need the emirate code as the `region`: `AUH`,
+  `DXB`, `SHJ`, `UAQ`, `FUJ`, `AJM` or `RAK`. A party with a UAE tax ID is
+  written with the country `AE`, so its address needs one too.
+- **Items**: every line item needs a `description`; goods need an HS
+  classification, an identity with the label `HS`.
 - **Out of scope documents**: the `outside-tax-scope` tag (type codes 480
-  and 81).
+  and 81), also needed when every line is exempt or outside the scope of VAT.
 - **Profit margin scheme**: the AE regime's `margin-scheme` tag with the
   `exempt` VAT key on every line; the lines are written in category `N`.
 - **Exemption reasons**: `cef-vatex` on exempt VAT combos, with the UAE codes
   `DL8.46.1` to `DL8.46.4`.
-- **Deemed supplies** go to the predefined endpoint `0235:9900000097`.
+- **Credit notes**: the reason in the `peppol-pint-ae-credit-note-reason`
+  extension, `DL8.61.1.A` to `DL8.61.1.E` or `VD` for a volume discount.
+- **Reverse charge**: the type of goods or services of each line item in the
+  `peppol-pint-ae-goods-type` extension.
+- **Predefined endpoints**: deemed supplies go to `0235:9900000097`. A buyer
+  without a Peppol ID takes `0235:9900000098`, or `0235:9900000099` on
+  exports; a UAE buyer without a TRN then needs its `TIN` identity.
 
 The supplier's and customer's endpoints must be Peppol ones
 (`iso6523-actorid-upis`), as PINT takes no email or web address as the
@@ -80,7 +96,9 @@ electronic address. An email inbox can stay on the party, but isn't written.
 
 PINT allows one note on the document and one per line, and only the payment
 due date (IBT-009) is written, so invoices with more notes, more than one due
-date or a due date for part of the amount are rejected.
+date or a due date for part of the amount are rejected. On credit notes the
+due date is written inside the payment means, so a credit note without payment
+instructions is sent without its due date.
 
 PINT only accepts ISO 6523 schemes on party identifiers: the identities other
 than the first legal one and the tax ones. A `TIN` is written as `0235`, but
@@ -110,8 +128,8 @@ import (
 	_ "github.com/invopop/gobl.peppol/ubl"
 )
 
-out, err := convert.Export(env, "ubl+peppol+pint+aunz")   // GOBL -> UBL
-env, err := convert.Import(data)                          // UBL -> GOBL
+out, err := convert.Export(env, "ubl+peppol+pint+aunz-v1")   // GOBL -> UBL
+env, err := convert.Import(data)                             // UBL -> GOBL
 ```
 
 The format is picked from the document's `CustomizationID` and `ProfileID` on
@@ -120,9 +138,9 @@ import, and the exported XML carries them back:
 | Format | Key | CustomizationID (`ibt-024`) | ProfileID (`ibt-023`) |
 | --- | --- | --- | --- |
 | `FormatBIS` | `ubl+peppol+bis-v3` | `urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0` | `urn:fdc:peppol.eu:2017:poacc:billing:01:1.0` |
-| `FormatPINT` | `ubl+peppol+pint` | `urn:peppol:pint:billing-1` | `urn:peppol:bis:billing` |
-| `FormatAUNZ` | `ubl+peppol+pint+aunz` | `urn:peppol:pint:billing-1@aunz-1` | `urn:peppol:bis:billing` |
-| `FormatAE` | `ubl+peppol+pint+ae` | `urn:peppol:pint:billing-1@ae-1` | `urn:peppol:bis:billing` |
+| `FormatPINT` | `ubl+peppol+pint-v1` | `urn:peppol:pint:billing-1` | `urn:peppol:bis:billing` |
+| `FormatAUNZ` | `ubl+peppol+pint+aunz-v1` | `urn:peppol:pint:billing-1@aunz-1` | `urn:peppol:bis:billing` |
+| `FormatAE` | `ubl+peppol+pint+ae-v1` | `urn:peppol:pint:billing-1@ae-1` | `urn:peppol:bis:billing` |
 
 `FormatBIS` writes self-billed invoices with `SpecificationBISSelfBilling`
 (Peppol BIS Self-Billing 3.0) and statuses (`bill.Status`) as Peppol Invoice
@@ -199,5 +217,5 @@ so a plain `go test ./...` needs no phorm service:
 go test ./ubl/ ./cii/ -args -validate=true   # posts to $PHORM_URL, default http://localhost:8080
 ```
 
-CI runs it against a `phelger/phorm:latest` service container (see
+CI runs it against a `phelger/phorm:2.2.15` service container (see
 `.github/workflows/test.yaml`).
