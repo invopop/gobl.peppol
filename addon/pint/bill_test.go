@@ -114,40 +114,33 @@ func TestBillPartyRules(t *testing.T) {
 	const (
 		faultCustomer         = "GOBL-PEPPOL-PINT-BILL-INVOICE-03"
 		faultSupplierEndpoint = "GOBL-PEPPOL-PINT-BILL-INVOICE-05"
-		faultSupplierInbox    = "GOBL-PEPPOL-PINT-BILL-INVOICE-06"
-		faultCustomerEndpoint = "GOBL-PEPPOL-PINT-BILL-INVOICE-07"
-		faultCustomerInbox    = "GOBL-PEPPOL-PINT-BILL-INVOICE-08"
-		faultCustomerIDs      = "GOBL-PEPPOL-PINT-BILL-INVOICE-09"
-		faultCustomerTaxCount = "GOBL-PEPPOL-PINT-BILL-INVOICE-10"
-		faultPayeeName        = "GOBL-PEPPOL-PINT-BILL-INVOICE-11"
-		faultPayeeIsSupplier  = "GOBL-PEPPOL-PINT-BILL-INVOICE-12"
+		faultCustomerEndpoint = "GOBL-PEPPOL-PINT-BILL-INVOICE-06"
+		faultCustomerIDs      = "GOBL-PEPPOL-PINT-BILL-INVOICE-07"
+		faultCustomerTaxCount = "GOBL-PEPPOL-PINT-BILL-INVOICE-08"
+		faultPayeeName        = "GOBL-PEPPOL-PINT-BILL-INVOICE-09"
+		faultPayeeIsSupplier  = "GOBL-PEPPOL-PINT-BILL-INVOICE-10"
 	)
 
-	t.Run("electronic address must not be an email address (IBR-081, IBR-080, ibr-cl-25)", func(t *testing.T) {
-		// An email address is written with the scheme EM, which PINT doesn't
-		// accept (ibr-cl-25), even next to a Peppol endpoint.
-		inv := baseInvoice()
-		inv.Supplier.Endpoints = append(inv.Supplier.Endpoints, &org.Endpoint{URI: "mailto:sales@example.com"})
-		inv.Customer.Endpoints = append(inv.Customer.Endpoints, &org.Endpoint{URI: "mailto:billing@example.com"})
-		out := faults(t, inv)
-		assert.Contains(t, out, faultSupplierEndpoint)
-		assert.Contains(t, out, faultCustomerEndpoint)
+	t.Run("electronic address must be a Peppol endpoint (IBR-081, IBR-080, ibr-cl-25)", func(t *testing.T) {
+		// gobl.ubl writes an email with the scheme EM and leaves web addresses out.
+		for name, uri := range map[string]cbc.URI{"email": "mailto:billing@example.com", "web": "https://example.com/invoices"} {
+			t.Run(name, func(t *testing.T) {
+				inv := baseInvoice()
+				inv.Supplier.Endpoints = []*org.Endpoint{{URI: uri}}
+				inv.Customer.Endpoints = []*org.Endpoint{{URI: uri}}
+				out := faults(t, inv)
+				assert.Contains(t, out, faultSupplierEndpoint)
+				assert.Contains(t, out, faultCustomerEndpoint)
+			})
+		}
 
-		inv = baseInvoice()
+		// An email inbox next to a Peppol endpoint is not written.
+		inv := baseInvoice()
 		inv.Supplier.Inboxes = []*org.Inbox{{Email: "sales@example.com"}}
 		inv.Customer.Inboxes = []*org.Inbox{{Email: "billing@example.com"}}
-		out = faults(t, inv)
-		assert.Contains(t, out, faultSupplierInbox)
-		assert.Contains(t, out, faultCustomerInbox)
-
-		inv = baseInvoice()
-		inv.Supplier.Inboxes = []*org.Inbox{{Scheme: "0151", Code: "51824753556"}}
-		inv.Customer.Inboxes = []*org.Inbox{{Scheme: "0151", Code: "53004085616"}}
-		out = faults(t, inv)
+		out := faults(t, inv)
 		assert.NotContains(t, out, faultSupplierEndpoint)
-		assert.NotContains(t, out, faultSupplierInbox)
 		assert.NotContains(t, out, faultCustomerEndpoint)
-		assert.NotContains(t, out, faultCustomerInbox)
 	})
 
 	t.Run("customer has at most one identifier besides its legal one (ibr-sr-16)", func(t *testing.T) {
@@ -237,8 +230,8 @@ func TestBillPartyRules(t *testing.T) {
 
 func TestBillNoteRules(t *testing.T) {
 	const (
-		faultInvoiceNotes = "GOBL-PEPPOL-PINT-BILL-INVOICE-13"
-		faultLineNotes    = "GOBL-PEPPOL-PINT-BILL-INVOICE-14"
+		faultInvoiceNotes = "GOBL-PEPPOL-PINT-BILL-INVOICE-11"
+		faultLineNotes    = "GOBL-PEPPOL-PINT-BILL-INVOICE-12"
 	)
 	note := func(text string) *org.Note { return &org.Note{Text: text} }
 
@@ -263,8 +256,8 @@ func TestBillNoteRules(t *testing.T) {
 
 func TestBillDueDateRules(t *testing.T) {
 	const (
-		faultDueDates     = "GOBL-PEPPOL-PINT-BILL-INVOICE-15"
-		faultDueDateWhole = "GOBL-PEPPOL-PINT-BILL-INVOICE-16"
+		faultDueDates     = "GOBL-PEPPOL-PINT-BILL-INVOICE-13"
+		faultDueDateWhole = "GOBL-PEPPOL-PINT-BILL-INVOICE-14"
 	)
 	withDueDates := func(dds ...*pay.DueDate) *bill.Invoice {
 		inv := baseInvoice()
@@ -320,10 +313,10 @@ func TestBillExemptionNoteRules(t *testing.T) {
 
 func TestBillInvoiceRulesAE(t *testing.T) {
 	const (
-		faultRate         = "GOBL-PEPPOL-PINT-BILL-INVOICE-26"
-		faultDecimals     = "GOBL-PEPPOL-PINT-BILL-INVOICE-27"
-		faultPayment      = "GOBL-PEPPOL-PINT-BILL-INVOICE-29"
-		faultInstructions = "GOBL-PEPPOL-PINT-BILL-INVOICE-30"
+		faultRate         = "GOBL-PEPPOL-PINT-BILL-INVOICE-24"
+		faultDecimals     = "GOBL-PEPPOL-PINT-BILL-INVOICE-25"
+		faultPayment      = "GOBL-PEPPOL-PINT-BILL-INVOICE-27"
+		faultInstructions = "GOBL-PEPPOL-PINT-BILL-INVOICE-28"
 	)
 	inAE := tax.RegimeContext(l10n.AE.Tax())
 	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
@@ -492,20 +485,20 @@ func aeFaults(t *testing.T, inv *bill.Invoice) string {
 
 func TestBillDocumentRulesAE(t *testing.T) {
 	const (
-		faultSellerTRN       = "GOBL-PEPPOL-PINT-BILL-INVOICE-33"
-		faultReverseCharge   = "GOBL-PEPPOL-PINT-BILL-INVOICE-63"
-		faultBuyerLegalID    = "GOBL-PEPPOL-PINT-BILL-INVOICE-34"
-		faultLineCategory    = "GOBL-PEPPOL-PINT-BILL-INVOICE-35"
-		faultDiscountCat     = "GOBL-PEPPOL-PINT-BILL-INVOICE-36"
-		faultChargeCategory  = "GOBL-PEPPOL-PINT-BILL-INVOICE-37"
-		faultOnlyExempt      = "GOBL-PEPPOL-PINT-BILL-INVOICE-39"
-		faultCreditPointDate = "GOBL-PEPPOL-PINT-BILL-INVOICE-40"
-		faultPointDate       = "GOBL-PEPPOL-PINT-BILL-INVOICE-28"
-		faultTaxPoint        = "GOBL-PEPPOL-PINT-BILL-INVOICE-66"
-		faultPayment         = "GOBL-PEPPOL-PINT-BILL-INVOICE-29"
-		faultDueTerms        = "GOBL-PEPPOL-PINT-BILL-INVOICE-31"
-		faultDueDate         = "GOBL-PEPPOL-PINT-BILL-INVOICE-32"
-		faultDocumentType    = "GOBL-PEPPOL-PINT-BILL-INVOICE-67"
+		faultSellerTRN       = "GOBL-PEPPOL-PINT-BILL-INVOICE-31"
+		faultReverseCharge   = "GOBL-PEPPOL-PINT-BILL-INVOICE-61"
+		faultBuyerLegalID    = "GOBL-PEPPOL-PINT-BILL-INVOICE-32"
+		faultLineCategory    = "GOBL-PEPPOL-PINT-BILL-INVOICE-33"
+		faultDiscountCat     = "GOBL-PEPPOL-PINT-BILL-INVOICE-34"
+		faultChargeCategory  = "GOBL-PEPPOL-PINT-BILL-INVOICE-35"
+		faultOnlyExempt      = "GOBL-PEPPOL-PINT-BILL-INVOICE-37"
+		faultCreditPointDate = "GOBL-PEPPOL-PINT-BILL-INVOICE-38"
+		faultPointDate       = "GOBL-PEPPOL-PINT-BILL-INVOICE-26"
+		faultTaxPoint        = "GOBL-PEPPOL-PINT-BILL-INVOICE-64"
+		faultPayment         = "GOBL-PEPPOL-PINT-BILL-INVOICE-27"
+		faultDueTerms        = "GOBL-PEPPOL-PINT-BILL-INVOICE-29"
+		faultDueDate         = "GOBL-PEPPOL-PINT-BILL-INVOICE-30"
+		faultDocumentType    = "GOBL-PEPPOL-PINT-BILL-INVOICE-65"
 	)
 	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
 	outsideScope := func() *bill.Invoice {
@@ -737,7 +730,7 @@ func TestBillDocumentRulesAE(t *testing.T) {
 }
 
 func TestBillCurrencyDecimalsRules(t *testing.T) {
-	const fault = "GOBL-PEPPOL-PINT-BILL-INVOICE-68"
+	const fault = "GOBL-PEPPOL-PINT-BILL-INVOICE-66"
 	ae := func(cur currency.Code) *bill.Invoice {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		inv.Currency = cur
@@ -781,12 +774,12 @@ func TestBillCurrencyDecimalsRules(t *testing.T) {
 
 func TestBillAddressRulesAE(t *testing.T) {
 	const (
-		faultSupplierStreet = "GOBL-PEPPOL-PINT-BILL-INVOICE-17"
-		faultSupplierCity   = "GOBL-PEPPOL-PINT-BILL-INVOICE-18"
-		faultSupplierRegion = "GOBL-PEPPOL-PINT-BILL-INVOICE-19"
-		faultCustomerStreet = "GOBL-PEPPOL-PINT-BILL-INVOICE-22"
-		faultCustomerCity   = "GOBL-PEPPOL-PINT-BILL-INVOICE-23"
-		faultCustomerRegion = "GOBL-PEPPOL-PINT-BILL-INVOICE-24"
+		faultSupplierStreet = "GOBL-PEPPOL-PINT-BILL-INVOICE-15"
+		faultSupplierCity   = "GOBL-PEPPOL-PINT-BILL-INVOICE-16"
+		faultSupplierRegion = "GOBL-PEPPOL-PINT-BILL-INVOICE-17"
+		faultCustomerStreet = "GOBL-PEPPOL-PINT-BILL-INVOICE-20"
+		faultCustomerCity   = "GOBL-PEPPOL-PINT-BILL-INVOICE-21"
+		faultCustomerRegion = "GOBL-PEPPOL-PINT-BILL-INVOICE-22"
 	)
 	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
 
@@ -852,10 +845,10 @@ func aeIdentityDocument() *bill.Invoice {
 
 func TestBillIdentityRulesAE(t *testing.T) {
 	const (
-		faultSupplierLegalRequired = "GOBL-PEPPOL-PINT-BILL-INVOICE-20"
-		faultSupplierTIN           = "GOBL-PEPPOL-PINT-BILL-INVOICE-21"
-		faultCustomerLegalRequired = "GOBL-PEPPOL-PINT-BILL-INVOICE-25"
-		faultCustomerTaxCount      = "GOBL-PEPPOL-PINT-BILL-INVOICE-10"
+		faultSupplierLegalRequired = "GOBL-PEPPOL-PINT-BILL-INVOICE-18"
+		faultSupplierTIN           = "GOBL-PEPPOL-PINT-BILL-INVOICE-19"
+		faultCustomerLegalRequired = "GOBL-PEPPOL-PINT-BILL-INVOICE-23"
+		faultCustomerTaxCount      = "GOBL-PEPPOL-PINT-BILL-INVOICE-08"
 	)
 
 	t.Run("supplier needs a legal identity (IBR-150-AE)", func(t *testing.T) {
@@ -936,22 +929,22 @@ func TestBillIdentityRulesAE(t *testing.T) {
 
 func TestBillTransactionTypeRulesAE(t *testing.T) {
 	const (
-		faultPaymentInstructions = "GOBL-PEPPOL-PINT-BILL-INVOICE-30"
-		faultDueDate             = "GOBL-PEPPOL-PINT-BILL-INVOICE-32"
-		faultBeneficiary         = "GOBL-PEPPOL-PINT-BILL-INVOICE-44"
-		faultDeemedEndpoint      = "GOBL-PEPPOL-PINT-BILL-INVOICE-45"
-		faultSummaryOrdering     = "GOBL-PEPPOL-PINT-BILL-INVOICE-49"
-		faultSummaryPeriod       = "GOBL-PEPPOL-PINT-BILL-INVOICE-50"
-		faultPrincipal           = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
-		faultPrincipalTRN        = "GOBL-PEPPOL-PINT-BILL-INVOICE-65"
-		faultSupplierTax         = "GOBL-PEPPOL-PINT-BILL-INVOICE-52"
-		faultDelivery            = "GOBL-PEPPOL-PINT-BILL-INVOICE-53"
-		faultDeliveryAddress     = "GOBL-PEPPOL-PINT-BILL-INVOICE-55"
-		faultECommerceStreet     = "GOBL-PEPPOL-PINT-BILL-INVOICE-56"
-		faultExportStreet        = "GOBL-PEPPOL-PINT-BILL-INVOICE-59"
-		faultExportRegion        = "GOBL-PEPPOL-PINT-BILL-INVOICE-61"
-		faultOutsideScopeFlags   = "GOBL-PEPPOL-PINT-BILL-INVOICE-38"
-		faultCustomerIdentifier  = "GOBL-PEPPOL-PINT-BILL-INVOICE-62"
+		faultPaymentInstructions = "GOBL-PEPPOL-PINT-BILL-INVOICE-28"
+		faultDueDate             = "GOBL-PEPPOL-PINT-BILL-INVOICE-30"
+		faultBeneficiary         = "GOBL-PEPPOL-PINT-BILL-INVOICE-42"
+		faultDeemedEndpoint      = "GOBL-PEPPOL-PINT-BILL-INVOICE-43"
+		faultSummaryOrdering     = "GOBL-PEPPOL-PINT-BILL-INVOICE-47"
+		faultSummaryPeriod       = "GOBL-PEPPOL-PINT-BILL-INVOICE-48"
+		faultPrincipal           = "GOBL-PEPPOL-PINT-BILL-INVOICE-49"
+		faultPrincipalTRN        = "GOBL-PEPPOL-PINT-BILL-INVOICE-63"
+		faultSupplierTax         = "GOBL-PEPPOL-PINT-BILL-INVOICE-50"
+		faultDelivery            = "GOBL-PEPPOL-PINT-BILL-INVOICE-51"
+		faultDeliveryAddress     = "GOBL-PEPPOL-PINT-BILL-INVOICE-53"
+		faultECommerceStreet     = "GOBL-PEPPOL-PINT-BILL-INVOICE-54"
+		faultExportStreet        = "GOBL-PEPPOL-PINT-BILL-INVOICE-57"
+		faultExportRegion        = "GOBL-PEPPOL-PINT-BILL-INVOICE-59"
+		faultOutsideScopeFlags   = "GOBL-PEPPOL-PINT-BILL-INVOICE-36"
+		faultCustomerIdentifier  = "GOBL-PEPPOL-PINT-BILL-INVOICE-60"
 	)
 	setExt := func(inv *bill.Invoice, key cbc.Key, code cbc.Code) {
 		if inv.Tax == nil {
@@ -1034,7 +1027,7 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 		setExt(inv, pint.ExtKeyPrincipalID, "155667745601003")
 		inv.Supplier.TaxID = &tax.Identity{Country: "AE"}
 		out := aeFaults(t, inv)
-		assert.Contains(t, out, "GOBL-PEPPOL-PINT-BILL-INVOICE-33")
+		assert.Contains(t, out, "GOBL-PEPPOL-PINT-BILL-INVOICE-31")
 		assert.NotContains(t, out, faultSupplierTax)
 
 		for _, typ := range []cbc.Key{bill.InvoiceTypeStandard, bill.InvoiceTypeCreditNote} {
@@ -1109,10 +1102,10 @@ func TestBillTransactionTypeRulesAE(t *testing.T) {
 
 func TestBillCreditNoteReasonRulesAE(t *testing.T) {
 	const (
-		faultReasonRequired   = "GOBL-PEPPOL-PINT-BILL-INVOICE-41"
-		faultPrecedingMissing = "GOBL-PEPPOL-PINT-BILL-INVOICE-42"
-		faultPrecedingVD      = "GOBL-PEPPOL-PINT-BILL-INVOICE-43"
-		faultReasonCode       = "GOBL-PEPPOL-PINT-BILL-INVOICE-64"
+		faultReasonRequired   = "GOBL-PEPPOL-PINT-BILL-INVOICE-39"
+		faultPrecedingMissing = "GOBL-PEPPOL-PINT-BILL-INVOICE-40"
+		faultPrecedingVD      = "GOBL-PEPPOL-PINT-BILL-INVOICE-41"
+		faultReasonCode       = "GOBL-PEPPOL-PINT-BILL-INVOICE-62"
 	)
 	withReason := func(inv *bill.Invoice, code cbc.Code) *bill.Invoice {
 		if inv.Tax == nil {
@@ -1192,9 +1185,9 @@ func TestBillExemptionRulesAE(t *testing.T) {
 func TestBillMarginSchemeRulesAE(t *testing.T) {
 	const (
 		faultLineExemption  = "GOBL-PEPPOL-PINT-TAX-COMBO-06"
-		faultMarginLine     = "GOBL-PEPPOL-PINT-BILL-INVOICE-46"
-		faultMarginDiscount = "GOBL-PEPPOL-PINT-BILL-INVOICE-47"
-		faultMarginCharge   = "GOBL-PEPPOL-PINT-BILL-INVOICE-48"
+		faultMarginLine     = "GOBL-PEPPOL-PINT-BILL-INVOICE-44"
+		faultMarginDiscount = "GOBL-PEPPOL-PINT-BILL-INVOICE-45"
+		faultMarginCharge   = "GOBL-PEPPOL-PINT-BILL-INVOICE-46"
 	)
 	margin := func(tags ...cbc.Key) *bill.Invoice {
 		inv := aeDocument(bill.InvoiceTypeStandard, tags...)
@@ -1279,7 +1272,7 @@ func TestBillMarginSchemeRulesAE(t *testing.T) {
 }
 
 func TestBillTagsOutsideAE(t *testing.T) {
-	const faultTags = "GOBL-PEPPOL-PINT-BILL-INVOICE-69"
+	const faultTags = "GOBL-PEPPOL-PINT-BILL-INVOICE-67"
 	tagFaults := func(t *testing.T, inv *bill.Invoice) string {
 		t.Helper()
 		require.NoError(t, inv.Calculate())

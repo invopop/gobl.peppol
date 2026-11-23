@@ -74,6 +74,10 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   `DL8.46.1` to `DL8.46.4`.
 - **Deemed supplies** go to the predefined endpoint `0235:9900000097`.
 
+The supplier's and customer's endpoints must be Peppol ones
+(`iso6523-actorid-upis`), as PINT takes no email or web address as the
+electronic address. An email inbox can stay on the party, but isn't written.
+
 PINT allows one note on the document and one per line, and only the payment
 due date (IBT-009) is written, so invoices with more notes, more than one due
 date or a due date for part of the amount are rejected.
