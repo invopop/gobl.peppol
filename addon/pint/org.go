@@ -142,7 +142,7 @@ func partyHasUAEEndpoint(pattern string, match bool) func(any) bool {
 			return false
 		}
 		scheme, code := partyEndpointID(p)
-		return scheme == ae.TINScheme && re.MatchString(code) == match
+		return scheme == TINScheme && re.MatchString(code) == match
 	}
 }
 
@@ -185,7 +185,7 @@ func normalizeSupplierAE(inv *bill.Invoice) {
 	}
 	if len(p.Endpoints) == 0 && len(p.Inboxes) == 0 {
 		p.Endpoints = append(p.Endpoints, &org.Endpoint{
-			URI: cbc.URI(iso.ActorIDScheme + "::" + ae.TINScheme.String() + ":" + tin.String()),
+			URI: cbc.URI(iso.ActorIDScheme + "::" + TINScheme.String() + ":" + tin.String()),
 		})
 	}
 }
@@ -198,7 +198,7 @@ func supplierTIN(p *org.Party) cbc.Code {
 			return id.Code
 		}
 	}
-	if scheme, code := partyEndpointID(p); scheme == ae.TINScheme {
+	if scheme, code := partyEndpointID(p); scheme == TINScheme {
 		return cbc.Code(code)
 	}
 	if p.TaxID == nil || p.TaxID.Country != l10n.AE.Tax() || len(p.TaxID.Code) < 10 {

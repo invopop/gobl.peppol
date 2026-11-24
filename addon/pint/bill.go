@@ -423,7 +423,7 @@ func billInvoiceRules() *rules.Set {
 				is.Not(is.Func("export", invoiceHasTags(tax.TagExport))),
 				rules.Field("customer",
 					rules.When(
-						is.Func("has UAE Peppol endpoint that is not a TIN", partyHasUAEEndpoint(ae.TINPattern, false)),
+						is.Func("has UAE Peppol endpoint that is not a TIN", partyHasUAEEndpoint(TINPattern, false)),
 						// gobl.ubl writes unscoped identities as cac:PartyIdentification.
 						rules.When(
 							is.Not(org.PartyHasTaxIDCode()),

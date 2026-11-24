@@ -665,7 +665,7 @@ func importAEDeliveryPartyID(in *goblubl.Invoice, inv *bill.Invoice) {
 }
 
 // trnRegexp matches a UAE TRN.
-var trnRegexp = regexp.MustCompile(ae.TRNPattern)
+var trnRegexp = regexp.MustCompile(pint.TRNPattern)
 
 // extensionHasCode reports whether the extension lists the code.
 func extensionHasCode(key cbc.Key, code cbc.Code) bool {
@@ -872,7 +872,7 @@ func exportAETINIdentification(out *goblubl.Party) {
 	for i := range out.PartyIdentification {
 		id := out.PartyIdentification[i].ID
 		if id != nil && id.SchemeID != nil && *id.SchemeID == ae.IdentityTypeTIN.String() {
-			scheme := ae.TINScheme.String()
+			scheme := pint.TINScheme.String()
 			id.SchemeID = &scheme
 		}
 	}
@@ -954,7 +954,7 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 // importAETINIdentification reads back the TIN identities exportAETINIdentification writes.
 func importAETINIdentification(p *org.Party) {
 	for _, id := range p.Identities {
-		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == ae.TINScheme {
+		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == pint.TINScheme {
 			id.Type = ae.IdentityTypeTIN
 			id.Ext = id.Ext.Delete(iso.ExtKeySchemeID)
 		}
