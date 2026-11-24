@@ -54,28 +54,60 @@ func documentType(t *testing.T, inv *bill.Invoice) cbc.Code {
 
 func TestInvoiceScenarios(t *testing.T) {
 	ae := l10n.AE.Tax()
+	standardLines := func(inv *bill.Invoice) *bill.Invoice {
+		inv.Lines[0].Taxes = tax.Set{{Category: tax.CategoryVAT, Key: tax.KeyStandard}}
+		return inv
+	}
 
-	t.Run("AE out-of-scope invoice is 480", func(t *testing.T) {
-		inv := scenarioInvoice(ae, bill.InvoiceTypeStandard, pint.TagOutsideTaxScope)
-		assert.Equal(t, cbc.Code("480"), documentType(t, inv))
+	t.Run("AE invoice with only out of scope lines is 480", func(t *testing.T) {
+		assert.Equal(t, cbc.Code("480"), documentType(t, scenarioInvoice(ae, bill.InvoiceTypeStandard)))
 	})
 
-	t.Run("AE out-of-scope credit note is 81", func(t *testing.T) {
-		inv := scenarioInvoice(ae, bill.InvoiceTypeCreditNote, pint.TagOutsideTaxScope)
-		assert.Equal(t, cbc.Code("81"), documentType(t, inv))
+	t.Run("AE credit note with only out of scope lines is 81", func(t *testing.T) {
+		assert.Equal(t, cbc.Code("81"), documentType(t, scenarioInvoice(ae, bill.InvoiceTypeCreditNote)))
 	})
 
-	t.Run("a hand-set code is replaced by the scenario", func(t *testing.T) {
-		inv := scenarioInvoice(ae, bill.InvoiceTypeStandard, pint.TagOutsideTaxScope)
-		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyDocumentType: "380"})}
-		assert.Equal(t, cbc.Code("480"), documentType(t, inv))
+	t.Run("AE documents with only exempt lines are 480 and 81", func(t *testing.T) {
+		exemptLines := func(inv *bill.Invoice) *bill.Invoice {
+			inv.Lines[0].Taxes = tax.Set{{Category: tax.CategoryVAT, Key: tax.KeyExempt}}
+			return inv
+		}
+		assert.Equal(t, cbc.Code("480"), documentType(t, exemptLines(scenarioInvoice(ae, bill.InvoiceTypeStandard))))
+		assert.Equal(t, cbc.Code("81"), documentType(t, exemptLines(scenarioInvoice(ae, bill.InvoiceTypeCreditNote))))
 	})
 
-	t.Run("the tag has no effect outside AE", func(t *testing.T) {
-		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard, pint.TagOutsideTaxScope)
+	t.Run("a standard or zero rated line next to an out of scope one keeps 380 and 381", func(t *testing.T) {
+		for _, key := range []cbc.Key{tax.KeyStandard, tax.KeyZero} {
+			for typ, code := range map[cbc.Key]cbc.Code{bill.InvoiceTypeStandard: "380", bill.InvoiceTypeCreditNote: "381"} {
+				inv := scenarioInvoice(ae, typ)
+				inv.Lines = append(inv.Lines, &bill.Line{
+					Quantity: num.MakeAmount(1, 0),
+					Item:     &org.Item{Name: "Other", Price: num.NewAmount(100, 2)},
+					Taxes:    tax.Set{{Category: tax.CategoryVAT, Key: key}},
+				})
+				assert.Equal(t, code, documentType(t, inv), "%s %s", key, typ)
+			}
+		}
+	})
+
+	t.Run("a standard rated line keeps 380 and 381", func(t *testing.T) {
+		assert.Equal(t, cbc.Code("380"), documentType(t, standardLines(scenarioInvoice(ae, bill.InvoiceTypeStandard))))
+		assert.Equal(t, cbc.Code("381"), documentType(t, standardLines(scenarioInvoice(ae, bill.InvoiceTypeCreditNote))))
+	})
+
+	t.Run("a hand-set code is replaced by the one the lines give", func(t *testing.T) {
+		inv := standardLines(scenarioInvoice(ae, bill.InvoiceTypeStandard))
+		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyDocumentType: "480"})}
 		assert.Equal(t, cbc.Code("380"), documentType(t, inv))
+	})
 
-		inv = scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeCreditNote, pint.TagOutsideTaxScope)
-		assert.Equal(t, cbc.Code("381"), documentType(t, inv))
+	t.Run("self-billed documents keep 389 and 261", func(t *testing.T) {
+		assert.Equal(t, cbc.Code("389"), documentType(t, scenarioInvoice(ae, bill.InvoiceTypeStandard, tax.TagSelfBilled)))
+		assert.Equal(t, cbc.Code("261"), documentType(t, scenarioInvoice(ae, bill.InvoiceTypeCreditNote, tax.TagSelfBilled)))
+	})
+
+	t.Run("documents outside AE keep 380 and 381", func(t *testing.T) {
+		assert.Equal(t, cbc.Code("380"), documentType(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)))
+		assert.Equal(t, cbc.Code("381"), documentType(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeCreditNote)))
 	})
 }

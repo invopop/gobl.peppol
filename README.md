@@ -76,8 +76,9 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   written with the country `AE`, so its address needs one too.
 - **Items**: every line item needs a `description`; goods need an HS
   classification, an identity with the label `HS`.
-- **Out of scope documents**: the `outside-tax-scope` tag (type codes 480
-  and 81), also needed when every line is exempt or outside the scope of VAT.
+- **Out of scope documents**: an invoice or credit note whose lines are all
+  exempt or outside the scope of VAT is sent with type code 480 or 81, as PINT
+  AE requires.
 - **Profit margin scheme**: the AE regime's `margin-scheme` tag with the
   `exempt` VAT key on every line; the lines are written in category `N`.
 - **Exemption reasons**: `cef-vatex` on exempt VAT combos, with the UAE codes
@@ -90,13 +91,14 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   without a Peppol ID takes `0235:9900000098`, or `0235:9900000099` on
   exports; a UAE buyer without a TRN then needs its `TIN` identity.
 
-The supplier's and customer's endpoints must be Peppol ones
-(`iso6523-actorid-upis`), as PINT takes no email or web address as the
-electronic address. An email inbox can stay on the party, but isn't written.
+Every party's endpoints must be Peppol ones (`iso6523-actorid-upis`), as PINT
+takes no email or web address as an electronic address, and the supplier and
+customer need one. An email inbox can stay on the party, but isn't written
+when the party has an endpoint.
 
 PINT allows one note on the document and one per line, and only the payment
-due date (IBT-009) is written, so invoices with more notes, more than one due
-date or a due date for part of the amount are rejected. On credit notes the
+due date (IBT-009) is written, so invoices with more notes or more than one due
+date are rejected. A single due date is written without its amount. On credit notes the
 due date is written inside the payment means, so a credit note without payment
 instructions is sent without its due date.
 

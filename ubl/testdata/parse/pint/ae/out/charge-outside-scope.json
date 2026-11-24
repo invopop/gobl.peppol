@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "aae800b5b6fa630b075675a56b74771af61a78517175c97d52bead64f5df0060"
+			"val": "29a753a295681f6d0ecbc374460bfd4452ae141d532b672a00bfac8cb49a7ce8"
 		},
 		"from": "iso6523-actorid-upis::0235:1987654321",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -15,9 +15,6 @@
 		"$addons": [
 			"eu-en16931-v2017",
 			"peppol-pint-v1"
-		],
-		"$tags": [
-			"outside-tax-scope"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",

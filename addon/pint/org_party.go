@@ -24,23 +24,30 @@ const endpointSchemeMailto = "mailto"
 // email addresses.
 const endpointSchemeEmail cbc.Code = "EM"
 
-// orgPartyRules validates parties on UAE documents.
+// orgPartyRules validates parties on PINT documents, with the AE rules on UAE documents only.
 //
 // TODO: a delivery receiver with a UAE tax ID and a foreign address gets an emirate error PINT AE wouldn't.
 func orgPartyRules() *rules.Set {
 	return rules.For(new(org.Party),
+		rules.Field("endpoints", rules.Each(
+			rules.Field("uri",
+				rules.Assert("01", "electronic address must be a Peppol endpoint (ibr-cl-25)",
+					cbc.URISchemeIn(iso.ActorIDScheme),
+				),
+			),
+		)),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			// gobl.ubl writes a UAE tax ID's country over the address's, so the address counts as UAE.
 			rules.When(
 				is.Func("UAE tax ID", partyHasAETaxID),
 				rules.Field("addresses",
-					rules.Assert("01", "address is required with a UAE tax ID (IBR-128-AE)", is.Present),
+					rules.Assert("02", "address is required with a UAE tax ID (IBR-128-AE)", is.Present),
 					rules.Each(
 						rules.When(
 							is.Not(is.Func("UAE address", addressIsAE)),
 							rules.Field("region",
-								rules.Assert("02", "region must be an emirate code (AUH, DXB, SHJ, UAQ, FUJ, AJM or RAK) with a UAE tax ID (IBR-128-AE)",
+								rules.Assert("03", "region must be an emirate code (AUH, DXB, SHJ, UAQ, FUJ, AJM or RAK) with a UAE tax ID (IBR-128-AE)",
 									is.Present, is.Matches(emiratePattern),
 								),
 							),
@@ -54,7 +61,7 @@ func orgPartyRules() *rules.Set {
 				rules.Field("identities", rules.Each(
 					rules.When(
 						is.Func("legal scope", identityScopeIn(org.IdentityScopeLegal)),
-						rules.Assert("03", "legal identity must be a trade license, Emirates ID, passport or Cabinet Decision with a UAE Peppol endpoint other than 9900000098 or 9900000099 (IBR-173-AE, IBR-181-AE, IBR-180-AE, IBR-183-AE)",
+						rules.Assert("04", "legal identity must be a trade license, Emirates ID, passport or Cabinet Decision with a UAE Peppol endpoint other than 9900000098 or 9900000099 (IBR-173-AE, IBR-181-AE, IBR-180-AE, IBR-183-AE)",
 							is.Or(org.IdentityKeyIn(org.IdentityKeyPassport), org.IdentityTypeIn(identityTypesAE...)),
 						),
 					),
@@ -77,36 +84,6 @@ func partyHasOneIdentification(val any) bool {
 	return ok && p != nil && len(partyIdentifications(p)) <= 1
 }
 
-// payeeIsNotSupplier reports whether the payee differs from the supplier by legal identity, else by
-// identification, else by name.
-func payeeIsNotSupplier(val any) bool {
-	inv, ok := val.(*bill.Invoice)
-	if !ok || inv == nil || inv.Payment == nil || inv.Payment.Payee == nil || inv.Supplier == nil {
-		return true
-	}
-	payee, supplier := inv.Payment.Payee, inv.Supplier
-	if p, s := partyFirstLegalIdentity(payee), partyFirstLegalIdentity(supplier); p != nil && s != nil {
-		return p.Code != s.Code || p.Ext.Get(iso.ExtKeySchemeID) != s.Ext.Get(iso.ExtKeySchemeID)
-	}
-	if ps, ss := partyIdentifications(payee), partyIdentifications(supplier); len(ps) > 0 && len(ss) > 0 {
-		for _, p := range ps {
-			if slices.ContainsFunc(ss, func(s *org.Identity) bool {
-				return p.Code == s.Code && identificationScheme(p) == identificationScheme(s)
-			}) {
-				return false
-			}
-		}
-		return true
-	}
-	name := payee.Name
-	if payee.Alias != "" {
-		// gobl.ubl writes the alias as the payee's cac:PartyName.
-		name = payee.Alias
-	}
-	return name == "" || supplier.Name == "" ||
-		!strings.EqualFold(strings.TrimSpace(name), strings.TrimSpace(supplier.Name))
-}
-
 // partyIdentifications returns the party's identities gobl.ubl writes as
 // cac:PartyIdentification: all but the tax scope ones and the first legal
 // one.
@@ -119,16 +96,6 @@ func partyIdentifications(p *org.Party) []*org.Identity {
 		}
 	}
 	return ids
-}
-
-// identificationScheme returns the scheme gobl.ubl writes as the @schemeID
-// of an identity's cac:PartyIdentification: its ISO 6523 scheme, or its type
-// when it has no extensions.
-func identificationScheme(id *org.Identity) cbc.Code {
-	if id.Ext.IsZero() {
-		return id.Type
-	}
-	return id.Ext.Get(iso.ExtKeySchemeID)
 }
 
 // partyEndpointID returns the scheme and code gobl.ubl writes as the party's cbc:EndpointID.

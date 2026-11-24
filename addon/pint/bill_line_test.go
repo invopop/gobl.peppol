@@ -17,8 +17,8 @@ import (
 
 func TestBillLineRulesAE(t *testing.T) {
 	const (
-		faultLineVAT         = "GOBL-PEPPOL-PINT-BILL-LINE-01"
-		faultLineDescription = "GOBL-PEPPOL-PINT-BILL-LINE-02"
+		faultLineVAT         = "GOBL-PEPPOL-PINT-BILL-LINE-02"
+		faultLineDescription = "GOBL-PEPPOL-PINT-BILL-LINE-03"
 	)
 
 	t.Run("line without a VAT combo is rejected (IBR-145-AE)", func(t *testing.T) {
@@ -47,11 +47,39 @@ func TestBillLineRulesAE(t *testing.T) {
 	})
 }
 
+func TestBillLineRulesAUNZ(t *testing.T) {
+	const faultLineGST = "GOBL-PEPPOL-PINT-BILL-LINE-01"
+	lineFaults := func(t *testing.T, inv *bill.Invoice) string {
+		t.Helper()
+		require.NoError(t, inv.Calculate())
+		err := rules.Validate(inv, tax.AddonContext(pint.V1), tax.RegimeContext(inv.GetRegime()))
+		if err == nil {
+			return ""
+		}
+		return err.Error()
+	}
+
+	t.Run("line without a GST combo is rejected (ALIGNED-IBRP-050-AUNZ)", func(t *testing.T) {
+		inv := scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)
+		inv.Lines[0].Taxes = nil
+		assert.Contains(t, lineFaults(t, inv), faultLineGST)
+	})
+
+	t.Run("line with a GST combo is fine", func(t *testing.T) {
+		assert.NotContains(t, lineFaults(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)), faultLineGST)
+	})
+
+	t.Run("the GST rule does not apply outside A-NZ", func(t *testing.T) {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		assert.NotContains(t, aeFaults(t, inv), faultLineGST)
+	})
+}
+
 func TestBillGoodsTypeRulesAE(t *testing.T) {
 	const (
-		faultGoodsType      = "GOBL-PEPPOL-PINT-BILL-LINE-03"
-		faultGoodsTypeValue = "GOBL-PEPPOL-PINT-BILL-LINE-04"
-		faultGTIN           = "GOBL-PEPPOL-PINT-BILL-LINE-05"
+		faultGoodsType      = "GOBL-PEPPOL-PINT-BILL-LINE-04"
+		faultGoodsTypeValue = "GOBL-PEPPOL-PINT-BILL-LINE-05"
+		faultGTIN           = "GOBL-PEPPOL-PINT-BILL-LINE-06"
 	)
 	gtin := func(scheme cbc.Code) []*org.Identity {
 		return []*org.Identity{{Code: "4006381333931", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: scheme})}}

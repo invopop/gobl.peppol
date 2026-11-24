@@ -121,15 +121,30 @@ func taxComboRules() *rules.Set {
 					tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryCodesAUNZ...),
 				),
 			),
+			rules.When(
+				is.Func("tax combo is standard rated", taxComboIsStandard),
+				rules.Field("percent",
+					rules.Assert("03", "tax percentage must be greater than 0 (ALIGNED-IBRP-S-05/06/07-AUNZ)",
+						num.Positive,
+					),
+				),
+			),
+			rules.When(
+				is.Func("tax combo is zero rated", taxComboIsZero),
+				rules.Field("percent",
+					rules.Assert("04", "tax percentage must be 0.00 (ALIGNED-IBRP-Z-05/06/07-AUNZ)",
+						num.Equals(num.MakePercentage(0, 2)),
+					),
+				),
+			),
 		),
 
-		// TODO: A-NZ has the same zero rate rule (ALIGNED-IBRP-Z-05/06/07) and a positive standard rate (ALIGNED-IBRP-S-05/06/07).
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			// EN 16931's and PINT's category lists have no N; IBR-139-AE checks the PINT AE list instead.
 			rules.Ignore("GOBL-EU-EN16931-TAX-COMBO-02", "GOBL-PEPPOL-PINT-TAX-COMBO-01"),
 			rules.Field("ext",
-				rules.Assert("03", "tax category code must be an AE UNCL5305 code: E, S, Z, O, AE or N (IBR-139-AE)",
+				rules.Assert("05", "tax category code must be an AE UNCL5305 code: E, S, Z, O, AE or N (IBR-139-AE)",
 					tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, taxCategoryCodesAE...),
 				),
 			),
@@ -137,7 +152,7 @@ func taxComboRules() *rules.Set {
 			rules.When(
 				is.Func("tax combo is standard rated", taxComboIsStandard),
 				rules.Field("percent",
-					rules.Assert("04", "tax percentage must be 5.00 (IBR-190-AE, ALIGNED-IBRP-S-05/06/07)",
+					rules.Assert("06", "tax percentage must be 5.00 (IBR-190-AE, ALIGNED-IBRP-S-05/06/07)",
 						num.Equals(num.MakePercentage(5, 2)),
 					),
 				),
@@ -146,7 +161,7 @@ func taxComboRules() *rules.Set {
 			rules.When(
 				is.Func("tax combo is zero rated", taxComboIsZero),
 				rules.Field("percent",
-					rules.Assert("05", "tax percentage must be 0.00 (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)",
+					rules.Assert("07", "tax percentage must be 0.00 (ALIGNED-IBRP-Z-05/06/07, IBR-120-AE)",
 						num.Equals(num.MakePercentage(0, 2)),
 					),
 				),
@@ -158,7 +173,7 @@ func taxComboRules() *rules.Set {
 						tax.ExtensionsRequire(untdid.ExtKeyTaxCategory),
 						tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, en16931.TaxCategoryExempt),
 					),
-					rules.Assert("06", "exempt VAT needs a cef-vatex exemption reason: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
+					rules.Assert("08", "exempt VAT needs a cef-vatex exemption reason: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
 						tax.ExtensionsRequire(cef.ExtKeyVATEX),
 					),
 				),
@@ -166,7 +181,7 @@ func taxComboRules() *rules.Set {
 
 			// The Schematron doesn't check PINT AE's code list.
 			rules.Field("ext",
-				rules.Assert("07", "VAT exemption reason must be one of PINT AE's: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (code list Aligned-TaxExemptionCodes)",
+				rules.Assert("09", "VAT exemption reason must be one of PINT AE's: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (code list Aligned-TaxExemptionCodes)",
 					tax.ExtensionsHasCodes(cef.ExtKeyVATEX, exemptionCodesAE...),
 				),
 			),

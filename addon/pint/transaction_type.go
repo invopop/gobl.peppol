@@ -75,6 +75,27 @@ func (t TransactionType) Code() cbc.Code {
 	return cbc.Code(b)
 }
 
+// transactionTypeCodesOutsideScope are the transaction types allowed on 480 and 81: those without
+// the deemed supply, margin scheme or summary flags (IBR-157-AE).
+var transactionTypeCodesOutsideScope = transactionTypeCodes(func(t TransactionType) bool {
+	return !t.DeemedSupply && !t.MarginScheme && !t.Summary
+})
+
+// transactionTypeCodes lists every transaction type code whose flags pass keep.
+func transactionTypeCodes(keep func(TransactionType) bool) []cbc.Code {
+	var codes []cbc.Code
+	for n := 0; n < 1<<len(transactionTypeFlags); n++ {
+		var t TransactionType
+		for i, f := range transactionTypeFlags {
+			*f.get(&t) = n&(1<<i) != 0
+		}
+		if keep(t) {
+			codes = append(codes, t.Code())
+		}
+	}
+	return codes
+}
+
 // Tags returns the invoice tags of the flags that are set.
 func (t TransactionType) Tags() []cbc.Key {
 	var tags []cbc.Key

@@ -4,17 +4,12 @@ import (
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
-	"github.com/invopop/gobl/i18n"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/tax"
 )
 
-// Document tags and the UNTDID 1001 codes they map to.
+// UNTDID 1001 document types.
 const (
-	// TagOutsideTaxScope marks a PINT AE document as out of scope of VAT,
-	// the UAE "commercial invoice".
-	TagOutsideTaxScope cbc.Key = "outside-tax-scope"
-
 	// UNTDID 1001 codes PINT AE uses for out-of-scope documents. 480 is in
 	// UNTDID D.23A but not in the EN 16931 code list, so it lives here.
 	docTypeInvoiceOutsideScope     cbc.Code = "480"
@@ -41,36 +36,24 @@ var docTypesAE = []cbc.Code{
 // invoiceTags are the document tags the PINT addon adds to invoices.
 var invoiceTags = &tax.TagSet{
 	Schema: bill.ShortSchemaInvoice,
-	List: append([]*cbc.Definition{
-		{
-			Key: TagOutsideTaxScope,
-			Name: i18n.String{
-				i18n.EN: "Outside Tax Scope",
-			},
-			Desc: i18n.String{
-				i18n.EN: "Marks a PINT AE document as out of scope of VAT, the UAE 'commercial invoice'. Invoices are sent with document type 480 and credit notes with 81. Only for UAE documents.",
-			},
-		},
-	}, transactionTypeTags...),
+	List:   transactionTypeTags,
 }
 
-// invoiceScenarios set 480 and 81 on out-of-scope documents, replacing the 380 or 381 that EN 16931 sets first.
+// invoiceScenarios set 480 and 81 on UAE documents whose lines are all exempt or outside the scope of
+// VAT, as PINT AE requires (IBR-151-AE, IBR-122-AE), replacing the 380 or 381 that EN 16931 sets first.
 var invoiceScenarios = &tax.ScenarioSet{
 	Schema: bill.ShortSchemaInvoice,
 	List: []*tax.Scenario{
-		// ** Out of scope of VAT (UAE only) **
 		{
 			Types:  []cbc.Key{bill.InvoiceTypeStandard},
-			Tags:   []cbc.Key{TagOutsideTaxScope},
-			Filter: invoiceIsAE,
+			Filter: invoiceIsOutsideTaxScopeAE,
 			Ext: tax.ExtensionsOf(cbc.CodeMap{
 				untdid.ExtKeyDocumentType: docTypeInvoiceOutsideScope,
 			}),
 		},
 		{
 			Types:  []cbc.Key{bill.InvoiceTypeCreditNote},
-			Tags:   []cbc.Key{TagOutsideTaxScope},
-			Filter: invoiceIsAE,
+			Filter: invoiceIsOutsideTaxScopeAE,
 			Ext: tax.ExtensionsOf(cbc.CodeMap{
 				untdid.ExtKeyDocumentType: docTypeCreditNoteGoodsServices,
 			}),
@@ -78,9 +61,10 @@ var invoiceScenarios = &tax.ScenarioSet{
 	},
 }
 
-// invoiceIsAE reports whether the scenario document is a UAE invoice, as the addon's scenarios
-// apply under every regime.
-func invoiceIsAE(doc any) bool {
+// invoiceIsOutsideTaxScopeAE reports whether the scenario document is a UAE invoice whose lines are all
+// exempt or outside the scope of VAT. Self-billed documents keep 389 and 261.
+func invoiceIsOutsideTaxScopeAE(doc any) bool {
 	inv, ok := doc.(*bill.Invoice)
-	return ok && inv != nil && inv.GetRegime() == l10n.AE.Tax()
+	return ok && inv != nil && inv.GetRegime() == l10n.AE.Tax() && !inv.HasTags(tax.TagSelfBilled) &&
+		len(inv.Lines) > 0 && !invoiceHasLineComboOtherThanEorO(inv)
 }

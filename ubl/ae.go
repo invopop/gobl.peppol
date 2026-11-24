@@ -100,7 +100,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 }
 
 // importAEOutsideTaxScope reads 480 and 81, which gobl.ubl imports as "other", as a standard invoice
-// and a credit note with the outside-tax-scope tag.
+// and a credit note; the scenarios give them 480 and 81 again from their lines.
 func importAEOutsideTaxScope(in *goblubl.Invoice, inv *bill.Invoice) {
 	code := in.InvoiceTypeCode
 	if code == nil {
@@ -114,11 +114,6 @@ func importAEOutsideTaxScope(in *goblubl.Invoice, inv *bill.Invoice) {
 		inv.Type = bill.InvoiceTypeStandard
 	case "81":
 		inv.Type = bill.InvoiceTypeCreditNote
-	default:
-		return
-	}
-	if !inv.HasTags(pint.TagOutsideTaxScope) {
-		inv.Tags.List = append(inv.Tags.List, pint.TagOutsideTaxScope)
 	}
 }
 

@@ -11,27 +11,34 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// billLineRules validates invoice lines on UAE documents.
+// billLineRules validates invoice lines on A-NZ and UAE documents.
 func billLineRules() *rules.Set {
 	return rules.For(new(bill.Line),
-		// TODO: extend IBR-145-AE to A-NZ (ALIGNED-IBRP-050/059-AUNZ).
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAUNZ...)),
+			rules.Field("taxes",
+				rules.Assert("01", "line must have a GST tax combo (ALIGNED-IBRP-050-AUNZ)",
+					tax.SetHasCategory(tax.CategoryGST),
+				),
+			),
+		),
 		rules.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			rules.Field("taxes",
-				rules.Assert("01", "line must have a VAT tax combo (IBR-145-AE)",
+				rules.Assert("02", "line must have a VAT tax combo (IBR-145-AE)",
 					tax.SetHasCategory(tax.CategoryVAT),
 				),
 			),
 			rules.Field("item",
 				rules.Field("description",
-					rules.Assert("02", "item description is required (IBR-125-AE)", is.Present),
+					rules.Assert("03", "item description is required (IBR-125-AE)", is.Present),
 				),
 			),
 			rules.When(
 				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
 				rules.Field("item",
 					rules.Field("ext",
-						rules.Assert("03", "reverse charge line item needs the type of goods or services in the peppol-pint-ae-goods-type extension (IBR-166-AE)",
+						rules.Assert("04", "reverse charge line item needs the type of goods or services in the peppol-pint-ae-goods-type extension (IBR-166-AE)",
 							tax.ExtensionsRequire(ExtKeyGoodsType),
 						),
 					),
@@ -40,7 +47,7 @@ func billLineRules() *rules.Set {
 			// The IBR-006-AE test checks every goods type, not only those of reverse charge lines as its text says.
 			rules.Field("item",
 				rules.Field("ext",
-					rules.Assert("04", "type of goods or services must be from the PINT AE code list (IBR-006-AE)",
+					rules.Assert("05", "type of goods or services must be from the PINT AE code list (IBR-006-AE)",
 						tax.ExtensionHasValidCode(ExtKeyGoodsType),
 					),
 				),
@@ -49,7 +56,7 @@ func billLineRules() *rules.Set {
 				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
 				rules.Field("item",
 					rules.Field("identities",
-						rules.Assert("05", "reverse charge line item needs a GTIN identity, scheme 0160 (IBR-174-AE)",
+						rules.Assert("06", "reverse charge line item needs a GTIN identity, scheme 0160 (IBR-174-AE)",
 							org.IdentitiesExtensionIn(iso.ExtKeySchemeID, IdentitySchemeGTIN),
 						),
 					),

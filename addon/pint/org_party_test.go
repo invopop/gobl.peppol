@@ -116,9 +116,9 @@ func TestNormalizeSupplierAE(t *testing.T) {
 
 func TestOrgPartyRulesAE(t *testing.T) {
 	const (
-		faultAddress   = "GOBL-PEPPOL-PINT-ORG-PARTY-01"
-		faultEmirate   = "GOBL-PEPPOL-PINT-ORG-PARTY-02"
-		faultLegalType = "GOBL-PEPPOL-PINT-ORG-PARTY-03"
+		faultAddress   = "GOBL-PEPPOL-PINT-ORG-PARTY-02"
+		faultEmirate   = "GOBL-PEPPOL-PINT-ORG-PARTY-03"
+		faultLegalType = "GOBL-PEPPOL-PINT-ORG-PARTY-04"
 	)
 	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
 	trn := func() *tax.Identity { return &tax.Identity{Country: "AE", Code: "100000003200003"} }
