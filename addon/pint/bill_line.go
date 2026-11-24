@@ -11,7 +11,7 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// billLineRules validates invoice lines on A-NZ and UAE documents.
+// billLineRules validates invoice lines on PINT documents, with stricter rules for A-NZ and UAE.
 func billLineRules() *rules.Set {
 	return rules.For(new(bill.Line),
 		rules.When(
@@ -61,6 +61,13 @@ func billLineRules() *rules.Set {
 						),
 					),
 				),
+			),
+		),
+		// A-NZ and AE ask for their own category above.
+		rules.When(
+			is.Not(is.InContext(tax.RegimeIn(append(regimesAUNZ, regimesAE...)...))),
+			rules.Field("taxes",
+				rules.Assert("07", "line taxes are required (ibr-sr-58)", is.Present),
 			),
 		),
 	)

@@ -69,6 +69,10 @@ func TestBillLineRulesAUNZ(t *testing.T) {
 		assert.NotContains(t, lineFaults(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)), faultLineGST)
 	})
 
+	t.Run("GST lines pass the EN 16931 line rule, which PINT ignores", func(t *testing.T) {
+		assert.NotContains(t, lineFaults(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)), "GOBL-EU-EN16931-BILL-INVOICE-10")
+	})
+
 	t.Run("the GST rule does not apply outside A-NZ", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		assert.NotContains(t, aeFaults(t, inv), faultLineGST)
@@ -114,5 +118,28 @@ func TestBillGoodsTypeRulesAE(t *testing.T) {
 	t.Run("reverse charge item needs a GTIN (IBR-174-AE)", func(t *testing.T) {
 		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.3.1", nil)), faultGTIN)
 		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.3.1", gtin("0088"))), faultGTIN)
+	})
+}
+
+func TestBillLineTaxesRule(t *testing.T) {
+	const faultLineTaxes = "GOBL-PEPPOL-PINT-BILL-LINE-07"
+	validate := func(regime l10n.TaxCountryCode, l *bill.Line) string {
+		err := rules.Validate(l, tax.AddonContext(pint.V1), tax.RegimeContext(regime))
+		if err == nil {
+			return ""
+		}
+		return err.Error()
+	}
+
+	t.Run("lines need taxes (ibr-sr-58)", func(t *testing.T) {
+		assert.Contains(t, validate(l10n.SG.Tax(), &bill.Line{}), faultLineTaxes)
+		l := &bill.Line{Taxes: tax.Set{{Category: tax.CategoryGST, Key: tax.KeyStandard}}}
+		assert.NotContains(t, validate(l10n.SG.Tax(), l), faultLineTaxes)
+	})
+
+	t.Run("A-NZ and AE lines get their own category rule instead", func(t *testing.T) {
+		for _, regime := range []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax(), l10n.AE.Tax()} {
+			assert.NotContains(t, validate(regime, &bill.Line{}), faultLineTaxes, regime)
+		}
 	})
 }
