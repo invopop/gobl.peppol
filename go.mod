@@ -3,7 +3,7 @@ module github.com/invopop/gobl.peppol
 go 1.25.0
 
 require (
-	github.com/invopop/gobl v0.512.1-0.20261124174107-c50a0d408f93
+	github.com/invopop/gobl v0.512.1-0.20261124175935-789c31790da4
 	github.com/invopop/gobl.cii v0.85.0
 	github.com/invopop/gobl.ubl v0.103.1-0.20261119164756-14cbfffcf2c2
 	github.com/invopop/phorm v0.1.5
