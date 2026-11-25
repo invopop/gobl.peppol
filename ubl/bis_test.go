@@ -7,6 +7,7 @@ import (
 	"github.com/invopop/gobl.peppol/addon/bis"
 	peppolubl "github.com/invopop/gobl.peppol/ubl"
 	ubl "github.com/invopop/gobl.ubl"
+	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
 	"github.com/invopop/gobl/cbc"
@@ -104,6 +105,33 @@ func TestFormatBISConvert(t *testing.T) {
 			} else {
 				assert.Empty(t, doc.GetAddons())
 			}
+		})
+	}
+}
+
+func TestFormatBISConvertWithoutBISAddon(t *testing.T) {
+	for name, tc := range map[string]struct {
+		file string
+		spec string
+	}{
+		"invoice":             {"bis/invoice-minimal.json", peppolubl.FormatBIS.CustomizationID},
+		"self-billed invoice": {"bis/self-billed-invoice.json", peppolubl.SpecificationBISSelfBilling.CustomizationID},
+	} {
+		t.Run(name, func(t *testing.T) {
+			env := loadTestEnvelope(t, tc.file)
+			inv := env.Extract().(*bill.Invoice)
+			inv.SetAddons(en16931.V2017)
+			require.NoError(t, env.Calculate())
+
+			out, err := convert.Export(env, peppolubl.KeyBIS)
+			require.NoError(t, err)
+			assert.Contains(t, string(out.Data), "<cbc:CustomizationID>"+tc.spec+"</cbc:CustomizationID>")
+			assert.NotContains(t, inv.GetAddons(), bis.V3)
+
+			res, err := convert.Import(out.Data)
+			require.NoError(t, err)
+			assert.Equal(t, peppolubl.KeyBIS, res.Format.Key)
+			assert.ElementsMatch(t, []cbc.Key{en16931.V2017, bis.V3}, res.Envelope.Extract().(*bill.Invoice).GetAddons())
 		})
 	}
 }

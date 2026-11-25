@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/invopop/gobl"
+	"github.com/invopop/gobl.peppol/addon/bis"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
@@ -60,6 +61,17 @@ func importInvoiceResponse(_ *goblubl.Format, doc goblubl.Document, env *gobl.En
 			importStatusLine(st.Lines[i], dr)
 		}
 	}
+	return nil
+}
+
+// importBISAddon adds the Peppol BIS addon to an imported invoice, which the
+// format does not require on export.
+func importBISAddon(_ *goblubl.Format, _ goblubl.Document, env *gobl.Envelope) error {
+	inv, ok := env.Extract().(*bill.Invoice)
+	if !ok || bis.V3.In(inv.GetAddons()...) {
+		return nil
+	}
+	inv.SetAddons(append(inv.GetAddons(), bis.V3)...)
 	return nil
 }
 
