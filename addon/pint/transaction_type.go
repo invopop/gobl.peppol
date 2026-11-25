@@ -51,6 +51,57 @@ var transactionTypeFlags = []struct {
 	{tax.TagExport, func(t *TransactionType) *bool { return &t.Export }},
 }
 
+// transactionTypeTags are the invoice tags for the transaction type flags.
+var transactionTypeTags = []*cbc.Definition{
+	{
+		Key:  TagFreeTradeZone,
+		Name: i18n.String{i18n.EN: "Free Trade Zone"},
+		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services in a free trade zone. Needs the beneficiary ID."},
+	},
+	{
+		Key:  TagDeemedSupply,
+		Name: i18n.String{i18n.EN: "Deemed Supply"},
+		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services without consideration."},
+	},
+	{
+		Key:  TagSummary,
+		Name: i18n.String{i18n.EN: "Summary Invoice"},
+		Desc: i18n.String{i18n.EN: "PINT AE: more than one supply of goods or services to the same person in the same calendar month. Needs the invoicing period."},
+	},
+	{
+		Key:  TagContinuousSupply,
+		Name: i18n.String{i18n.EN: "Continuous Supply"},
+		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services made on a recurrent basis."},
+	},
+	{
+		Key:  TagDisclosedAgent,
+		Name: i18n.String{i18n.EN: "Disclosed Agent Billing"},
+		Desc: i18n.String{i18n.EN: "PINT AE: an agent who is a registrant makes a supply on behalf of the principal. Needs the principal ID."},
+	},
+	{
+		Key:  TagECommerce,
+		Name: i18n.String{i18n.EN: "E-commerce"},
+		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services through e-commerce. Needs a complete delivery address."},
+	},
+	{
+		Key:  tax.TagExport,
+		Name: i18n.String{i18n.EN: "Export"},
+		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services outside the country. Needs a complete delivery address outside the UAE."},
+	},
+}
+
+// normalizeTransactionType sets the transaction type from the flag tags only: a code from an earlier
+// calculation can't be told apart from one set directly.
+func normalizeTransactionType(inv *bill.Invoice) {
+	if inv == nil {
+		return
+	}
+	if inv.Tax == nil {
+		inv.Tax = new(bill.Tax)
+	}
+	inv.Tax.Ext = inv.Tax.Ext.Set(ExtKeyTransactionType, transactionTypeFromTags(inv).Code())
+}
+
 // ParseTransactionType reads the flags of a transaction type code: each position holding a 1 sets
 // its flag.
 func ParseTransactionType(code cbc.Code) TransactionType {
@@ -95,57 +146,6 @@ func transactionTypeFromTags(inv *bill.Invoice) TransactionType {
 		}
 	}
 	return t
-}
-
-// normalizeTransactionType sets the transaction type from the flag tags only: a code from an earlier
-// calculation can't be told apart from one set directly.
-func normalizeTransactionType(inv *bill.Invoice) {
-	if inv == nil {
-		return
-	}
-	if inv.Tax == nil {
-		inv.Tax = new(bill.Tax)
-	}
-	inv.Tax.Ext = inv.Tax.Ext.Set(ExtKeyTransactionType, transactionTypeFromTags(inv).Code())
-}
-
-// transactionTypeTags are the invoice tags for the transaction type flags.
-var transactionTypeTags = []*cbc.Definition{
-	{
-		Key:  TagFreeTradeZone,
-		Name: i18n.String{i18n.EN: "Free Trade Zone"},
-		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services in a free trade zone. Needs the beneficiary ID."},
-	},
-	{
-		Key:  TagDeemedSupply,
-		Name: i18n.String{i18n.EN: "Deemed Supply"},
-		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services without consideration."},
-	},
-	{
-		Key:  TagSummary,
-		Name: i18n.String{i18n.EN: "Summary Invoice"},
-		Desc: i18n.String{i18n.EN: "PINT AE: more than one supply of goods or services to the same person in the same calendar month. Needs the invoicing period."},
-	},
-	{
-		Key:  TagContinuousSupply,
-		Name: i18n.String{i18n.EN: "Continuous Supply"},
-		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services made on a recurrent basis."},
-	},
-	{
-		Key:  TagDisclosedAgent,
-		Name: i18n.String{i18n.EN: "Disclosed Agent Billing"},
-		Desc: i18n.String{i18n.EN: "PINT AE: an agent who is a registrant makes a supply on behalf of the principal. Needs the principal ID."},
-	},
-	{
-		Key:  TagECommerce,
-		Name: i18n.String{i18n.EN: "E-commerce"},
-		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services through e-commerce. Needs a complete delivery address."},
-	},
-	{
-		Key:  tax.TagExport,
-		Name: i18n.String{i18n.EN: "Export"},
-		Desc: i18n.String{i18n.EN: "PINT AE: supply of goods or services outside the country. Needs a complete delivery address outside the UAE."},
-	},
 }
 
 // invoiceHasTags returns a predicate that reports whether an invoice has all the tags.

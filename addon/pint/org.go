@@ -23,6 +23,10 @@ const endpointSchemeMailto = "mailto"
 // email addresses.
 const endpointSchemeEmail cbc.Code = "EM"
 
+// TINScheme is the ISO 6523 ICD the UAE Federal Tax Authority registered for the TIN, which is also the
+// scheme of UAE Peppol endpoints (0235:<TIN>).
+const TINScheme cbc.Code = "0235"
+
 // Predefined UAE Peppol endpoint codes (PINT AE BIS 1.5.3, IBT-049).
 const (
 	endpointDeemedSupply     = "9900000097" // deemed supply
@@ -41,6 +45,113 @@ const (
 // principalIDPattern is a UAE TRN ending with 03, as PINT AE asks of the principal ID (IBR-132-AE).
 const principalIDPattern = `^1\d{12}03$`
 
+// emiratePattern matches the emirate codes PINT AE accepts, its own list rather than ISO 3166-2.
+const emiratePattern = `^(AUH|DXB|SHJ|UAQ|FUJ|AJM|RAK)$`
+
+// IdentityTypePassport is the PINT AE legal registration type of a passport (BTAE-15, BTAE-16).
+const IdentityTypePassport cbc.Code = "PAS"
+
+// identityTypesAE are the AE regime's identity types that are PINT AE legal
+// registration identifier types.
+var identityTypesAE = []cbc.Code{
+	ae.IdentityTypeTradeLicense,
+	ae.IdentityTypeEmiratesID,
+	ae.IdentityTypeCabinetDecision,
+}
+
+// IdentitySchemeGTIN is the ISO 6523 scheme of a GTIN.
+const IdentitySchemeGTIN cbc.Code = "0160"
+
+// ItemKeyGoodsServices is the item key for PINT AE's item type B, both goods and services.
+const ItemKeyGoodsServices cbc.Key = "goods-services"
+
+// PINT AE item types, written as the item's
+// cac:CommodityClassification/cbc:CommodityCode (BTAE-13).
+const (
+	ItemTypeGoods         cbc.Code = "G"
+	ItemTypeServices      cbc.Code = "S"
+	ItemTypeGoodsServices cbc.Code = "B"
+)
+
+// Labels of the item identities PINT AE uses.
+const (
+	IdentityLabelHS  = "HS"  // HS item classification
+	IdentityLabelSAC = "SAC" // service accounting code
+)
+
+// normalizeDeemedSupplyAE overrides the customer's endpoints (and any Peppol
+// inbox) to the predefined UAE deemed supply endpoint (0235:9900000097) when
+// the invoice is tagged as a deemed supply (PINT AE BIS 1.5.3, IBT-049).
+// Because norm traverses children before parents, this runs after EN 16931's
+// inbox-to-endpoint migration.
+func normalizeDeemedSupplyAE(inv *bill.Invoice) {
+	if inv == nil || inv.Customer == nil || !inv.HasTags(TagDeemedSupply) {
+		return
+	}
+	inv.Customer.Endpoints = []*org.Endpoint{
+		{URI: cbc.URI(iso.ActorIDScheme + "::" + TINScheme.String() + ":" + endpointDeemedSupply)},
+	}
+	if len(inv.Customer.Inboxes) == 0 {
+		return
+	}
+	var inboxes []*org.Inbox
+	replaced := false
+	for _, ib := range inv.Customer.Inboxes {
+		if ib == nil {
+			continue
+		}
+		if ib.Key == org.InboxKeyPeppol || ib.Scheme != cbc.CodeEmpty {
+			if !replaced {
+				ib.Scheme = TINScheme
+				ib.Code = endpointDeemedSupply
+				inboxes = append(inboxes, ib)
+				replaced = true
+			}
+			continue
+		}
+		inboxes = append(inboxes, ib)
+	}
+	inv.Customer.Inboxes = inboxes
+}
+
+// normalizeSupplierAE adds the TIN identity (IBT-032) and 0235:<TIN> endpoint of a UAE supplier, unless it
+// already has a TIN or tax identity, or any endpoint or inbox.
+// TODO: derive the customer's endpoint from its TRN too.
+func normalizeSupplierAE(inv *bill.Invoice) {
+	if inv == nil || inv.Supplier == nil {
+		return
+	}
+	p := inv.Supplier
+	tin := supplierTIN(p)
+	if tin == "" {
+		return
+	}
+	if !slices.ContainsFunc(p.Identities, func(id *org.Identity) bool {
+		return id != nil && (id.Type == ae.IdentityTypeTIN || id.Scope == org.IdentityScopeTax)
+	}) {
+		p.Identities = append(p.Identities, &org.Identity{
+			Type:  ae.IdentityTypeTIN,
+			Code:  tin,
+			Scope: org.IdentityScopeTax,
+		})
+	}
+	if len(p.Endpoints) == 0 && len(p.Inboxes) == 0 {
+		p.Endpoints = append(p.Endpoints, &org.Endpoint{
+			URI: cbc.URI(iso.ActorIDScheme + "::" + TINScheme.String() + ":" + tin.String()),
+		})
+	}
+}
+
+// normalizeIdentityScopes scopes the supplier and customer identities where PINT AE reads them: legal
+// for the registration types, and tax for the supplier's TIN.
+func normalizeIdentityScopes(inv *bill.Invoice) {
+	if inv == nil {
+		return
+	}
+	setIdentityScopes(inv.Supplier, org.IdentityScopeLegal, org.IdentityScopeTax)
+	setIdentityScopes(inv.Customer, org.IdentityScopeLegal)
+}
+
 // orgPartyRules validates parties on PINT documents, with the AE rules on UAE documents only.
 func orgPartyRules() *rules.Set {
 	return rules.For(new(org.Party),
@@ -57,6 +168,70 @@ func orgPartyRules() *rules.Set {
 						),
 					),
 				)),
+			),
+		),
+	)
+}
+
+// orgAddressRules validates addresses on UAE documents.
+func orgAddressRules() *rules.Set {
+	return rules.For(new(org.Address),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			rules.When(
+				is.Func("UAE address", addressIsAE),
+				rules.Field("region",
+					rules.Assert("01", "region must be an emirate code (AUH, DXB, SHJ, UAQ, FUJ, AJM or RAK) when the country is AE (IBR-128-AE)",
+						is.Present, is.Matches(emiratePattern),
+					),
+				),
+			),
+		),
+	)
+}
+
+// orgIdentityRules validates identities on UAE documents.
+func orgIdentityRules() *rules.Set {
+	return rules.For(new(org.Identity),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			rules.When(
+				org.IdentityKeyIn(org.IdentityKeyPassport),
+				rules.Field("country",
+					rules.Assert("01", "passport must have the issuing country (IBR-012-AE, IBR-010-AE)", is.Present),
+				),
+			),
+			// IBR-101-AE exempts the endpoints 9900000098 and 9900000099, but an identity can't see its party's endpoint.
+			rules.When(
+				org.IdentityTypeIn(ae.IdentityTypeTradeLicense),
+				rules.Field("description",
+					rules.Assert("02", "trade license must have the issuing authority in the description (IBR-172-AE, IBR-101-AE)", is.Present),
+				),
+			),
+			rules.When(
+				org.IdentityKeyIn(IdentityKeyPrincipal),
+				rules.Field("code",
+					rules.Assert("03", "principal identity code must be a TRN of 15 digits starting with 1 and ending with 03 (IBR-132-AE)",
+						is.Matches(principalIDPattern),
+					),
+				),
+			),
+		),
+	)
+}
+
+// orgItemRules validates items on UAE documents.
+func orgItemRules() *rules.Set {
+	return rules.For(new(org.Item),
+		rules.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			rules.When(
+				is.Func("goods or goods and services", itemKeyIn(org.ItemKeyGoods, ItemKeyGoodsServices)),
+				rules.Field("identities",
+					rules.Assert("01", "goods or goods and services item needs an HS item classification, an identity with the label HS (IBR-184-AE, IBR-186-AE)",
+						is.Func("has HS", identitiesHaveLabel(IdentityLabelHS)),
+					),
+				),
 			),
 		),
 	)
@@ -138,69 +313,6 @@ func partyFirstLegalIdentity(val any) *org.Identity {
 	return nil
 }
 
-// normalizeDeemedSupplyAE overrides the customer's endpoints (and any Peppol
-// inbox) to the predefined UAE deemed supply endpoint (0235:9900000097) when
-// the invoice is tagged as a deemed supply (PINT AE BIS 1.5.3, IBT-049).
-// Because norm traverses children before parents, this runs after EN 16931's
-// inbox-to-endpoint migration.
-func normalizeDeemedSupplyAE(inv *bill.Invoice) {
-	if inv == nil || inv.Customer == nil || !inv.HasTags(TagDeemedSupply) {
-		return
-	}
-	inv.Customer.Endpoints = []*org.Endpoint{
-		{URI: cbc.URI(iso.ActorIDScheme + "::" + TINScheme.String() + ":" + endpointDeemedSupply)},
-	}
-	if len(inv.Customer.Inboxes) == 0 {
-		return
-	}
-	var inboxes []*org.Inbox
-	replaced := false
-	for _, ib := range inv.Customer.Inboxes {
-		if ib == nil {
-			continue
-		}
-		if ib.Key == org.InboxKeyPeppol || ib.Scheme != cbc.CodeEmpty {
-			if !replaced {
-				ib.Scheme = TINScheme
-				ib.Code = endpointDeemedSupply
-				inboxes = append(inboxes, ib)
-				replaced = true
-			}
-			continue
-		}
-		inboxes = append(inboxes, ib)
-	}
-	inv.Customer.Inboxes = inboxes
-}
-
-// normalizeSupplierAE adds the TIN identity (IBT-032) and 0235:<TIN> endpoint of a UAE supplier, unless it
-// already has a TIN or tax identity, or any endpoint or inbox.
-// TODO: derive the customer's endpoint from its TRN too.
-func normalizeSupplierAE(inv *bill.Invoice) {
-	if inv == nil || inv.Supplier == nil {
-		return
-	}
-	p := inv.Supplier
-	tin := supplierTIN(p)
-	if tin == "" {
-		return
-	}
-	if !slices.ContainsFunc(p.Identities, func(id *org.Identity) bool {
-		return id != nil && (id.Type == ae.IdentityTypeTIN || id.Scope == org.IdentityScopeTax)
-	}) {
-		p.Identities = append(p.Identities, &org.Identity{
-			Type:  ae.IdentityTypeTIN,
-			Code:  tin,
-			Scope: org.IdentityScopeTax,
-		})
-	}
-	if len(p.Endpoints) == 0 && len(p.Inboxes) == 0 {
-		p.Endpoints = append(p.Endpoints, &org.Endpoint{
-			URI: cbc.URI(iso.ActorIDScheme + "::" + TINScheme.String() + ":" + tin.String()),
-		})
-	}
-}
-
 // supplierTIN returns the supplier's TIN: the one it gives as a TIN identity or as its UAE Peppol endpoint, or
 // else the first 10 digits of its TRN. A tax group member must give its own, as its TRN is the group's.
 func supplierTIN(p *org.Party) cbc.Code {
@@ -218,71 +330,10 @@ func supplierTIN(p *org.Party) cbc.Code {
 	return p.TaxID.Code[:10]
 }
 
-// emiratePattern matches the emirate codes PINT AE accepts, its own list rather than ISO 3166-2.
-const emiratePattern = `^(AUH|DXB|SHJ|UAQ|FUJ|AJM|RAK)$`
-
-// orgAddressRules validates addresses on UAE documents.
-func orgAddressRules() *rules.Set {
-	return rules.For(new(org.Address),
-		rules.When(
-			is.InContext(tax.RegimeIn(regimesAE...)),
-			rules.When(
-				is.Func("UAE address", addressIsAE),
-				rules.Field("region",
-					rules.Assert("01", "region must be an emirate code (AUH, DXB, SHJ, UAQ, FUJ, AJM or RAK) when the country is AE (IBR-128-AE)",
-						is.Present, is.Matches(emiratePattern),
-					),
-				),
-			),
-		),
-	)
-}
-
 // addressIsAE reports whether an address is in the UAE.
 func addressIsAE(val any) bool {
 	a, ok := val.(*org.Address)
 	return ok && a != nil && a.Country == l10n.AE.ISO()
-}
-
-// IdentityTypePassport is the PINT AE legal registration type of a passport (BTAE-15, BTAE-16).
-const IdentityTypePassport cbc.Code = "PAS"
-
-// identityTypesAE are the AE regime's identity types that are PINT AE legal
-// registration identifier types.
-var identityTypesAE = []cbc.Code{
-	ae.IdentityTypeTradeLicense,
-	ae.IdentityTypeEmiratesID,
-	ae.IdentityTypeCabinetDecision,
-}
-
-// orgIdentityRules validates identities on UAE documents.
-func orgIdentityRules() *rules.Set {
-	return rules.For(new(org.Identity),
-		rules.When(
-			is.InContext(tax.RegimeIn(regimesAE...)),
-			rules.When(
-				org.IdentityKeyIn(org.IdentityKeyPassport),
-				rules.Field("country",
-					rules.Assert("01", "passport must have the issuing country (IBR-012-AE, IBR-010-AE)", is.Present),
-				),
-			),
-			// IBR-101-AE exempts the endpoints 9900000098 and 9900000099, but an identity can't see its party's endpoint.
-			rules.When(
-				org.IdentityTypeIn(ae.IdentityTypeTradeLicense),
-				rules.Field("description",
-					rules.Assert("02", "trade license must have the issuing authority in the description (IBR-172-AE, IBR-101-AE)", is.Present),
-				),
-			),
-			rules.When(
-				org.IdentityKeyIn(IdentityKeyPrincipal),
-				rules.Field("code",
-					rules.Assert("03", "principal identity code must be a TRN of 15 digits starting with 1 and ending with 03 (IBR-132-AE)",
-						is.Matches(principalIDPattern),
-					),
-				),
-			),
-		),
-	)
 }
 
 // IdentityTypeAE returns the PINT AE legal registration identifier type of an
@@ -311,16 +362,6 @@ func SetIdentityTypeAE(id *org.Identity, typ cbc.Code) bool {
 		return false
 	}
 	return true
-}
-
-// normalizeIdentityScopes scopes the supplier and customer identities where PINT AE reads them: legal
-// for the registration types, and tax for the supplier's TIN.
-func normalizeIdentityScopes(inv *bill.Invoice) {
-	if inv == nil {
-		return
-	}
-	setIdentityScopes(inv.Supplier, org.IdentityScopeLegal, org.IdentityScopeTax)
-	setIdentityScopes(inv.Customer, org.IdentityScopeLegal)
 }
 
 // setIdentityScopes gives unscoped identities their PINT AE scope, if it's one of scopes and still free, as
@@ -358,9 +399,6 @@ func identityScopeAE(id *org.Identity) cbc.Key {
 	return ""
 }
 
-// IdentitySchemeGTIN is the ISO 6523 scheme of a GTIN.
-const IdentitySchemeGTIN cbc.Code = "0160"
-
 // GTINIdentity returns the first identity with the GTIN scheme, or nil.
 func GTINIdentity(ids []*org.Identity) *org.Identity {
 	for _, id := range ids {
@@ -389,23 +427,6 @@ func identitiesScopeIn(scopes ...cbc.Key) func(any) bool {
 	}
 }
 
-// ItemKeyGoodsServices is the item key for PINT AE's item type B, both goods and services.
-const ItemKeyGoodsServices cbc.Key = "goods-services"
-
-// PINT AE item types, written as the item's
-// cac:CommodityClassification/cbc:CommodityCode (BTAE-13).
-const (
-	ItemTypeGoods         cbc.Code = "G"
-	ItemTypeServices      cbc.Code = "S"
-	ItemTypeGoodsServices cbc.Code = "B"
-)
-
-// Labels of the item identities PINT AE uses.
-const (
-	IdentityLabelHS  = "HS"  // HS item classification
-	IdentityLabelSAC = "SAC" // service accounting code
-)
-
 // ItemTypeAE returns the PINT AE item type for an item key, or an empty code
 // if the key has none.
 func ItemTypeAE(key cbc.Key) cbc.Code {
@@ -432,23 +453,6 @@ func ItemKeyAE(typ cbc.Code) cbc.Key {
 		return ItemKeyGoodsServices
 	}
 	return ""
-}
-
-// orgItemRules validates items on UAE documents.
-func orgItemRules() *rules.Set {
-	return rules.For(new(org.Item),
-		rules.When(
-			is.InContext(tax.RegimeIn(regimesAE...)),
-			rules.When(
-				is.Func("goods or goods and services", itemKeyIn(org.ItemKeyGoods, ItemKeyGoodsServices)),
-				rules.Field("identities",
-					rules.Assert("01", "goods or goods and services item needs an HS item classification, an identity with the label HS (IBR-184-AE, IBR-186-AE)",
-						is.Func("has HS", identitiesHaveLabel(IdentityLabelHS)),
-					),
-				),
-			),
-		),
-	)
 }
 
 // itemKeyIn returns a predicate that reports whether an item has one of the keys.

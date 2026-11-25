@@ -794,8 +794,11 @@ func importAEDeliveryPartyID(in *goblubl.Invoice, inv *bill.Invoice) {
 	r.Identities = append(r.Identities, &org.Identity{Type: ae.IdentityTypeTIN, Code: code})
 }
 
+// trnPattern is the UAE TRN format: 15 digits starting with its TIN.
+const trnPattern = `^1\d{14}$`
+
 // trnRegexp matches a UAE TRN.
-var trnRegexp = regexp.MustCompile(pint.TRNPattern)
+var trnRegexp = regexp.MustCompile(trnPattern)
 
 // extensionHasCode reports whether the extension lists the code.
 func extensionHasCode(key cbc.Key, code cbc.Code) bool {
