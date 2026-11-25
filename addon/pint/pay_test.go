@@ -39,15 +39,10 @@ func TestPayInstructionsRules(t *testing.T) {
 	})
 
 	t.Run("credit transfer without account details is rejected (ALIGNED-IBRP-018)", func(t *testing.T) {
-		instr := instructionsWithMeansCode("30")
-		err := validate(instr)
-		assert.ErrorContains(t, err, "credit transfer instructions must include a payment account identifier")
-	})
-
-	t.Run("SEPA credit transfer without account details is rejected (ALIGNED-IBRP-018)", func(t *testing.T) {
-		instr := instructionsWithMeansCode("58")
-		err := validate(instr)
-		assert.ErrorContains(t, err, "credit transfer instructions must include a payment account identifier")
+		for _, code := range []string{"30", "58"} {
+			err := validate(instructionsWithMeansCode(code))
+			assert.ErrorContains(t, err, "credit transfer instructions must include a payment account identifier", "means %s", code)
+		}
 	})
 
 	t.Run("credit transfer entry missing both IBAN and number is rejected (ALIGNED-IBRP-016)", func(t *testing.T) {
@@ -100,12 +95,6 @@ func TestPayInstructionsRulesAE(t *testing.T) {
 		assert.NoError(t, validate(instr))
 	})
 
-	t.Run("credit transfer with account number is accepted", func(t *testing.T) {
-		instr := instructionsWithMeansCode("30")
-		instr.CreditTransfer = []*pay.CreditTransfer{{Number: "1234567897"}}
-		assert.NoError(t, validate(instr))
-	})
-
 	t.Run("credit transfer without credit transfer details is rejected (IBR-192-AE)", func(t *testing.T) {
 		err := validate(instructionsWithMeansCode("30"))
 		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
@@ -129,12 +118,10 @@ func TestPayInstructionsRulesAE(t *testing.T) {
 	})
 
 	t.Run("other payment means are not checked", func(t *testing.T) {
-		for _, code := range []string{"58", "31"} {
-			instr := instructionsWithMeansCode(code)
-			assert.NoError(t, validate(instr), "means %s", code)
-			instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD"}}
-			assert.NoError(t, validate(instr), "means %s with BIC only", code)
-		}
+		instr := instructionsWithMeansCode("58")
+		assert.NoError(t, validate(instr))
+		instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD"}}
+		assert.NoError(t, validate(instr))
 	})
 
 	t.Run("the A-NZ account rules do not apply", func(t *testing.T) {

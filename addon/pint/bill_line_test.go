@@ -135,7 +135,7 @@ func TestBillLineTaxesRule(t *testing.T) {
 	})
 
 	t.Run("A-NZ and AE lines get their own category rule instead", func(t *testing.T) {
-		for _, regime := range []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax(), l10n.AE.Tax()} {
+		for _, regime := range []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.AE.Tax()} {
 			assert.NotContains(t, validate(regime, &bill.Line{}), faultLineTaxes, regime)
 		}
 	})

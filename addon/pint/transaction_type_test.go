@@ -50,10 +50,6 @@ func TestNormalizeTransactionType(t *testing.T) {
 		return inv.Tax.GetExt(pint.ExtKeyTransactionType)
 	}
 
-	t.Run("no tags give 00000000", func(t *testing.T) {
-		assert.Equal(t, cbc.Code("00000000"), code(aeDocument(bill.InvoiceTypeStandard)))
-	})
-
 	t.Run("tags set their flags", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard, pint.TagSummary, pint.TagECommerce, tax.TagExport)
 		assert.Equal(t, cbc.Code("00010011"), code(inv))

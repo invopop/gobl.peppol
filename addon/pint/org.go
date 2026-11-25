@@ -23,9 +23,12 @@ const endpointSchemeMailto = "mailto"
 // email addresses.
 const endpointSchemeEmail cbc.Code = "EM"
 
-// endpointDeemedSupply is the predefined UAE Peppol endpoint code for deemed
-// supplies (PINT AE BIS 1.5.3, IBT-049).
-const endpointDeemedSupply = "9900000097"
+// Predefined UAE Peppol endpoint codes (PINT AE BIS 1.5.3, IBT-049).
+const (
+	endpointDeemedSupply     = "9900000097" // deemed supply
+	endpointNoPeppolID       = "9900000098" // buyer without a Peppol ID
+	endpointNoPeppolIDExport = "9900000099" // buyer without a Peppol ID on exports
+)
 
 // PINT AE party identity keys for roles written to dedicated UBL party elements.
 const (
@@ -115,7 +118,7 @@ func partyHasNonPredefinedUAEEndpoint(val any) bool {
 		return false
 	}
 	scheme, code := partyEndpointID(p)
-	return scheme == TINScheme && code != "9900000098" && code != "9900000099"
+	return scheme == TINScheme && code != endpointNoPeppolID && code != endpointNoPeppolIDExport
 }
 
 // partyFirstLegalIdentity returns the party's first identity with the legal

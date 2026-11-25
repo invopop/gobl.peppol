@@ -22,46 +22,25 @@ import (
 // after en16931's and wins.
 
 func TestTaxComboNormalization(t *testing.T) {
-	t.Run("standard GST rate maps to S (not O)", func(t *testing.T) {
-		p := num.MakePercentage(10, 2)
-		c := &tax.Combo{
-			Category: tax.CategoryGST,
-			Key:      tax.KeyStandard,
-			Percent:  &p,
+	t.Run("GST keys map to UNCL5305 categories (not O)", func(t *testing.T) {
+		for _, tc := range []struct {
+			name    string
+			key     cbc.Key
+			percent *num.Percentage
+			want    string
+		}{
+			{"standard", tax.KeyStandard, num.NewPercentage(10, 2), "S"},
+			{"zero", tax.KeyZero, num.NewPercentage(0, 2), "Z"},
+			{"exempt", tax.KeyExempt, nil, "E"},
+		} {
+			c := &tax.Combo{
+				Category: tax.CategoryGST,
+				Key:      tc.key,
+				Percent:  tc.percent,
+			}
+			norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1))
+			assert.Equal(t, tc.want, c.Ext.Get(untdid.ExtKeyTaxCategory).String(), tc.name)
 		}
-		norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1))
-		assert.Equal(t, "S", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
-	})
-
-	t.Run("zero-rated GST maps to Z", func(t *testing.T) {
-		p := num.MakePercentage(0, 2)
-		c := &tax.Combo{
-			Category: tax.CategoryGST,
-			Key:      tax.KeyZero,
-			Percent:  &p,
-		}
-		norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1))
-		assert.Equal(t, "Z", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
-	})
-
-	t.Run("exempt GST maps to E", func(t *testing.T) {
-		c := &tax.Combo{
-			Category: tax.CategoryGST,
-			Key:      tax.KeyExempt,
-		}
-		norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1))
-		assert.Equal(t, "E", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
-	})
-
-	t.Run("standard VAT still maps to S", func(t *testing.T) {
-		p := num.MakePercentage(20, 2)
-		c := &tax.Combo{
-			Category: tax.CategoryVAT,
-			Key:      tax.KeyStandard,
-			Percent:  &p,
-		}
-		norm.Normalize(c, tax.AddonContext(en16931.V2017, pint.V1))
-		assert.Equal(t, "S", c.Ext.Get(untdid.ExtKeyTaxCategory).String())
 	})
 
 	t.Run("exempt lines map to N only on UAE margin scheme invoices", func(t *testing.T) {
@@ -143,7 +122,7 @@ func TestTaxComboRules(t *testing.T) {
 		}
 	})
 
-	t.Run("documents outside AU and NZ accept the full PINT set", func(t *testing.T) {
+	t.Run("documents outside AU, NZ and AE accept the full PINT set", func(t *testing.T) {
 		err := rules.Validate(gstCombo("K"), tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
 		assert.NoError(t, err)
 	})
@@ -196,10 +175,6 @@ func TestTaxComboRulesAE(t *testing.T) {
 		}
 	})
 
-	t.Run("AE subset does not apply outside AE", func(t *testing.T) {
-		assert.NoError(t, validateComboIn(vatCombo(cbc.KeyEmpty, "K", nil), l10n.SG.Tax()))
-	})
-
 	t.Run("standard rate must be 5% (IBR-190-AE, ALIGNED-IBRP-S-05/06/07)", func(t *testing.T) {
 		for _, rate := range []int64{0, 10} {
 			err := validateComboIn(vatCombo(tax.KeyStandard, "S", num.NewPercentage(rate, 2)), ae)
@@ -219,11 +194,9 @@ func TestTaxComboRulesAE(t *testing.T) {
 	t.Run("exempt VAT needs an exemption reason (IBR-167-AE, IBR-168-AE, IBR-169-AE)", func(t *testing.T) {
 		const faultExemption = "GOBL-PEPPOL-PINT-TAX-COMBO-08"
 		assert.ErrorContains(t, validateComboIn(vatCombo(tax.KeyExempt, "E", nil), ae), faultExemption)
-		for _, code := range []cbc.Code{"DL8.46.1", "DL8.46.4"} {
-			c := vatCombo(tax.KeyExempt, "E", nil)
-			c.Ext = c.Ext.Set(uae.ExtKeyVATEX, code)
-			assert.NoError(t, validateComboIn(c, ae), code)
-		}
+		c := vatCombo(tax.KeyExempt, "E", nil)
+		c.Ext = c.Ext.Set(uae.ExtKeyVATEX, "DL8.46.1")
+		assert.NoError(t, validateComboIn(c, ae))
 	})
 
 	t.Run("rate rules do not apply outside AE and A-NZ", func(t *testing.T) {

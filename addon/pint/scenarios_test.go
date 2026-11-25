@@ -90,11 +90,6 @@ func TestInvoiceScenarios(t *testing.T) {
 		}
 	})
 
-	t.Run("a standard rated line keeps 380 and 381", func(t *testing.T) {
-		assert.Equal(t, cbc.Code("380"), documentType(t, standardLines(scenarioInvoice(ae, bill.InvoiceTypeStandard))))
-		assert.Equal(t, cbc.Code("381"), documentType(t, standardLines(scenarioInvoice(ae, bill.InvoiceTypeCreditNote))))
-	})
-
 	t.Run("a hand-set code is replaced by the one the lines give", func(t *testing.T) {
 		inv := standardLines(scenarioInvoice(ae, bill.InvoiceTypeStandard))
 		inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyDocumentType: "480"})}

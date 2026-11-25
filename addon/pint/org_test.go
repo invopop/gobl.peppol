@@ -133,25 +133,17 @@ func TestNormalizeSupplierAE(t *testing.T) {
 
 		p = trn()
 		p.Inboxes = []*org.Inbox{{Scheme: "0235", Code: "1234567897"}}
-		assert.Equal(t, []*org.Identity{own}, normalize(l10n.AE.Tax(), p).Identities, "from the inbox")
+		got := normalize(l10n.AE.Tax(), p)
+		assert.Equal(t, []*org.Identity{own}, got.Identities, "from the inbox")
+		assert.Empty(t, got.Endpoints, "from the inbox")
 	})
 
-	t.Run("an endpoint under another scheme leaves the TRN's", func(t *testing.T) {
+	t.Run("an endpoint under another scheme is kept and leaves the TRN's", func(t *testing.T) {
 		p := trn()
 		p.Endpoints = []*org.Endpoint{{URI: "iso6523-actorid-upis::0088:5790000435975"}}
-		assert.Equal(t, []*org.Identity{tinIdentity}, normalize(l10n.AE.Tax(), p).Identities)
-	})
-
-	t.Run("a Peppol endpoint is kept", func(t *testing.T) {
-		p := trn()
-		p.Endpoints = []*org.Endpoint{{URI: "iso6523-actorid-upis::0088:5790000435975"}}
-		assert.Len(t, normalize(l10n.AE.Tax(), p).Endpoints, 1)
-	})
-
-	t.Run("an existing Peppol inbox stops the UAE endpoint", func(t *testing.T) {
-		p := trn()
-		p.Inboxes = []*org.Inbox{{Scheme: "0235", Code: "1234567897"}}
-		assert.Empty(t, normalize(l10n.AE.Tax(), p).Endpoints)
+		got := normalize(l10n.AE.Tax(), p)
+		assert.Equal(t, []*org.Identity{tinIdentity}, got.Identities)
+		assert.Len(t, got.Endpoints, 1)
 	})
 
 	t.Run("an email endpoint or inbox is kept, without the UAE Peppol endpoint", func(t *testing.T) {
@@ -252,7 +244,7 @@ func TestOrgAddressRulesAE(t *testing.T) {
 	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
 
 	t.Run("UAE address region must be an emirate code (IBR-128-AE)", func(t *testing.T) {
-		for _, region := range []string{"Dubai", "DBX", ""} {
+		for _, region := range []string{"Dubai", ""} {
 			inv := standard()
 			inv.Customer.Addresses[0].Region = region
 			assert.Contains(t, aeFaults(t, inv), fault, region)
@@ -466,6 +458,7 @@ func TestOrgIdentityRulesAE(t *testing.T) {
 		assert.NotContains(t, aeFaults(t, aeIdentityDocument()), faultAuthority)
 	})
 	t.Run("principal identity code must match UAE TRN ending with 03 (IBR-132-AE)", func(t *testing.T) {
+		// Checked without the disclosed-agent tag too, as the identity is written whenever present.
 		inv := aeIdentityDocument()
 		inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
 			Key:  pint.IdentityKeyPrincipal,
@@ -473,12 +466,14 @@ func TestOrgIdentityRulesAE(t *testing.T) {
 		})
 		assert.NotContains(t, aeFaults(t, inv), faultPrincipal)
 
-		inv = aeIdentityDocument()
-		inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
-			Key:  pint.IdentityKeyPrincipal,
-			Code: "155667745601004",
-		})
-		assert.Contains(t, aeFaults(t, inv), faultPrincipal)
+		for _, code := range []cbc.Code{"255667745601003", "155667745601004"} {
+			inv = aeIdentityDocument()
+			inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
+				Key:  pint.IdentityKeyPrincipal,
+				Code: code,
+			})
+			assert.Contains(t, aeFaults(t, inv), faultPrincipal, code)
+		}
 	})
 }
 

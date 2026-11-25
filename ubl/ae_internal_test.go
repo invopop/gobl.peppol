@@ -399,7 +399,9 @@ func TestImportAEChargeExemptions(t *testing.T) {
 		importAEChargeExemptions(in, inv)
 		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
 	})
+}
 
+func TestClearAECEFVATEX(t *testing.T) {
 	t.Run("clears cef-vatex copied by gobl.ubl", func(t *testing.T) {
 		inv := &bill.Invoice{
 			Lines: []*bill.Line{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
