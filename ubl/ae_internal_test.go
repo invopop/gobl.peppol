@@ -3,6 +3,8 @@ package ubl
 import (
 	"testing"
 
+	"github.com/invopop/gobl.peppol/addon/pint"
+	"github.com/invopop/gobl.peppol/catalogues/vatexae"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/cef"
@@ -204,11 +206,56 @@ func TestImportAETransactionType(t *testing.T) {
 		assert.Equal(t, []cbc.Key{tax.TagExport}, inv.Tags.List)
 	})
 
+	t.Run("reads beneficiary and principal IDs into party identities", func(t *testing.T) {
+		inv := &bill.Invoice{
+			Supplier: &org.Party{Name: "Supplier"},
+			Customer: &org.Party{Name: "Customer"},
+		}
+		in := &goblubl.Invoice{
+			BuyerCustomerParty:  &goblubl.CustomerParty{Party: identifiedParty("189098765401003")},
+			SellerSupplierParty: &goblubl.SupplierParty{Party: identifiedParty("155667745601003")},
+		}
+		importAETransactionType(in, inv)
+		require.Len(t, inv.Customer.Identities, 1)
+		assert.Equal(t, pint.IdentityKeyBeneficiary, inv.Customer.Identities[0].Key)
+		assert.Equal(t, cbc.Code("189098765401003"), inv.Customer.Identities[0].Code)
+		require.Len(t, inv.Supplier.Identities, 1)
+		assert.Equal(t, pint.IdentityKeyPrincipal, inv.Supplier.Identities[0].Key)
+		assert.Equal(t, cbc.Code("155667745601003"), inv.Supplier.Identities[0].Code)
+	})
+
 	t.Run("nothing to read leaves the invoice alone", func(t *testing.T) {
 		inv := new(bill.Invoice)
 		importAETransactionType(&goblubl.Invoice{BuyerCustomerParty: &goblubl.CustomerParty{}}, inv)
 		assert.Nil(t, inv.Tax)
 		assert.Empty(t, inv.Tags.List)
+	})
+}
+
+func TestAECreditNoteReason(t *testing.T) {
+	t.Run("volume discount tag exports as VD and imports back as tag without duplicating", func(t *testing.T) {
+		out := &goblubl.Invoice{CreditNoteTypeCode: &goblubl.IDType{Value: "381"}}
+		exportAECreditNoteReason(out, &bill.Invoice{Tags: tax.WithTags(pint.TagVolumeDiscount)})
+		require.Len(t, out.DiscrepancyResponse, 1)
+		assert.Equal(t, "VD", out.DiscrepancyResponse[0].ResponseCode.Value)
+
+		inv := new(bill.Invoice)
+		importAECreditNoteReason(out, inv)
+		importAECreditNoteReason(out, inv)
+		assert.Equal(t, []cbc.Key{pint.TagVolumeDiscount}, inv.Tags.List)
+	})
+
+	t.Run("non-VD reason exports from and imports into first preceding reference", func(t *testing.T) {
+		out := &goblubl.Invoice{CreditNoteTypeCode: &goblubl.IDType{Value: "381"}}
+		exportAECreditNoteReason(out, &bill.Invoice{
+			Preceding: []*org.DocumentRef{{Code: "INV-1", Reason: "DL8.61.1.E"}},
+		})
+		require.Len(t, out.DiscrepancyResponse, 1)
+		assert.Equal(t, "DL8.61.1.E", out.DiscrepancyResponse[0].ResponseCode.Value)
+
+		inv := &bill.Invoice{Preceding: []*org.DocumentRef{{Code: "INV-1"}}}
+		importAECreditNoteReason(out, inv)
+		assert.Equal(t, "DL8.61.1.E", inv.Preceding[0].Reason)
 	})
 }
 
@@ -345,12 +392,36 @@ func TestExportAECreditTransfer(t *testing.T) {
 
 func TestImportAEChargeExemptions(t *testing.T) {
 	t.Run("charges that don't match are skipped", func(t *testing.T) {
-		exempt := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt, Ext: tax.ExtensionsOf(cbc.CodeMap{cef.ExtKeyVATEX: "DL8.46.1"})}
+		exempt := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt, Ext: tax.ExtensionsOf(cbc.CodeMap{vatexae.ExtKeyVATEX: "DL8.46.1"})}
 		inv := &bill.Invoice{Discounts: []*bill.Discount{{Taxes: tax.Set{exempt}}}}
 		category := []*goblubl.TaxCategory{{ID: &goblubl.IDType{Value: "E"}, TaxExemptionReasonCode: strPtr("DL8.46.2")}}
 		in := &goblubl.Invoice{AllowanceCharge: []goblubl.AllowanceCharge{{TaxCategory: category}, {TaxCategory: category}}}
 		importAEChargeExemptions(in, inv)
-		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(cef.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(vatexae.ExtKeyVATEX))
+	})
+
+	t.Run("clears cef-vatex copied by gobl.ubl", func(t *testing.T) {
+		inv := &bill.Invoice{
+			Lines: []*bill.Line{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
+				cef.ExtKeyVATEX:     "DL8.46.1",
+				vatexae.ExtKeyVATEX: "DL8.46.1",
+			})}}}},
+			Discounts: []*bill.Discount{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
+				cef.ExtKeyVATEX:     "DL8.46.2",
+				vatexae.ExtKeyVATEX: "DL8.46.2",
+			})}}}},
+			Charges: []*bill.Charge{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
+				cef.ExtKeyVATEX:     "DL8.46.3",
+				vatexae.ExtKeyVATEX: "DL8.46.3",
+			})}}}},
+		}
+		clearAECEFVATEX(inv)
+		assert.False(t, inv.Lines[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Lines[0].Taxes[0].Ext.Get(vatexae.ExtKeyVATEX))
+		assert.False(t, inv.Discounts[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.2"), inv.Discounts[0].Taxes[0].Ext.Get(vatexae.ExtKeyVATEX))
+		assert.False(t, inv.Charges[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.3"), inv.Charges[0].Taxes[0].Ext.Get(vatexae.ExtKeyVATEX))
 	})
 }
 

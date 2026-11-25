@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
+	"github.com/invopop/gobl.peppol/catalogues/vatexae"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
-	"github.com/invopop/gobl/catalogues/cef"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
@@ -173,7 +173,7 @@ func TestTaxComboRulesAE(t *testing.T) {
 		} {
 			c := vatCombo(key, cat, nil)
 			if cat == "E" {
-				c.Ext = c.Ext.Set(cef.ExtKeyVATEX, "DL8.46.1")
+				c.Ext = c.Ext.Set(vatexae.ExtKeyVATEX, "DL8.46.1")
 			}
 			assert.NoError(t, validateComboIn(c, ae), "category %s", cat)
 		}
@@ -221,7 +221,7 @@ func TestTaxComboRulesAE(t *testing.T) {
 		assert.ErrorContains(t, validateComboIn(vatCombo(tax.KeyExempt, "E", nil), ae), faultExemption)
 		for _, code := range []cbc.Code{"DL8.46.1", "DL8.46.4"} {
 			c := vatCombo(tax.KeyExempt, "E", nil)
-			c.Ext = c.Ext.Set(cef.ExtKeyVATEX, code)
+			c.Ext = c.Ext.Set(vatexae.ExtKeyVATEX, code)
 			assert.NoError(t, validateComboIn(c, ae), code)
 		}
 	})

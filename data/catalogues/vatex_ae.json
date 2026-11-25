@@ -1,0 +1,72 @@
+{
+  "$schema": "https://gobl.org/draft-0/tax/catalogue-def",
+  "key": "vatex-ae",
+  "name": {
+    "en": "UAE VAT Exemption Reasons"
+  },
+  "description": {
+    "en": "Codes for UAE VAT exemption reasons under Article 46 of Federal Decree-Law No. 8 of 2017 on Value Added Tax, as published in the Peppol PINT AE Aligned-TaxExemptionCodes code list."
+  },
+  "extensions": [
+    {
+      "key": "vatex-ae",
+      "name": {
+        "en": "UAE: VAT Exemption Reason"
+      },
+      "desc": {
+        "en": "Reasons for exemption from UAE VAT under Article 46 of Federal Decree-Law No. 8 of 2017 (PINT AE Aligned-TaxExemptionCodes)."
+      },
+      "usage": {
+        "schemas": [
+          "tax/combo"
+        ]
+      },
+      "sources": [
+        {
+          "title": {
+            "en": "PINT AE Aligned Tax Exemption Codes"
+          },
+          "url": "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/codelist/Aligned-TaxExemptionCodes/"
+        }
+      ],
+      "values": [
+        {
+          "code": "DL8.46.1",
+          "name": {
+            "en": "Financial services"
+          },
+          "desc": {
+            "en": "Exempt supply of certain financial services under Article 46(1) of UAE Federal Decree-Law No. 8 of 2017."
+          }
+        },
+        {
+          "code": "DL8.46.2",
+          "name": {
+            "en": "Residential buildings"
+          },
+          "desc": {
+            "en": "Exempt supply of residential buildings through sale or lease under Article 46(2) of UAE Federal Decree-Law No. 8 of 2017."
+          }
+        },
+        {
+          "code": "DL8.46.3",
+          "name": {
+            "en": "Bare land"
+          },
+          "desc": {
+            "en": "Exempt supply of bare land under Article 46(3) of UAE Federal Decree-Law No. 8 of 2017."
+          }
+        },
+        {
+          "code": "DL8.46.4",
+          "name": {
+            "en": "Local passenger transport"
+          },
+          "desc": {
+            "en": "Exempt supply of local passenger transport under Article 46(4) of UAE Federal Decree-Law No. 8 of 2017."
+          }
+        }
+      ]
+    }
+  ]
+}

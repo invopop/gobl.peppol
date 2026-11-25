@@ -14,10 +14,7 @@ preceding:
     issue_date: "2025-01-30"
     series: "AE"
     code: "001"
-
-tax:
-  ext:
-    peppol-pint-ae-credit-note-reason: "DL8.61.1.D"
+    reason: "DL8.61.1.D"
 
 supplier:
   name: "Supplier Legal Name"

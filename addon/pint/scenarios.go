@@ -1,12 +1,19 @@
 package pint
 
 import (
+	"slices"
+
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
+	"github.com/invopop/gobl/i18n"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/tax"
 )
+
+// TagVolumeDiscount marks a UAE volume discount credit note (BTAE-03 reason "VD"),
+// which must not carry a preceding invoice reference (IBR-055-AE).
+const TagVolumeDiscount cbc.Key = "volume-discount"
 
 // UNTDID 1001 document types.
 const (
@@ -36,7 +43,11 @@ var docTypesAE = []cbc.Code{
 // invoiceTags are the document tags the PINT addon adds to invoices.
 var invoiceTags = &tax.TagSet{
 	Schema: bill.ShortSchemaInvoice,
-	List:   transactionTypeTags,
+	List: append(slices.Clone(transactionTypeTags), &cbc.Definition{
+		Key:  TagVolumeDiscount,
+		Name: i18n.String{i18n.EN: "Volume Discount"},
+		Desc: i18n.String{i18n.EN: "PINT AE: credit note issued for a volume discount (reason VD). Must not have a preceding invoice reference."},
+	}),
 }
 
 // invoiceScenarios set 480 and 81 on UAE documents whose lines are all exempt or outside the scope of

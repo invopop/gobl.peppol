@@ -66,22 +66,3 @@ func TestOrgGLN(t *testing.T) {
 		assert.ErrorContains(t, validate(glnIdentity("00")), "GLN identifier must have a valid GS1 format")
 	})
 }
-
-func TestOrgEndpointScheme(t *testing.T) {
-	const fault = "GOBL-PEPPOL-BIS-ORG-ENDPOINT-02"
-	validate := func(uri cbc.URI) error {
-		return rules.Validate(&org.Endpoint{URI: uri}, tax.AddonContext(bis.V3))
-	}
-
-	t.Run("Peppol endpoint passes (PEPPOL-EN16931-CL008)", func(t *testing.T) {
-		if err := validate("iso6523-actorid-upis::0208:0123456789"); err != nil {
-			assert.NotContains(t, err.Error(), fault)
-		}
-	})
-
-	t.Run("email and web addresses are rejected (PEPPOL-EN16931-CL008)", func(t *testing.T) {
-		for _, uri := range []cbc.URI{"mailto:billing@example.com", "https://example.com/invoices"} {
-			assert.ErrorContains(t, validate(uri), fault, uri)
-		}
-	})
-}

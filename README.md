@@ -72,8 +72,7 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   issuing authority as its `description`), `EID` or `CD`, or the `passport`
   key.
 - **Emirates**: UAE addresses need the emirate code as the `region`: `AUH`,
-  `DXB`, `SHJ`, `UAQ`, `FUJ`, `AJM` or `RAK`. A party with a UAE tax ID is
-  written with the country `AE`, so its address needs one too.
+  `DXB`, `SHJ`, `UAQ`, `FUJ`, `AJM` or `RAK`.
 - **Items**: every line item needs a `description`; goods need an HS
   classification, an identity with the label `HS`.
 - **Out of scope documents**: an invoice or credit note whose lines are all
@@ -81,20 +80,25 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   AE requires.
 - **Profit margin scheme**: the AE regime's `margin-scheme` tag with the
   `exempt` VAT key on every line; the lines are written in category `N`.
-- **Exemption reasons**: `cef-vatex` on exempt VAT combos, with the UAE codes
+- **Exemption reasons**: `vatex-ae` on exempt VAT combos, with the UAE codes
   `DL8.46.1` to `DL8.46.4`.
-- **Credit notes**: the reason in the `peppol-pint-ae-credit-note-reason`
-  extension, `DL8.61.1.A` to `DL8.61.1.E` or `VD` for a volume discount.
+- **Credit notes**: the reason code (`DL8.61.1.A` to `DL8.61.1.E`) in the
+  first `preceding` reference's `reason`, or the `volume-discount` tag for
+  volume discount credit notes (written as `VD`, with no preceding invoice).
+- **Free trade zone and disclosed agent**: a `beneficiary` identity
+  (`key: "beneficiary"`) on the customer for free trade zone supplies, and a
+  `principal` identity (`key: "principal"`, 15-digit UAE TRN ending in `03`)
+  on the supplier for disclosed agent billing.
 - **Reverse charge**: the type of goods or services of each line item in the
   `peppol-pint-ae-goods-type` extension.
-- **Predefined endpoints**: deemed supplies go to `0235:9900000097`. A buyer
-  without a Peppol ID takes `0235:9900000098`, or `0235:9900000099` on
-  exports; a UAE buyer without a TRN then needs its `TIN` identity.
+- **Predefined endpoints**: deemed supplies automatically set the customer
+  endpoint to `0235:9900000097`. A buyer without a Peppol ID takes
+  `0235:9900000098`, or `0235:9900000099` on exports; PINT AE additionally
+  expects a UAE buyer without a TRN to carry its `TIN` identity (not enforced
+  by GOBL).
 
-Every party's endpoints must be Peppol ones (`iso6523-actorid-upis`), as PINT
-takes no email or web address as an electronic address, and the supplier and
-customer need one. An email inbox can stay on the party, but isn't written
-when the party has an endpoint.
+The supplier and customer need an electronic address (`endpoints`). An email
+inbox can stay on the party, but isn't written when the party has an endpoint.
 
 PINT allows one note on the document and one per line, and only the payment
 due date (IBT-009) is written, so invoices with more notes or more than one due

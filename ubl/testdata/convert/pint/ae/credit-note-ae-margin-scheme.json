@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "00584c9137b26e2f579e19ada5ee72e101098cbd47ce1dcc94fe1abd1082b157"
+			"val": "a411fccf5da545fed426ec451ed035d46719e54ba9af19735afd9cf629bd5fe9"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -29,12 +29,12 @@
 			{
 				"issue_date": "2025-01-30",
 				"series": "AE",
-				"code": "MARGIN-001"
+				"code": "MARGIN-001",
+				"reason": "DL8.61.1.E"
 			}
 		],
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-credit-note-reason": "DL8.61.1.E",
 				"peppol-pint-ae-transaction-type": "00100000",
 				"untdid-document-type": "381"
 			},

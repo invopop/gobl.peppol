@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "d4dba466923e4099dc18d6e43effaaf266c52e18062953bcb406391339a13931"
+			"val": "6f9b70195d77bfc566e451d30c6ef9b2639a8861d7e10d213920c007eddf7dc0"
 		},
 		"from": "iso6523-actorid-upis::0235:112345678900003",
 		"to": "iso6523-actorid-upis::0235:112345679000003"
@@ -37,7 +37,6 @@
 		"tax": {
 			"rounding": "currency",
 			"ext": {
-				"peppol-pint-ae-beneficiary-id": "189098765401003",
 				"peppol-pint-ae-transaction-type": "10001010",
 				"untdid-document-type": "380"
 			},
@@ -127,6 +126,10 @@
 					"type": "TL",
 					"code": "112345679000001",
 					"description": "Trade License issuing Authority"
+				},
+				{
+					"key": "beneficiary",
+					"code": "189098765401003"
 				}
 			],
 			"people": [
@@ -299,8 +302,8 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"cef-vatex": "DL8.46.2",
-							"untdid-tax-category": "E"
+							"untdid-tax-category": "E",
+							"vatex-ae": "DL8.46.2"
 						}
 					}
 				],
@@ -757,8 +760,8 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"cef-vatex": "DL8.46.2",
-									"untdid-tax-category": "E"
+									"untdid-tax-category": "E",
+									"vatex-ae": "DL8.46.2"
 								},
 								"base": "3900.00",
 								"amount": "0.00"

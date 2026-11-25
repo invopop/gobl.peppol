@@ -43,7 +43,6 @@ func init() {
 		billLineRules(),
 		taxComboRules(),
 		taxCategoryTotalRules(),
-		taxIdentityRules(),
 		orgPartyRules(),
 		orgAddressRules(),
 		orgItemRules(),
@@ -57,6 +56,8 @@ func init() {
 		norm.When(
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			norm.For(normalizeTransactionType),
+			norm.For(normalizeExchangeRateAE),
+			norm.For(normalizeDeemedSupplyAE),
 			norm.For(normalizeSupplierAE),
 			norm.For(normalizeIdentityScopes),
 			norm.For(normalizeMarginSchemeAE),

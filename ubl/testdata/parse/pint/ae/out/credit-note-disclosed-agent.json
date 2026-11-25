@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "c346e3cb38103147e8a569113f1b5b775278422bb94fe2b6d70a0694656251f1"
+			"val": "188c9ca98404386748c78e9578e48dea8064d143a14727b06fc9508a7bf22ef2"
 		},
 		"from": "iso6523-actorid-upis::0235:1987654321",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -28,14 +28,13 @@
 		"preceding": [
 			{
 				"issue_date": "2025-02-07",
-				"code": "Sample-02"
+				"code": "Sample-02",
+				"reason": "DL8.61.1.E"
 			}
 		],
 		"tax": {
 			"rounding": "currency",
 			"ext": {
-				"peppol-pint-ae-credit-note-reason": "DL8.61.1.E",
-				"peppol-pint-ae-principal-id": "155667745601003",
 				"peppol-pint-ae-transaction-type": "00000100",
 				"untdid-document-type": "381"
 			}
@@ -53,6 +52,10 @@
 					"type": "TL",
 					"code": "112345678900003",
 					"description": "Trade License issuing Authority"
+				},
+				{
+					"key": "principal",
+					"code": "155667745601003"
 				},
 				{
 					"scope": "tax",

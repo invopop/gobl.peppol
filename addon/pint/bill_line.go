@@ -56,7 +56,7 @@ func billLineRules() *rules.Set {
 				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
 				rules.Field("item",
 					rules.Field("identities",
-						rules.Assert("06", "reverse charge line item needs a GTIN identity, scheme 0160 (IBR-174-AE)",
+						rules.Assert("06", `reverse charge line item needs a GTIN identity (key "gtin") (IBR-174-AE)`,
 							org.IdentitiesExtensionIn(iso.ExtKeySchemeID, IdentitySchemeGTIN),
 						),
 					),

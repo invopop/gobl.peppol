@@ -17,6 +17,75 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNormalizeDeemedSupplyAE(t *testing.T) {
+	want := []*org.Endpoint{{URI: "iso6523-actorid-upis::0235:9900000097"}}
+	normalize := func(regime l10n.TaxCountryCode, inv *bill.Invoice) {
+		norm.Normalize(inv, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(regime))
+	}
+
+	t.Run("sets deemed supply endpoint when customer has none", func(t *testing.T) {
+		inv := &bill.Invoice{
+			Tags:     tax.WithTags(pint.TagDeemedSupply),
+			Customer: &org.Party{Name: "Buyer"},
+		}
+		normalize(l10n.AE.Tax(), inv)
+		assert.Equal(t, want, inv.Customer.Endpoints)
+	})
+
+	t.Run("overrides existing customer endpoints", func(t *testing.T) {
+		inv := &bill.Invoice{
+			Tags: tax.WithTags(pint.TagDeemedSupply),
+			Customer: &org.Party{
+				Name:      "Buyer",
+				Endpoints: uaeEndpoints("1345678906"),
+			},
+		}
+		normalize(l10n.AE.Tax(), inv)
+		assert.Equal(t, want, inv.Customer.Endpoints)
+	})
+
+	t.Run("overrides endpoint and Peppol inbox while keeping non-Peppol inboxes, and stays idempotent", func(t *testing.T) {
+		inv := &bill.Invoice{
+			Tags: tax.WithTags(pint.TagDeemedSupply),
+			Customer: &org.Party{
+				Name: "Buyer",
+				Inboxes: []*org.Inbox{
+					{Email: "buyer@example.com"},
+					{Key: org.InboxKeyPeppol, Scheme: "0235", Code: "1345678906"},
+					{Scheme: "0088", Code: "1234567890128"},
+				},
+			},
+		}
+		wantInboxes := []*org.Inbox{
+			{Email: "buyer@example.com"},
+			{Key: org.InboxKeyPeppol, Scheme: "0235", Code: "9900000097"},
+		}
+		normalize(l10n.AE.Tax(), inv)
+		assert.Equal(t, want, inv.Customer.Endpoints)
+		assert.Equal(t, wantInboxes, inv.Customer.Inboxes)
+		// Second pass must remain idempotent and not re-append from the inbox.
+		normalize(l10n.AE.Tax(), inv)
+		assert.Equal(t, want, inv.Customer.Endpoints)
+		assert.Equal(t, wantInboxes, inv.Customer.Inboxes)
+	})
+
+	t.Run("leaves customer untouched without the deemed-supply tag or outside AE", func(t *testing.T) {
+		orig := uaeEndpoints("1345678906")
+		inv := &bill.Invoice{
+			Customer: &org.Party{Name: "Buyer", Endpoints: orig},
+		}
+		normalize(l10n.AE.Tax(), inv)
+		assert.Equal(t, orig, inv.Customer.Endpoints)
+
+		inv = &bill.Invoice{
+			Tags:     tax.WithTags(pint.TagDeemedSupply),
+			Customer: &org.Party{Name: "Buyer", Endpoints: orig},
+		}
+		normalize(l10n.AU.Tax(), inv)
+		assert.Equal(t, orig, inv.Customer.Endpoints)
+	})
+}
+
 func TestNormalizeSupplierAE(t *testing.T) {
 	// normalize returns the supplier after normalizing an invoice under the
 	// regime.
@@ -117,60 +186,7 @@ func TestNormalizeSupplierAE(t *testing.T) {
 }
 
 func TestOrgPartyRulesAE(t *testing.T) {
-	const (
-		faultAddress   = "GOBL-PEPPOL-PINT-ORG-PARTY-02"
-		faultEmirate   = "GOBL-PEPPOL-PINT-ORG-PARTY-03"
-		faultLegalType = "GOBL-PEPPOL-PINT-ORG-PARTY-04"
-	)
-	standard := func() *bill.Invoice { return aeDocument(bill.InvoiceTypeStandard) }
-	trn := func() *tax.Identity { return &tax.Identity{Country: "AE", Code: "100000003200003"} }
-	oman := func() []*org.Address {
-		return []*org.Address{{Street: "Street 1", Locality: "Muscat", Region: "Muscat", Country: "OM"}}
-	}
-
-	t.Run("a UAE tax ID makes every address count as in the UAE (IBR-128-AE)", func(t *testing.T) {
-		inv := standard()
-		inv.Supplier.Addresses = oman()
-		assert.Contains(t, aeFaults(t, inv), faultEmirate)
-
-		inv = standard()
-		inv.Ordering = &bill.Ordering{Seller: &org.Party{Name: "Tax Rep", TaxID: trn(), Addresses: oman()}}
-		assert.Contains(t, aeFaults(t, inv), faultEmirate)
-
-		inv = standard()
-		inv.Supplier.Addresses = oman()
-		inv.Supplier.Addresses[0].Region = "DXB"
-		assert.NotContains(t, aeFaults(t, inv), faultEmirate)
-	})
-
-	t.Run("a UAE tax ID needs an address, as one is written (IBR-128-AE)", func(t *testing.T) {
-		inv := standard()
-		inv.Ordering = &bill.Ordering{Issuer: &org.Party{Name: "Issuer", TaxID: trn()}}
-		assert.Contains(t, aeFaults(t, inv), faultAddress)
-
-		inv = standard()
-		inv.Payment = &bill.PaymentDetails{Payee: &org.Party{Name: "Payee", TaxID: trn()}}
-		assert.Contains(t, aeFaults(t, inv), faultAddress)
-	})
-
-	t.Run("UAE addresses are left to the address rules (IBR-128-AE)", func(t *testing.T) {
-		inv := standard()
-		inv.Supplier.Addresses[0].Region = "Dubai"
-		assert.NotContains(t, aeFaults(t, inv), faultEmirate)
-	})
-
-	t.Run("other parties are not checked (IBR-128-AE)", func(t *testing.T) {
-		inv := standard()
-		inv.Lines[0].Seller = &org.Party{
-			Name:      "Maker",
-			TaxID:     &tax.Identity{Country: "DE", Code: "111111125"},
-			Addresses: []*org.Address{{Street: "Hauptstr. 1", Locality: "Berlin", Region: "Berlin", Country: "DE"}},
-		}
-		inv.Ordering = &bill.Ordering{Issuer: &org.Party{Name: "Issuer"}}
-		out := aeFaults(t, inv)
-		assert.NotContains(t, out, faultAddress)
-		assert.NotContains(t, out, faultEmirate)
-	})
+	const faultLegalType = "GOBL-PEPPOL-PINT-ORG-PARTY-01"
 
 	t.Run("legal identity needs a PINT AE type with a UAE endpoint (IBR-173-AE, IBR-181-AE, IBR-180-AE, IBR-183-AE)", func(t *testing.T) {
 		inv := aeIdentityDocument()
@@ -420,6 +436,7 @@ func TestOrgIdentityRulesAE(t *testing.T) {
 	const (
 		fault          = "GOBL-PEPPOL-PINT-ORG-IDENTITY-01"
 		faultAuthority = "GOBL-PEPPOL-PINT-ORG-IDENTITY-02"
+		faultPrincipal = "GOBL-PEPPOL-PINT-ORG-IDENTITY-03"
 	)
 
 	t.Run("passport needs the issuing country (IBR-012-AE, IBR-010-AE)", func(t *testing.T) {
@@ -448,6 +465,21 @@ func TestOrgIdentityRulesAE(t *testing.T) {
 
 		assert.NotContains(t, aeFaults(t, aeIdentityDocument()), faultAuthority)
 	})
+	t.Run("principal identity code must match UAE TRN ending with 03 (IBR-132-AE)", func(t *testing.T) {
+		inv := aeIdentityDocument()
+		inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
+			Key:  pint.IdentityKeyPrincipal,
+			Code: "155667745601003",
+		})
+		assert.NotContains(t, aeFaults(t, inv), faultPrincipal)
+
+		inv = aeIdentityDocument()
+		inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
+			Key:  pint.IdentityKeyPrincipal,
+			Code: "155667745601004",
+		})
+		assert.Contains(t, aeFaults(t, inv), faultPrincipal)
+	})
 }
 
 func TestItemKeyAE(t *testing.T) {
@@ -466,8 +498,7 @@ func TestItemKeyAE(t *testing.T) {
 func TestOrgItemRulesAE(t *testing.T) {
 	const (
 		faultGoodsHS        = "GOBL-PEPPOL-PINT-ORG-ITEM-01"
-		faultGoodsServices  = "GOBL-PEPPOL-PINT-ORG-ITEM-02"
-		faultClassification = "GOBL-PEPPOL-PINT-ORG-ITEM-03"
+		faultClassification = "GOBL-PEPPOL-PINT-ORG-ITEM-02"
 	)
 	hs := &org.Identity{Label: pint.IdentityLabelHS, Code: "8471"}
 	sac := &org.Identity{Label: pint.IdentityLabelSAC, Code: "998713"}
@@ -478,26 +509,20 @@ func TestOrgItemRulesAE(t *testing.T) {
 		return inv
 	}
 
-	t.Run("goods need an HS classification (IBR-184-AE)", func(t *testing.T) {
-		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods)), faultGoodsHS)
-		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods, sac)), faultGoodsHS)
-		assert.NotContains(t, aeFaults(t, item(org.ItemKeyGoods, hs)), faultGoodsHS)
+	t.Run("goods and goods-services need an HS classification (IBR-184-AE, IBR-186-AE)", func(t *testing.T) {
+		for _, key := range []cbc.Key{org.ItemKeyGoods, pint.ItemKeyGoodsServices} {
+			assert.Contains(t, aeFaults(t, item(key)), faultGoodsHS, key)
+			assert.Contains(t, aeFaults(t, item(key, sac)), faultGoodsHS, key)
+			assert.NotContains(t, aeFaults(t, item(key, hs)), faultGoodsHS, key)
+		}
 
 		// An identity with a scheme ID isn't written as a classification.
 		withScheme := &org.Identity{Label: pint.IdentityLabelHS, Code: "8471", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: "0088"})}
 		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods, withScheme)), faultGoodsHS)
 	})
 
-	t.Run("goods and services need an HS classification (IBR-186-AE)", func(t *testing.T) {
-		assert.Contains(t, aeFaults(t, item(pint.ItemKeyGoodsServices)), faultGoodsServices)
-		assert.Contains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, sac)), faultGoodsServices)
-		assert.NotContains(t, aeFaults(t, item(pint.ItemKeyGoodsServices, hs)), faultGoodsServices)
-	})
-
-	t.Run("no item type needs neither", func(t *testing.T) {
-		out := aeFaults(t, item(""))
-		assert.NotContains(t, out, faultGoodsHS)
-		assert.NotContains(t, out, faultGoodsServices)
+	t.Run("no item type needs no HS classification", func(t *testing.T) {
+		assert.NotContains(t, aeFaults(t, item("")), faultGoodsHS)
 	})
 
 	t.Run("item classifications must include an HS one (IBR-188-AE)", func(t *testing.T) {

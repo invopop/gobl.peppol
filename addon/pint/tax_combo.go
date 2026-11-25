@@ -1,9 +1,9 @@
 package pint
 
 import (
+	"github.com/invopop/gobl.peppol/catalogues/vatexae"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
-	"github.com/invopop/gobl/catalogues/cef"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/num"
@@ -27,15 +27,6 @@ var taxCategoryMap = tax.ExtensionsOf(cbc.CodeMap{
 	tax.KeyExport:         en16931.TaxCategoryExport,
 	tax.KeyOutsideScope:   en16931.TaxCategoryOutsideScope,
 })
-
-// exemptionCodesAE are PINT AE's reasons for exemption from tax (code list Aligned-TaxExemptionCodes): the
-// UAE VAT exemptions of Article 46 of Federal Decree-Law No. 8 of 2017.
-var exemptionCodesAE = []cbc.Code{
-	"DL8.46.1", // certain financial services
-	"DL8.46.2", // residential buildings
-	"DL8.46.3", // bare land
-	"DL8.46.4", // local passenger transport
-}
 
 // taxCategoryCodesAUNZ lists the subset of UNTDID 5305 tax category codes
 // accepted by the A-NZ PINT specification.
@@ -80,7 +71,7 @@ func normalizeMarginSchemeAE(inv *bill.Invoice) {
 			continue
 		}
 		for _, c := range l.Taxes {
-			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt && !c.Ext.Has(cef.ExtKeyVATEX) {
+			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt && !c.Ext.Has(vatexae.ExtKeyVATEX) {
 				c.Ext = c.Ext.Set(untdid.ExtKeyTaxCategory, TaxCategoryMarginScheme)
 			}
 		}
@@ -173,8 +164,8 @@ func taxComboRules() *rules.Set {
 						tax.ExtensionsRequire(untdid.ExtKeyTaxCategory),
 						tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, en16931.TaxCategoryExempt),
 					),
-					rules.Assert("08", "exempt VAT needs a cef-vatex exemption reason: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
-						tax.ExtensionsRequire(cef.ExtKeyVATEX),
+					rules.Assert("08", "exempt VAT needs a vatex-ae exemption reason: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
+						tax.ExtensionsRequire(vatexae.ExtKeyVATEX),
 					),
 				),
 			),
@@ -182,7 +173,7 @@ func taxComboRules() *rules.Set {
 			// The Schematron doesn't check PINT AE's code list.
 			rules.Field("ext",
 				rules.Assert("09", "VAT exemption reason must be one of PINT AE's: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (code list Aligned-TaxExemptionCodes)",
-					tax.ExtensionsHasCodes(cef.ExtKeyVATEX, exemptionCodesAE...),
+					tax.ExtensionHasValidCode(vatexae.ExtKeyVATEX),
 				),
 			),
 		),

@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "f039789d4ef40d943370da1de63dd818c772f16dfc5d244f2f921ab632eb91ef"
+			"val": "84a626746eafb24aa18b8d182236da267f9baa838f7e25cfb9171857c4c76107"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -25,12 +25,12 @@
 		"preceding": [
 			{
 				"issue_date": "2025-01-30",
-				"code": "AE-001"
+				"code": "AE-001",
+				"reason": "DL8.61.1.E"
 			}
 		],
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-credit-note-reason": "DL8.61.1.E",
 				"peppol-pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "81"
 			}

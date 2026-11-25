@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "724110f09d53407f6e574d17c26c2aec8837a351eaa783a855ce01a9339b8059"
+			"val": "c0e7db1c2567246ad7afe19cb30d104e23bb202627acf00a2d8eb2943f3d2d59"
 		},
 		"from": "iso6523-actorid-upis::0235:1246801357",
 		"to": "iso6523-actorid-upis::0235:1789012345"
@@ -27,7 +27,6 @@
 		"tax": {
 			"rounding": "currency",
 			"ext": {
-				"peppol-pint-ae-beneficiary-id": "189098765401003",
 				"peppol-pint-ae-transaction-type": "10000000",
 				"untdid-document-type": "380"
 			}
@@ -103,6 +102,10 @@
 					"type": "TL",
 					"code": "112345679000001",
 					"description": "Trade License issuing Authority"
+				},
+				{
+					"key": "beneficiary",
+					"code": "189098765401003"
 				}
 			],
 			"people": [

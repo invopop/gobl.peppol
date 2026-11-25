@@ -6,6 +6,7 @@ import (
 
 	"github.com/invopop/gobl"
 	"github.com/invopop/gobl.peppol/addon/pint"
+	"github.com/invopop/gobl.peppol/catalogues/vatexae"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/cef"
@@ -39,6 +40,10 @@ const aedTotalDocumentType = "aedtotal-incl-vat"
 // which the syntax binding requires and the official examples write.
 const deliveryTermsSchemeIncoterms = "Incoterms"
 
+// creditNoteReasonVolumeDiscount is the PINT AE credit note reason code (BTAE-03)
+// for a volume discount, mapped to and from pint.TagVolumeDiscount.
+const creditNoteReasonVolumeDiscount = "VD"
+
 // exportAE applies the Peppol PINT AE rules to an exported invoice.
 func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error {
 	out, ok := doc.(*goblubl.Invoice)
@@ -54,7 +59,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	exportAEDeliveryPartyID(out, inv)
 	exportAEContractValue(out, inv)
 	exportAEPayment(out, inv)
-	exportAEChargeRates(out, aeStandardRate(inv))
+	exportAECharges(out, inv, aeStandardRate(inv))
 	exportAELines(out.InvoiceLines, inv)
 	exportAELines(out.CreditNoteLines, inv)
 	for _, p := range goblubl.InvoiceParties(inv, out) {
@@ -63,6 +68,9 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	}
 	exportAEPartyIdentities(out.AccountingSupplierParty.Party, inv.Supplier)
 	exportAEPartyIdentities(out.AccountingCustomerParty.Party, inv.Customer)
+	if len(out.TaxTotal) > 0 {
+		exportAETaxSubtotalExemptions(&out.TaxTotal[0], inv)
+	}
 	for i := range out.TaxTotal {
 		exportAETaxTotal(&out.TaxTotal[i], aeStandardRate(inv))
 	}
@@ -87,6 +95,7 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	importAEChargeExemptions(in, inv)
 	importAELineExemptions(in.InvoiceLines, inv)
 	importAELineExemptions(in.CreditNoteLines, inv)
+	clearAECEFVATEX(inv)
 	importAELineGoods(in.InvoiceLines, inv)
 	importAELineGoods(in.CreditNoteLines, inv)
 	importAELineItems(in.InvoiceLines, inv)
@@ -153,15 +162,40 @@ func exportAEUUID(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// exportAETransactionType writes the transaction type (BTAE-02), and the beneficiary (BTAE-01) and
-// principal (BTAE-14) IDs as the buyer and seller party identifications.
+// exportAETransactionType writes the transaction type (BTAE-02), and moves the
+// customer's beneficiary (BTAE-01) and supplier's principal (BTAE-14) identities
+// to the dedicated buyer and seller party identifications.
 func exportAETransactionType(out *goblubl.Invoice, inv *bill.Invoice) {
 	out.ProfileExecutionID = inv.Tax.GetExt(pint.ExtKeyTransactionType).String()
-	if id := inv.Tax.GetExt(pint.ExtKeyBeneficiaryID); id != "" {
-		out.BuyerCustomerParty = &goblubl.CustomerParty{Party: identifiedParty(id)}
+	if inv.Customer != nil {
+		if id := org.IdentityForKey(inv.Customer.Identities, pint.IdentityKeyBeneficiary); id != nil && id.Code != "" {
+			out.BuyerCustomerParty = &goblubl.CustomerParty{Party: identifiedParty(id.Code)}
+			removePartyIdentification(out.AccountingCustomerParty.Party, id.Code)
+		}
 	}
-	if id := inv.Tax.GetExt(pint.ExtKeyPrincipalID); id != "" {
-		out.SellerSupplierParty = &goblubl.SupplierParty{Party: identifiedParty(id)}
+	if inv.Supplier != nil {
+		if id := org.IdentityForKey(inv.Supplier.Identities, pint.IdentityKeyPrincipal); id != nil && id.Code != "" {
+			out.SellerSupplierParty = &goblubl.SupplierParty{Party: identifiedParty(id.Code)}
+			removePartyIdentification(out.AccountingSupplierParty.Party, id.Code)
+		}
+	}
+}
+
+// removePartyIdentification removes the first cac:PartyIdentification whose
+// value matches code.
+func removePartyIdentification(p *goblubl.Party, code cbc.Code) {
+	if p == nil {
+		return
+	}
+	val := code.String()
+	for i, pi := range p.PartyIdentification {
+		if pi.ID != nil && pi.ID.Value == val {
+			p.PartyIdentification = append(p.PartyIdentification[:i], p.PartyIdentification[i+1:]...)
+			if len(p.PartyIdentification) == 0 {
+				p.PartyIdentification = nil
+			}
+			return
+		}
 	}
 }
 
@@ -243,15 +277,47 @@ func aeAddress(a *org.Address) *goblubl.PostalAddress {
 	return addr
 }
 
-// exportAEChargeRates writes the standard rate on reverse charge allowances and charges, where gobl.ubl
-// writes 0 and PINT AE wants one above 0.
-func exportAEChargeRates(out *goblubl.Invoice, standard string) {
+// exportAECharges writes the standard rate on reverse charge allowances and
+// charges, where gobl.ubl writes 0 and PINT AE wants one above 0, and copies
+// UAE VATEX exemption codes onto their TaxCategory elements.
+func exportAECharges(out *goblubl.Invoice, inv *bill.Invoice, standard string) {
 	for _, ac := range out.AllowanceCharge {
 		for _, c := range ac.TaxCategory {
 			if c != nil && c.ID != nil && c.ID.Value == taxCategoryReverseCharge {
 				rate := standard
 				c.Percent = &rate
 			}
+		}
+	}
+	if len(out.AllowanceCharge) != len(inv.Charges)+len(inv.Discounts) {
+		return
+	}
+	for i, ch := range inv.Charges {
+		if ch != nil {
+			exportAETaxCategoryExemption(out.AllowanceCharge[i].TaxCategory, ch.Taxes)
+		}
+	}
+	for i, d := range inv.Discounts {
+		if d != nil {
+			exportAETaxCategoryExemption(out.AllowanceCharge[len(inv.Charges)+i].TaxCategory, d.Taxes)
+		}
+	}
+}
+
+func exportAETaxCategoryExemption(cats []*goblubl.TaxCategory, taxes tax.Set) {
+	c := taxes.Get(tax.CategoryVAT)
+	if c == nil {
+		return
+	}
+	code := c.Ext.Get(vatexae.ExtKeyVATEX)
+	if code == "" {
+		return
+	}
+	for _, tc := range cats {
+		if tc != nil && tc.TaxScheme != nil && tc.TaxScheme.ID.Value == tax.CategoryVAT.String() {
+			v := code.String()
+			tc.TaxExemptionReasonCode = &v
+			return
 		}
 	}
 }
@@ -281,8 +347,42 @@ func importAEChargeExemptions(in *goblubl.Invoice, inv *bill.Invoice) {
 				continue
 			}
 			if code := cbc.Code(strings.TrimSpace(*cat.TaxExemptionReasonCode)); code != "" {
-				c.Ext = c.Ext.Set(cef.ExtKeyVATEX, code)
+				c.Ext = c.Ext.Set(vatexae.ExtKeyVATEX, code)
 				break
+			}
+		}
+	}
+}
+
+// clearAECEFVATEX removes any cef-vatex copied by gobl.ubl from TaxTotal
+// breakdowns so UAE exemptions live strictly under vatex-ae.
+func clearAECEFVATEX(inv *bill.Invoice) {
+	clearSet := func(set tax.Set) {
+		for _, c := range set {
+			if c != nil {
+				c.Ext = c.Ext.Delete(cef.ExtKeyVATEX)
+			}
+		}
+	}
+	for _, l := range inv.Lines {
+		if l != nil {
+			clearSet(l.Taxes)
+		}
+	}
+	for _, d := range inv.Discounts {
+		if d != nil {
+			clearSet(d.Taxes)
+		}
+	}
+	for _, ch := range inv.Charges {
+		if ch != nil {
+			clearSet(ch.Taxes)
+		}
+	}
+	if inv.Totals != nil && inv.Totals.Taxes != nil {
+		for _, cat := range inv.Totals.Taxes.Categories {
+			for _, r := range cat.Rates {
+				r.Ext = r.Ext.Delete(cef.ExtKeyVATEX)
 			}
 		}
 	}
@@ -307,11 +407,21 @@ func importAETransactionType(in *goblubl.Invoice, inv *bill.Invoice) {
 			}
 		}
 	}
-	if in.BuyerCustomerParty != nil {
-		setAEExt(inv, pint.ExtKeyBeneficiaryID, partyIdentificationID(in.BuyerCustomerParty.Party))
+	if in.BuyerCustomerParty != nil && inv.Customer != nil {
+		if id := partyIdentificationID(in.BuyerCustomerParty.Party); id != "" {
+			inv.Customer.Identities = append(inv.Customer.Identities, &org.Identity{
+				Key:  pint.IdentityKeyBeneficiary,
+				Code: id,
+			})
+		}
 	}
-	if in.SellerSupplierParty != nil {
-		setAEExt(inv, pint.ExtKeyPrincipalID, partyIdentificationID(in.SellerSupplierParty.Party))
+	if in.SellerSupplierParty != nil && inv.Supplier != nil {
+		if id := partyIdentificationID(in.SellerSupplierParty.Party); id != "" {
+			inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
+				Key:  pint.IdentityKeyPrincipal,
+				Code: id,
+			})
+		}
 	}
 }
 
@@ -343,12 +453,21 @@ func setAEExt(inv *bill.Invoice, key cbc.Key, code cbc.Code) {
 // cac:DiscrepancyResponse/cbc:ResponseCode (BTAE-03). UBL 2.1 only allows it
 // on credit notes.
 func exportAECreditNoteReason(out *goblubl.Invoice, inv *bill.Invoice) {
-	reason := inv.Tax.GetExt(pint.ExtKeyCreditNoteReason)
-	if reason == "" || out.CreditNoteTypeCode == nil {
+	if out.CreditNoteTypeCode == nil {
+		return
+	}
+	var reason string
+	switch {
+	case inv.HasTags(pint.TagVolumeDiscount):
+		reason = creditNoteReasonVolumeDiscount
+	case len(inv.Preceding) > 0 && inv.Preceding[0] != nil:
+		reason = inv.Preceding[0].Reason
+	}
+	if reason == "" {
 		return
 	}
 	out.DiscrepancyResponse = []goblubl.Response{
-		{ResponseCode: &goblubl.IDType{Value: reason.String()}},
+		{ResponseCode: &goblubl.IDType{Value: reason}},
 	}
 }
 
@@ -356,10 +475,21 @@ func exportAECreditNoteReason(out *goblubl.Invoice, inv *bill.Invoice) {
 // cac:DiscrepancyResponse with a code, the only one PINT AE allows.
 func importAECreditNoteReason(in *goblubl.Invoice, inv *bill.Invoice) {
 	for _, r := range in.DiscrepancyResponse {
-		if r.ResponseCode != nil && strings.TrimSpace(r.ResponseCode.Value) != "" {
-			setAEExt(inv, pint.ExtKeyCreditNoteReason, cbc.Code(strings.TrimSpace(r.ResponseCode.Value)))
-			return
+		if r.ResponseCode == nil {
+			continue
 		}
+		code := strings.TrimSpace(r.ResponseCode.Value)
+		if code == "" {
+			continue
+		}
+		if code == creditNoteReasonVolumeDiscount {
+			if !inv.HasTags(pint.TagVolumeDiscount) {
+				inv.Tags.List = append(inv.Tags.List, pint.TagVolumeDiscount)
+			}
+		} else if len(inv.Preceding) > 0 && inv.Preceding[0] != nil {
+			inv.Preceding[0].Reason = code
+		}
+		return
 	}
 }
 
@@ -374,7 +504,7 @@ func exportAELineExemption(line *goblubl.InvoiceLine, l *bill.Line, tx *bill.Tax
 		return
 	}
 	ctc := line.Item.ClassifiedTaxCategory
-	if code := c.Ext.Get(cef.ExtKeyVATEX); code != "" {
+	if code := c.Ext.Get(vatexae.ExtKeyVATEX); code != "" {
 		v := code.String()
 		ctc.TaxExemptionReasonCode = &v
 	}
@@ -415,7 +545,7 @@ func importAELineExemptions(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 		ctc := line.Item.ClassifiedTaxCategory
 		if ctc.TaxExemptionReasonCode != nil {
 			if code := cbc.Code(strings.TrimSpace(*ctc.TaxExemptionReasonCode)); code != "" {
-				c.Ext = c.Ext.Set(cef.ExtKeyVATEX, code)
+				c.Ext = c.Ext.Set(vatexae.ExtKeyVATEX, code)
 			}
 		}
 		if ctc.TaxExemptionReason == nil || strings.TrimSpace(*ctc.TaxExemptionReason) == "" {
@@ -976,6 +1106,31 @@ func importAELegalIdentity(id *org.Identity, cid *goblubl.IDType) {
 		id.Country = l10n.ISOCountryCode(name)
 	case id.Type == ae.IdentityTypeTradeLicense:
 		id.Description = name
+	}
+}
+
+// exportAETaxSubtotalExemptions copies UAE VATEX exemption codes from the
+// calculated tax totals onto the matching UBL subtotals before merging.
+// It relies on gobl.ubl emitting one TaxSubtotal per rate in the exact
+// iteration order of inv.Totals.Taxes.Categories[*].Rates[*].
+func exportAETaxSubtotalExemptions(tt *goblubl.TaxTotal, inv *bill.Invoice) {
+	if inv == nil || inv.Totals == nil || inv.Totals.Taxes == nil {
+		return
+	}
+	var codes []cbc.Code
+	for _, cat := range inv.Totals.Taxes.Categories {
+		for _, r := range cat.Rates {
+			codes = append(codes, r.Ext.Get(vatexae.ExtKeyVATEX))
+		}
+	}
+	if len(codes) != len(tt.TaxSubtotal) {
+		return
+	}
+	for i, code := range codes {
+		if code != "" {
+			v := code.String()
+			tt.TaxSubtotal[i].TaxCategory.TaxExemptionReasonCode = &v
+		}
 	}
 }
 

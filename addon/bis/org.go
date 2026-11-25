@@ -29,9 +29,6 @@ func orgEndpointRules() *rules.Set {
 					is.Func("GS1 check digit", glnCheckDigitValid),
 				),
 			),
-			rules.Assert("02", "electronic address must be a Peppol endpoint (PEPPOL-EN16931-CL008)",
-				cbc.URISchemeIn(iso.ActorIDScheme),
-			),
 		),
 	)
 }

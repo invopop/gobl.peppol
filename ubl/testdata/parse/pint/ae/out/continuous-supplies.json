@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "d435eaefff7f9b8e80ae46b75fb0a14571227bdba0bc703392e8489e586a0357"
+			"val": "4bdba82858741083124802d78b77ad1164a026accd331c6f0e85f172b2a9767f"
 		},
 		"from": "iso6523-actorid-upis::0235:1987654321",
 		"to": "iso6523-actorid-upis::0235:1456789456"
@@ -213,8 +213,8 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"cef-vatex": "DL8.46.4",
-							"untdid-tax-category": "E"
+							"untdid-tax-category": "E",
+							"vatex-ae": "DL8.46.4"
 						}
 					}
 				],
@@ -302,8 +302,8 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"cef-vatex": "DL8.46.4",
-									"untdid-tax-category": "E"
+									"untdid-tax-category": "E",
+									"vatex-ae": "DL8.46.4"
 								},
 								"base": "727.50",
 								"amount": "0.00"
