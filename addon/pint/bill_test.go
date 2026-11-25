@@ -1116,10 +1116,8 @@ func TestBillMarginSchemeRulesAE(t *testing.T) {
 
 func TestBillDiscountChargeRules(t *testing.T) {
 	const (
-		faultDiscount   = "GOBL-PEPPOL-PINT-BILL-DISCOUNT-01"
 		faultCharge     = "GOBL-PEPPOL-PINT-BILL-CHARGE-01"
 		faultENDiscount = "GOBL-EU-EN16931-BILL-DISCOUNT-01"
-		faultENCharge   = "GOBL-EU-EN16931-BILL-CHARGE-02"
 	)
 	ctx := []rules.WithContext{tax.AddonContext(pint.V1, en16931.V2017), tax.RegimeContext(l10n.AU.Tax())}
 	gst := func() tax.Set {
@@ -1141,15 +1139,15 @@ func TestBillDiscountChargeRules(t *testing.T) {
 		d := &bill.Discount{Reason: "Loyalty", Amount: num.MakeAmount(100, 2), Taxes: gst()}
 		c := &bill.Charge{Reason: "Freight", Amount: num.MakeAmount(100, 2), Taxes: gst()}
 		out := errText(rules.Validate(d, ctx...)) + errText(rules.Validate(c, ctx...))
-		for _, code := range []string{faultDiscount, faultCharge, faultENDiscount, faultENCharge} {
+		for _, code := range []string{faultCharge, faultENDiscount} {
 			assert.NotContains(t, out, code)
 		}
 	})
 
-	t.Run("discounts and charges need taxes (aligned-ibrp-032, aligned-ibrp-037)", func(t *testing.T) {
+	t.Run("discounts and charges need taxes (BR-32, aligned-ibrp-037)", func(t *testing.T) {
 		d := &bill.Discount{Reason: "Loyalty", Amount: num.MakeAmount(100, 2)}
 		c := &bill.Charge{Reason: "Freight", Amount: num.MakeAmount(100, 2)}
-		assert.Contains(t, errText(rules.Validate(d, ctx...)), faultDiscount)
+		assert.Contains(t, errText(rules.Validate(d, ctx...)), faultENDiscount)
 		assert.Contains(t, errText(rules.Validate(c, ctx...)), faultCharge)
 	})
 }

@@ -43,8 +43,6 @@ func billInvoiceRules() *rules.Set {
 		// PINT has no BR-E-10, BR-O-10 or BR-AE-10; PINT AE replaces it with
 		// GOBL-PEPPOL-PINT-TAX-COMBO-08 (IBR-167-AE, IBR-168-AE, IBR-169-AE) per line, discount and charge.
 		rules.Ignore("GOBL-EU-EN16931-BILL-INVOICE-08"),
-		// EN 16931 asks lines for a VAT category; PINT takes any tax scheme, so the line rules check it.
-		rules.Ignore("GOBL-EU-EN16931-BILL-INVOICE-10"),
 
 		// Supplier and customer
 		rules.Field("supplier",
@@ -442,22 +440,9 @@ func billInvoiceRules() *rules.Set {
 	)
 }
 
-// billDiscountRules validates document level discounts on PINT documents.
-func billDiscountRules() *rules.Set {
-	return rules.For(new(bill.Discount),
-		// EN 16931 asks for a VAT category; PINT takes any tax scheme.
-		rules.Ignore("GOBL-EU-EN16931-BILL-DISCOUNT-01"),
-		rules.Field("taxes",
-			rules.Assert("01", "discount taxes are required (aligned-ibrp-032)", is.Present),
-		),
-	)
-}
-
 // billChargeRules validates document level charges on PINT documents.
 func billChargeRules() *rules.Set {
 	return rules.For(new(bill.Charge),
-		// EN 16931 asks for a VAT category; PINT takes any tax scheme.
-		rules.Ignore("GOBL-EU-EN16931-BILL-CHARGE-02"),
 		rules.Field("taxes",
 			rules.Assert("01", "charge taxes are required (aligned-ibrp-037)", is.Present),
 		),

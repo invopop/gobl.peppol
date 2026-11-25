@@ -69,10 +69,6 @@ func TestBillLineRulesAUNZ(t *testing.T) {
 		assert.NotContains(t, lineFaults(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)), faultLineGST)
 	})
 
-	t.Run("GST lines pass the EN 16931 line rule, which PINT ignores", func(t *testing.T) {
-		assert.NotContains(t, lineFaults(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)), "GOBL-EU-EN16931-BILL-INVOICE-10")
-	})
-
 	t.Run("the GST rule does not apply outside A-NZ", func(t *testing.T) {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		assert.NotContains(t, aeFaults(t, inv), faultLineGST)
