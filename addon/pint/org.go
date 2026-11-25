@@ -1,7 +1,6 @@
 package pint
 
 import (
-	"regexp"
 	"slices"
 	"strings"
 
@@ -46,7 +45,7 @@ func orgPartyRules() *rules.Set {
 			is.InContext(tax.RegimeIn(regimesAE...)),
 			// IBR-183-AE also exempts other 1XXXXXXXXX endpoints, but IBR-180-AE still asks them for a type.
 			rules.When(
-				is.Func("has UAE Peppol endpoint other than 9900000098 or 9900000099", partyHasUAEEndpoint(endpointPatternPredefined, false)),
+				is.Func("has UAE Peppol endpoint other than 9900000098 or 9900000099", partyHasNonPredefinedUAEEndpoint),
 				rules.Field("identities", rules.Each(
 					rules.When(
 						is.Func("legal scope", identityScopeIn(org.IdentityScopeLegal)),
@@ -107,25 +106,16 @@ func partyEndpointID(p *org.Party) (cbc.Code, string) {
 	return "", ""
 }
 
-// Patterns of the UAE Peppol endpoint codes the PINT AE rules depend on.
-const (
-	endpointPatternPredefined = `^99000000(98|99)$`
-	endpointPattern1or9       = `^[19]\d{9}$`
-)
-
-// partyHasUAEEndpoint returns a predicate that reports whether the party's
-// electronic address, as gobl.ubl chooses it, uses the UAE Peppol scheme 0235
-// with a code that matches the pattern, or that doesn't when match is false.
-func partyHasUAEEndpoint(pattern string, match bool) func(any) bool {
-	re := regexp.MustCompile(pattern)
-	return func(val any) bool {
-		p, ok := val.(*org.Party)
-		if !ok || p == nil {
-			return false
-		}
-		scheme, code := partyEndpointID(p)
-		return scheme == TINScheme && re.MatchString(code) == match
+// partyHasNonPredefinedUAEEndpoint reports whether the party's electronic
+// address, as gobl.ubl chooses it, uses the UAE Peppol scheme 0235 with a
+// code other than the predefined buyer endpoints 9900000098 and 9900000099.
+func partyHasNonPredefinedUAEEndpoint(val any) bool {
+	p, ok := val.(*org.Party)
+	if !ok || p == nil {
+		return false
 	}
+	scheme, code := partyEndpointID(p)
+	return scheme == TINScheme && code != "9900000098" && code != "9900000099"
 }
 
 // partyFirstLegalIdentity returns the party's first identity with the legal
@@ -454,12 +444,6 @@ func orgItemRules() *rules.Set {
 					),
 				),
 			),
-			// IBR-188-AE's text wants every classification to be HS, but its test passes when any one is.
-			rules.Field("identities",
-				rules.Assert("02", "item classifications must include one from the HS list (IBR-188-AE)",
-					is.Func("classifications include HS", identitiesClassifiedWithHS),
-				),
-			),
 		),
 	)
 }
@@ -487,24 +471,4 @@ func identitiesHaveLabel(label string) func(any) bool {
 		}
 		return false
 	}
-}
-
-// identitiesClassifiedWithHS reports whether the item classifications, if any, include an HS one.
-// SAC codes don't count.
-func identitiesClassifiedWithHS(val any) bool {
-	ids, ok := val.([]*org.Identity)
-	if !ok {
-		return false
-	}
-	classified := false
-	for _, id := range ids {
-		if id == nil || id.Label == "" || id.Label == IdentityLabelSAC || id.Ext.Has(iso.ExtKeySchemeID) {
-			continue
-		}
-		if id.Label == IdentityLabelHS {
-			return true
-		}
-		classified = true
-	}
-	return !classified
 }

@@ -189,9 +189,3 @@ func taxComboIsZero(val any) bool {
 	tc, ok := val.(*tax.Combo)
 	return ok && tc != nil && tc.Key == tax.KeyZero
 }
-
-// taxCategoryCodesOutsideScope are the VAT category codes allowed on outside scope documents.
-var taxCategoryCodesOutsideScope = []cbc.Code{
-	en16931.TaxCategoryExempt,
-	en16931.TaxCategoryOutsideScope,
-}
