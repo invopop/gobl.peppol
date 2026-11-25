@@ -33,9 +33,8 @@ var (
 	statusSchema  = schema.Lookup(bill.Status{})
 )
 
-// FormatBIS defines the Peppol BIS 3 format. Exports only require the EN 16931
-// addon, so invoices without the Peppol BIS addon are accepted as before, while
-// imported invoices are given the Peppol BIS addon.
+// FormatBIS defines the Peppol BIS 3 format. It only requires the EN 16931
+// addon, so invoices without the Peppol BIS addon are accepted.
 var FormatBIS = goblubl.Format{
 	Key:             KeyBIS,
 	Name:            i18n.NewString("UBL Peppol BIS 3"),
@@ -53,7 +52,7 @@ var FormatBIS = goblubl.Format{
 		SpecificationBISInvoiceResponse,
 	},
 	ExportFuncs: []goblubl.ExportFunc{exportBISBilling, exportInvoiceResponse},
-	ImportFuncs: []goblubl.ImportFunc{importInvoiceResponse, importBISAddon, importEndpoints},
+	ImportFuncs: []goblubl.ImportFunc{importInvoiceResponse, importEndpoints},
 }
 
 // SpecificationBISSelfBilling is Peppol BIS Self-Billing 3.0, used for

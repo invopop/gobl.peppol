@@ -101,7 +101,7 @@ func TestFormatBISConvert(t *testing.T) {
 			assert.Equal(t, peppolubl.KeyBIS, res.Format.Key)
 			doc := res.Envelope.Extract().(interface{ GetAddons() []cbc.Key })
 			if tc.addons {
-				assert.Contains(t, doc.GetAddons(), bis.V3)
+				assert.Equal(t, []cbc.Key{en16931.V2017}, doc.GetAddons())
 			} else {
 				assert.Empty(t, doc.GetAddons())
 			}
@@ -131,7 +131,7 @@ func TestFormatBISConvertWithoutBISAddon(t *testing.T) {
 			res, err := convert.Import(out.Data)
 			require.NoError(t, err)
 			assert.Equal(t, peppolubl.KeyBIS, res.Format.Key)
-			assert.ElementsMatch(t, []cbc.Key{en16931.V2017, bis.V3}, res.Envelope.Extract().(*bill.Invoice).GetAddons())
+			assert.Equal(t, []cbc.Key{en16931.V2017}, res.Envelope.Extract().(*bill.Invoice).GetAddons())
 		})
 	}
 }
