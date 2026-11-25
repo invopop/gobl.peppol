@@ -74,7 +74,7 @@
       </cac:PartyTaxScheme>
       <cac:PartyLegalEntity>
         <cbc:RegistrationName>Buyer Legal Name</cbc:RegistrationName>
-        <cbc:CompanyID schemeAgencyID="TL" schemeAgencyName="Trade License issuing Authority">112345679000001</cbc:CompanyID>
+        <cbc:CompanyID schemeAgencyID="PAS" schemeAgencyName="IN">P1234567890</cbc:CompanyID>
       </cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingCustomerParty>

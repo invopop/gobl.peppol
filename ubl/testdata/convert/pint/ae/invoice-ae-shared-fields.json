@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "e68b22bc71d0cc87beff33d3f41e88ac3e734b062ff663bc525a307e99ae5612"
+			"val": "b849914dc4dcbffac81d52c1610510ec0cdc95acb9f5cf38a8075e1e671fe6e6"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -76,9 +76,9 @@
 			"identities": [
 				{
 					"scope": "legal",
-					"type": "TL",
-					"code": "112345679000001",
-					"description": "Trade License issuing Authority"
+					"country": "IN",
+					"key": "passport",
+					"code": "P1234567890"
 				},
 				{
 					"type": "TIN",
