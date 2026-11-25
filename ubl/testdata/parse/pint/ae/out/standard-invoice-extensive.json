@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "6f9b70195d77bfc566e451d30c6ef9b2639a8861d7e10d213920c007eddf7dc0"
+			"val": "b57a9e38f467c4890474833ce3eda8bd73344fab7e23a09f880cb823ffaf0444"
 		},
 		"from": "iso6523-actorid-upis::0235:112345678900003",
 		"to": "iso6523-actorid-upis::0235:112345679000003"
@@ -423,7 +423,7 @@
 					"unit": "piece",
 					"origin": "AE",
 					"ext": {
-						"peppol-pint-ae-goods-type": "DL8.48.3.1",
+						"ae-goods-type": "DL8.48.3.1",
 						"untdid-unit": "H87"
 					}
 				},

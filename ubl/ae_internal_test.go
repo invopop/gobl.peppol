@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl.peppol/catalogues/vatexae"
+	"github.com/invopop/gobl.peppol/catalogues/uae"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/cef"
@@ -392,36 +392,36 @@ func TestExportAECreditTransfer(t *testing.T) {
 
 func TestImportAEChargeExemptions(t *testing.T) {
 	t.Run("charges that don't match are skipped", func(t *testing.T) {
-		exempt := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt, Ext: tax.ExtensionsOf(cbc.CodeMap{vatexae.ExtKeyVATEX: "DL8.46.1"})}
+		exempt := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt, Ext: tax.ExtensionsOf(cbc.CodeMap{uae.ExtKeyVATEX: "DL8.46.1"})}
 		inv := &bill.Invoice{Discounts: []*bill.Discount{{Taxes: tax.Set{exempt}}}}
 		category := []*goblubl.TaxCategory{{ID: &goblubl.IDType{Value: "E"}, TaxExemptionReasonCode: strPtr("DL8.46.2")}}
 		in := &goblubl.Invoice{AllowanceCharge: []goblubl.AllowanceCharge{{TaxCategory: category}, {TaxCategory: category}}}
 		importAEChargeExemptions(in, inv)
-		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(vatexae.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
 	})
 
 	t.Run("clears cef-vatex copied by gobl.ubl", func(t *testing.T) {
 		inv := &bill.Invoice{
 			Lines: []*bill.Line{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
-				cef.ExtKeyVATEX:     "DL8.46.1",
-				vatexae.ExtKeyVATEX: "DL8.46.1",
+				cef.ExtKeyVATEX: "DL8.46.1",
+				uae.ExtKeyVATEX: "DL8.46.1",
 			})}}}},
 			Discounts: []*bill.Discount{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
-				cef.ExtKeyVATEX:     "DL8.46.2",
-				vatexae.ExtKeyVATEX: "DL8.46.2",
+				cef.ExtKeyVATEX: "DL8.46.2",
+				uae.ExtKeyVATEX: "DL8.46.2",
 			})}}}},
 			Charges: []*bill.Charge{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
-				cef.ExtKeyVATEX:     "DL8.46.3",
-				vatexae.ExtKeyVATEX: "DL8.46.3",
+				cef.ExtKeyVATEX: "DL8.46.3",
+				uae.ExtKeyVATEX: "DL8.46.3",
 			})}}}},
 		}
 		clearAECEFVATEX(inv)
 		assert.False(t, inv.Lines[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
-		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Lines[0].Taxes[0].Ext.Get(vatexae.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Lines[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
 		assert.False(t, inv.Discounts[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
-		assert.Equal(t, cbc.Code("DL8.46.2"), inv.Discounts[0].Taxes[0].Ext.Get(vatexae.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.2"), inv.Discounts[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
 		assert.False(t, inv.Charges[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
-		assert.Equal(t, cbc.Code("DL8.46.3"), inv.Charges[0].Taxes[0].Ext.Get(vatexae.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.3"), inv.Charges[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
 	})
 }
 

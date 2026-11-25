@@ -1,6 +1,6 @@
-// Package vatexae provides the UAE VAT exemption reason codes (Article 46 of
-// Federal Decree-Law No. 8 of 2017) used by Peppol PINT AE.
-package vatexae
+// Package uae provides the UAE Federal Tax Authority code lists (Federal
+// Decree-Law No. 8 of 2017) used by Peppol PINT AE.
+package uae
 
 import (
 	"encoding/json"
@@ -13,6 +13,9 @@ import (
 const (
 	// ExtKeyVATEX identifies the UAE VAT exemption reason code extension.
 	ExtKeyVATEX cbc.Key = "vatex-ae"
+
+	// ExtKeyGoodsType identifies the UAE reverse-charge goods/services type extension.
+	ExtKeyGoodsType cbc.Key = "ae-goods-type"
 )
 
 func init() {
@@ -20,7 +23,7 @@ func init() {
 }
 
 func registerCatalogue() {
-	raw, err := data.Content.ReadFile("catalogues/vatex_ae.json")
+	raw, err := data.Content.ReadFile("catalogues/uae.json")
 	if err != nil {
 		panic(err)
 	}

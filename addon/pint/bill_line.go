@@ -1,6 +1,7 @@
 package pint
 
 import (
+	"github.com/invopop/gobl.peppol/catalogues/uae"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
@@ -38,8 +39,8 @@ func billLineRules() *rules.Set {
 				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
 				rules.Field("item",
 					rules.Field("ext",
-						rules.Assert("04", "reverse charge line item needs the type of goods or services in the peppol-pint-ae-goods-type extension (IBR-166-AE)",
-							tax.ExtensionsRequire(ExtKeyGoodsType),
+						rules.Assert("04", "reverse charge line item needs the type of goods or services in the ae-goods-type extension (IBR-166-AE)",
+							tax.ExtensionsRequire(uae.ExtKeyGoodsType),
 						),
 					),
 				),
@@ -48,7 +49,7 @@ func billLineRules() *rules.Set {
 			rules.Field("item",
 				rules.Field("ext",
 					rules.Assert("05", "type of goods or services must be from the PINT AE code list (IBR-006-AE)",
-						tax.ExtensionHasValidCode(ExtKeyGoodsType),
+						tax.ExtensionHasValidCode(uae.ExtKeyGoodsType),
 					),
 				),
 			),

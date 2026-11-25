@@ -6,7 +6,7 @@ import (
 
 	"github.com/invopop/gobl"
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl.peppol/catalogues/vatexae"
+	"github.com/invopop/gobl.peppol/catalogues/uae"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/cef"
@@ -309,7 +309,7 @@ func exportAETaxCategoryExemption(cats []*goblubl.TaxCategory, taxes tax.Set) {
 	if c == nil {
 		return
 	}
-	code := c.Ext.Get(vatexae.ExtKeyVATEX)
+	code := c.Ext.Get(uae.ExtKeyVATEX)
 	if code == "" {
 		return
 	}
@@ -347,7 +347,7 @@ func importAEChargeExemptions(in *goblubl.Invoice, inv *bill.Invoice) {
 				continue
 			}
 			if code := cbc.Code(strings.TrimSpace(*cat.TaxExemptionReasonCode)); code != "" {
-				c.Ext = c.Ext.Set(vatexae.ExtKeyVATEX, code)
+				c.Ext = c.Ext.Set(uae.ExtKeyVATEX, code)
 				break
 			}
 		}
@@ -504,7 +504,7 @@ func exportAELineExemption(line *goblubl.InvoiceLine, l *bill.Line, tx *bill.Tax
 		return
 	}
 	ctc := line.Item.ClassifiedTaxCategory
-	if code := c.Ext.Get(vatexae.ExtKeyVATEX); code != "" {
+	if code := c.Ext.Get(uae.ExtKeyVATEX); code != "" {
 		v := code.String()
 		ctc.TaxExemptionReasonCode = &v
 	}
@@ -545,7 +545,7 @@ func importAELineExemptions(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 		ctc := line.Item.ClassifiedTaxCategory
 		if ctc.TaxExemptionReasonCode != nil {
 			if code := cbc.Code(strings.TrimSpace(*ctc.TaxExemptionReasonCode)); code != "" {
-				c.Ext = c.Ext.Set(vatexae.ExtKeyVATEX, code)
+				c.Ext = c.Ext.Set(uae.ExtKeyVATEX, code)
 			}
 		}
 		if ctc.TaxExemptionReason == nil || strings.TrimSpace(*ctc.TaxExemptionReason) == "" {
@@ -569,7 +569,7 @@ func exportAELineGoods(line *goblubl.InvoiceLine, l *bill.Line) {
 	if l == nil || l.Item == nil || line.Item == nil {
 		return
 	}
-	if code := l.Item.Ext.Get(pint.ExtKeyGoodsType); code != "" {
+	if code := l.Item.Ext.Get(uae.ExtKeyGoodsType); code != "" {
 		v := code.String()
 		aeCommodityClassification(line.Item).NatureCode = &v
 	}
@@ -643,7 +643,7 @@ func importAELineGoods(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 				continue
 			}
 			if code := cbc.Code(strings.TrimSpace(*cc.NatureCode)); code != "" {
-				inv.Lines[i].Item.Ext = inv.Lines[i].Item.Ext.Set(pint.ExtKeyGoodsType, code)
+				inv.Lines[i].Item.Ext = inv.Lines[i].Item.Ext.Set(uae.ExtKeyGoodsType, code)
 				break
 			}
 		}
@@ -1120,7 +1120,7 @@ func exportAETaxSubtotalExemptions(tt *goblubl.TaxTotal, inv *bill.Invoice) {
 	var codes []cbc.Code
 	for _, cat := range inv.Totals.Taxes.Categories {
 		for _, r := range cat.Rates {
-			codes = append(codes, r.Ext.Get(vatexae.ExtKeyVATEX))
+			codes = append(codes, r.Ext.Get(uae.ExtKeyVATEX))
 		}
 	}
 	if len(codes) != len(tt.TaxSubtotal) {

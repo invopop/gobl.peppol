@@ -90,7 +90,7 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   `principal` identity (`key: "principal"`, 15-digit UAE TRN ending in `03`)
   on the supplier for disclosed agent billing.
 - **Reverse charge**: the type of goods or services of each line item in the
-  `peppol-pint-ae-goods-type` extension.
+  `ae-goods-type` extension.
 - **Predefined endpoints**: deemed supplies automatically set the customer
   endpoint to `0235:9900000097`. A buyer without a Peppol ID takes
   `0235:9900000098`, or `0235:9900000099` on exports; PINT AE additionally

@@ -1,7 +1,7 @@
 package pint
 
 import (
-	"github.com/invopop/gobl.peppol/catalogues/vatexae"
+	"github.com/invopop/gobl.peppol/catalogues/uae"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/untdid"
@@ -71,7 +71,7 @@ func normalizeMarginSchemeAE(inv *bill.Invoice) {
 			continue
 		}
 		for _, c := range l.Taxes {
-			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt && !c.Ext.Has(vatexae.ExtKeyVATEX) {
+			if c != nil && c.Category == tax.CategoryVAT && c.Key == tax.KeyExempt && !c.Ext.Has(uae.ExtKeyVATEX) {
 				c.Ext = c.Ext.Set(untdid.ExtKeyTaxCategory, TaxCategoryMarginScheme)
 			}
 		}
@@ -165,7 +165,7 @@ func taxComboRules() *rules.Set {
 						tax.ExtensionsHasCodes(untdid.ExtKeyTaxCategory, en16931.TaxCategoryExempt),
 					),
 					rules.Assert("08", "exempt VAT needs a vatex-ae exemption reason: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (IBR-167-AE, IBR-168-AE, IBR-169-AE)",
-						tax.ExtensionsRequire(vatexae.ExtKeyVATEX),
+						tax.ExtensionsRequire(uae.ExtKeyVATEX),
 					),
 				),
 			),
@@ -173,7 +173,7 @@ func taxComboRules() *rules.Set {
 			// The Schematron doesn't check PINT AE's code list.
 			rules.Field("ext",
 				rules.Assert("09", "VAT exemption reason must be one of PINT AE's: DL8.46.1, DL8.46.2, DL8.46.3 or DL8.46.4 (code list Aligned-TaxExemptionCodes)",
-					tax.ExtensionHasValidCode(vatexae.ExtKeyVATEX),
+					tax.ExtensionHasValidCode(uae.ExtKeyVATEX),
 				),
 			),
 		),

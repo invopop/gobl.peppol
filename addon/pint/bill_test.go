@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl.peppol/catalogues/vatexae"
+	"github.com/invopop/gobl.peppol/catalogues/uae"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/cal"
@@ -1009,7 +1009,7 @@ func TestBillExemptionRulesAE(t *testing.T) {
 	const faultExemptionCode = "GOBL-PEPPOL-PINT-TAX-COMBO-09"
 	exempt := func(code cbc.Code) *tax.Combo {
 		c := lineCombo(tax.KeyExempt)
-		c.Ext = tax.ExtensionsOf(cbc.CodeMap{vatexae.ExtKeyVATEX: code})
+		c.Ext = tax.ExtensionsOf(cbc.CodeMap{uae.ExtKeyVATEX: code})
 		return c
 	}
 
@@ -1099,7 +1099,7 @@ func TestBillMarginSchemeRulesAE(t *testing.T) {
 		// A line with a UAE exemption reason is a real exempt supply, not a
 		// margin scheme one.
 		inv = margin(pint.TagMarginScheme)
-		inv.Lines[0].Taxes[0].Ext = tax.ExtensionsOf(cbc.CodeMap{vatexae.ExtKeyVATEX: "DL8.46.1"})
+		inv.Lines[0].Taxes[0].Ext = tax.ExtensionsOf(cbc.CodeMap{uae.ExtKeyVATEX: "DL8.46.1"})
 		assert.Contains(t, aeFaults(t, inv), faultMarginLine)
 		assert.Equal(t, cbc.Code("E"), inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory))
 

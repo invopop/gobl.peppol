@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "6e624d7454f59fecc32b9bdffe31147c93111b6ce9434e5152e436a03784c8d5"
+			"val": "6e08aab3a983bb812c9a7eb95010796714ec6ef43373e2258d95a333ec18e89a"
 		},
 		"from": "iso6523-actorid-upis::0235:1278906543",
 		"to": "iso6523-actorid-upis::0235:1347809543"
@@ -163,7 +163,7 @@
 					"price": "99.00",
 					"unit": "kl",
 					"ext": {
-						"peppol-pint-ae-goods-type": "DL8.48.3.1",
+						"ae-goods-type": "DL8.48.3.1",
 						"untdid-unit": "K6"
 					}
 				},
