@@ -3,6 +3,9 @@
 package pint
 
 import (
+	"slices"
+
+	"github.com/invopop/gobl.peppol/catalogues/uae"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/i18n"
@@ -105,11 +108,15 @@ func newV1Addon() *tax.AddonDef {
 				URL:   "https://docs.peppol.eu/poac/aunz/pint-aunz/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
 			},
 			{
+				Title: i18n.NewString("Peppol PINT AE Billing specification"),
+				URL:   "https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/bis/",
+			},
+			{
 				Title: i18n.NewString("PINT AE jurisdiction-aligned rules"),
-				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
+				URL:   "https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
 			},
 		},
-		Extensions: extensions,
+		Extensions: slices.Concat(extensions, uae.Extensions()),
 		Tags: []*tax.TagSet{
 			invoiceTags,
 		},

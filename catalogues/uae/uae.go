@@ -4,6 +4,7 @@ package uae
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/invopop/gobl.peppol/data"
 	"github.com/invopop/gobl/cbc"
@@ -18,6 +19,8 @@ const (
 	ExtKeyGoodsType cbc.Key = "ae-goods-type"
 )
 
+var catalogue *tax.CatalogueDef
+
 func init() {
 	registerCatalogue()
 }
@@ -31,5 +34,11 @@ func registerCatalogue() {
 	if err := json.Unmarshal(raw, cat); err != nil {
 		panic(err)
 	}
+	catalogue = cat
 	tax.RegisterExtension(cat.Extensions...)
+}
+
+// Extensions returns a copy of the extension definitions registered by the UAE catalogue.
+func Extensions() []*cbc.Definition {
+	return slices.Clone(catalogue.Extensions)
 }

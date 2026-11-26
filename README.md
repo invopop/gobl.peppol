@@ -9,6 +9,7 @@ Released under the Apache 2.0 [LICENSE](https://github.com/invopop/gobl.peppol/b
 [![Lint](https://github.com/invopop/gobl.peppol/actions/workflows/lint.yaml/badge.svg)](https://github.com/invopop/gobl.peppol/actions/workflows/lint.yaml)
 [![Test Go](https://github.com/invopop/gobl.peppol/actions/workflows/test.yaml/badge.svg)](https://github.com/invopop/gobl.peppol/actions/workflows/test.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/invopop/gobl.peppol)](https://goreportcard.com/report/github.com/invopop/gobl.peppol)
+[![codecov](https://codecov.io/gh/invopop/gobl.peppol/graph/badge.svg)](https://codecov.io/gh/invopop/gobl.peppol)
 [![GoDoc](https://godoc.org/github.com/invopop/gobl.peppol?status.svg)](https://godoc.org/github.com/invopop/gobl.peppol)
 ![Latest Tag](https://img.shields.io/github/v/tag/invopop/gobl.peppol)
 
@@ -26,7 +27,7 @@ This module implements the Peppol billing models as a set of GOBL tax addons:
   documents are also validated against the
   [PINT A-NZ](https://docs.peppol.eu/poac/aunz/pint-aunz/bis/) rules, and UAE
   (`AE`) documents against the
-  [PINT AE](https://docs.peppol.eu/poac/ae/pint-ae/) rules.
+  [PINT AE](https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/) rules.
 
 A document must declare the addon that applies to it.
 
@@ -70,7 +71,8 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   TIN, as the identity or as the endpoint.
 - **Legal registrations**: identities of type `TL` (trade licence, with the
   issuing authority as its `description`), `EID` or `CD`, or the `passport`
-  key.
+  key. Issuing authorities on `EID` and `CD` (BTAE-11, BTAE-12) are not
+  written.
 - **Emirates**: UAE addresses need the emirate code as the `region`: `AUH`,
   `DXB`, `SHJ`, `UAQ`, `FUJ`, `AJM` or `RAK`.
 - **Items**: every line item needs a `description`; goods need an HS
@@ -97,14 +99,84 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   expects a UAE buyer without a TRN to carry its `TIN` identity (not enforced
   by GOBL).
 
+#### Extensions
+
+| Key | Schema | Description |
+| --- | --- | --- |
+| `peppol-pint-ae-transaction-type` | `bill/tax` | PINT AE invoice transaction type (BTAE-02): 8 binary flags built automatically from the transaction tags (`00000000` when none apply). |
+| `vatex-ae` | `tax/combo` | UAE VAT exemption reason under Federal Decree-Law No. 8 of 2017 Art. 46. Code list in [`data/catalogues/uae.json`](./data/catalogues/uae.json). |
+| `ae-goods-type` | `org/item` | Type of goods or services subject to UAE domestic reverse charge under Art. 48 (BTAE-09). Code list in [`data/catalogues/uae.json`](./data/catalogues/uae.json). |
+
+#### Tags
+
+| Tag | Meaning |
+| --- | --- |
+| `free-trade-zone` | Free trade zone supply (BTAE-02 flag 1); requires a `beneficiary` identity on the customer. |
+| `deemed-supply` | Deemed supply (BTAE-02 flag 2); sets customer endpoint to `0235:9900000097`. |
+| `margin-scheme` | Profit margin scheme (BTAE-02 flag 3, from the `AE` regime); lines use `exempt` VAT (without a UAE exemption reason), export in category `N`, and no document-level discounts or charges are allowed. |
+| `summary` | Summary invoice (BTAE-02 flag 4); requires `ordering.period`. |
+| `continuous-supply` | Continuous supply (BTAE-02 flag 5). |
+| `disclosed-agent` | Disclosed agent billing (BTAE-02 flag 6); requires a `principal` identity on the supplier. |
+| `e-commerce` | E-commerce supply (BTAE-02 flag 7); requires `delivery.receiver` with an address (`street`, `locality`, `region`). |
+| `export` | Export supply (BTAE-02 flag 8, GOBL core `export` tag); requires `delivery.receiver` with an address (`street`, `locality`, `region`) and a `country` other than `AE`. |
+| `volume-discount` | Volume discount credit note (BTAE-03 reason `VD`); must have no `preceding` invoice. |
+
+#### Example
+
+Partial fragment showing the PINT AE-specific fields (see
+[`examples/invoice-ae.yaml`](./examples/invoice-ae.yaml) and
+[`examples/credit-note-ae.yaml`](./examples/credit-note-ae.yaml) for complete
+documents):
+
+```yaml
+$regime: "AE"
+$addons:
+  - "peppol-pint-v1"
+$tags:
+  - "free-trade-zone"
+  - "disclosed-agent"
+supplier:
+  tax_id:
+    country: "AE"
+    code: "135790246700003"
+  identities:
+    - type: "TL"
+      code: "112345678900003"
+      description: "Dubai Department of Economy and Tourism"
+    - key: "principal"
+      code: "155667745601003"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1357902467"
+customer:
+  identities:
+    - key: "beneficiary"
+      code: "189098765401003"
+lines:
+  - quantity: "1"
+    item:
+      key: "goods"
+      name: "Gold bar"
+      description: "24k gold bar"
+      price: "1000.00"
+      identities:
+        - label: "HS"
+          code: "7108"
+      ext:
+        ae-goods-type: "DL8.48.8.1"
+    taxes:
+      - cat: "VAT"
+        key: "reverse-charge"
+```
+
 The supplier and customer need an electronic address (`endpoints`). An email
 inbox can stay on the party, but isn't written when the party has an endpoint.
 
 PINT allows one note on the document and one per line, and only the payment
 due date (IBT-009) is written, so invoices with more notes or more than one due
-date are rejected. A single due date is written without its amount. On credit notes the
-due date is written inside the payment means, so a credit note without payment
-instructions is sent without its due date.
+date are rejected. A single due date is written without its amount (a partial
+due date is therefore written as if for the full amount due). On credit notes
+the due date is written inside the payment means, so a credit note without
+payment instructions is sent without its due date.
 
 PINT only accepts ISO 6523 schemes on party identifiers: the identities other
 than the first legal one and the tax ones. A `TIN` is written as `0235`, but
@@ -114,13 +186,19 @@ with its type as the scheme and fails validation, so give it the
 
 ## Layout
 
-- `addon/` — the GOBL addons: normalizers, scenarios and validation rules that
-  register into GOBL on import. These packages are kept dependency-light so
-  importing them never pulls in conversion tooling.
+- `addon/` — the GOBL addons (`addon/bis` and `addon/pint`): extensions,
+  normalizers, scenarios and validation rules that register into GOBL on
+  import. These packages are kept dependency-light so importing them never
+  pulls in conversion tooling.
+- `catalogues/` — external code lists used by the addons, such as
+  `catalogues/uae` for the UAE FTA `vatex-ae` and `ae-goods-type` lists.
+- `data/` — embedded JSON definitions for `catalogues/`.
 - `ubl/` — the Peppol BIS and PINT UBL formats, registered with `gobl.ubl` and
   GOBL's `convert` register.
 - `cii/` — the Peppol BIS CII format, registered with `gobl.cii` and GOBL's
   `convert` register.
+- `examples/` — sample GOBL documents and their golden calculated envelopes
+  under `examples/out/`, verified with GOBL's `pkg/examples` helpers.
 
 ## Conversion
 
@@ -225,3 +303,29 @@ go test ./ubl/ ./cii/ -args -validate=true   # posts to $PHORM_URL, default http
 
 CI runs it against a `phelger/phorm:2.2.15` service container (see
 `.github/workflows/test.yaml`).
+
+## Development
+
+Run the full test suite:
+
+```sh
+go test ./...
+```
+
+After intentional changes to addon normalization or examples, regenerate the
+golden envelopes under `examples/out/` (verified via GOBL's `pkg/examples`
+helpers):
+
+```sh
+go test . -run TestExamples -update
+```
+
+## Sources
+
+- [Peppol BIS Billing 3.0](https://docs.peppol.eu/poacc/billing/3.0/) and
+  [UBL business rules](https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-peppol/)
+- [Peppol PINT specifications](https://docs.peppol.eu/poac/pint/)
+- [Peppol PINT A-NZ Billing specification](https://docs.peppol.eu/poac/aunz/pint-aunz/bis/)
+  and [jurisdiction-aligned rules](https://docs.peppol.eu/poac/aunz/pint-aunz/trn-invoice/rule/PINT-jurisdiction-aligned-rules/)
+- [Peppol PINT AE Billing specification (1.0.5)](https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/bis/)
+  and [jurisdiction-aligned rules (1.0.5)](https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/)

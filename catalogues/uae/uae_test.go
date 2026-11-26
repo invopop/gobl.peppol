@@ -45,4 +45,11 @@ func TestInit(t *testing.T) {
 			assert.Nil(t, ed.CodeDef(code), code.String())
 		}
 	})
+
+	t.Run("extensions", func(t *testing.T) {
+		exts := uae.Extensions()
+		require.Len(t, exts, 2)
+		assert.Same(t, tax.ExtensionForKey(uae.ExtKeyVATEX), exts[0])
+		assert.Same(t, tax.ExtensionForKey(uae.ExtKeyGoodsType), exts[1])
+	})
 }

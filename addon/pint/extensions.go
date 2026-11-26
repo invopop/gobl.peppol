@@ -16,7 +16,6 @@ const (
 // Usages of the PINT AE extensions, under the AE regime.
 var (
 	usageAEInvoiceTax = &cbc.Usage{
-		Keys:    []cbc.Key{V1},
 		Codes:   []cbc.Code{ae.CountryCode},
 		Schemas: []string{bill.ShortSchemaTax},
 	}
@@ -46,8 +45,8 @@ var extensions = []*cbc.Definition{
 		},
 		Sources: []*cbc.Source{
 			{
-				Title: i18n.NewString("Peppol PINT AE Billing specification"),
-				URL:   "https://docs.peppol.eu/poac/ae/pint-ae/bis/",
+				Title: i18n.NewString("Peppol PINT AE Billing specification (1.0.5)"),
+				URL:   "https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/bis/",
 			},
 		},
 		Pattern: transactionTypePattern,
