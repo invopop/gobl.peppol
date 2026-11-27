@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "188c9ca98404386748c78e9578e48dea8064d143a14727b06fc9508a7bf22ef2"
+			"val": "92ba048646c0c7bbdf100862c4c02310fbf1e3ede7b2f071e699b819b0f3778c"
 		},
 		"from": "iso6523-actorid-upis::0235:1987654321",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -16,9 +16,6 @@
 			"eu-en16931-v2017",
 			"peppol-pint-v1"
 		],
-		"$tags": [
-			"disclosed-agent"
-		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "credit-note",
 		"code": "AE001-CN-TEST",
@@ -28,14 +25,15 @@
 		"preceding": [
 			{
 				"issue_date": "2025-02-07",
-				"code": "Sample-02",
-				"reason": "DL8.61.1.E"
+				"code": "Sample-02"
 			}
 		],
 		"tax": {
 			"rounding": "currency",
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00000100",
+				"pint-ae-credit-note-reason": "DL8.61.1.E",
+				"pint-ae-principal-id": "155667745601003",
+				"pint-ae-transaction-type": "00000100",
 				"untdid-document-type": "381"
 			}
 		},
@@ -52,10 +50,6 @@
 					"type": "TL",
 					"code": "112345678900003",
 					"description": "Trade License issuing Authority"
-				},
-				{
-					"key": "principal",
-					"code": "155667745601003"
 				},
 				{
 					"scope": "tax",
@@ -173,7 +167,7 @@
 							"code": "Buyer Item Identification"
 						},
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "11223355"
 						}
 					],
@@ -190,6 +184,7 @@
 					"unit": "piece",
 					"origin": "AE",
 					"ext": {
+						"pint-ae-item-type": "G",
 						"untdid-unit": "H87"
 					}
 				},

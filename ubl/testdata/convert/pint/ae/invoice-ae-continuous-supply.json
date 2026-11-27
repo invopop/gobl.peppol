@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "c62d8f786fcc7b8d72ab8cd08b2623254b52db6184210d72ef731f68daad304f"
+			"val": "be68f2630eba7f89843f5d7f1ff872879aad7f1f9a017621f68a0caa01fb7692"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -16,9 +16,6 @@
 			"eu-en16931-v2017",
 			"peppol-pint-v1"
 		],
-		"$tags": [
-			"continuous-supply"
-		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",
 		"series": "AE",
@@ -27,7 +24,7 @@
 		"currency": "AED",
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00001000",
+				"pint-ae-transaction-type": "00001000",
 				"untdid-document-type": "380"
 			}
 		},

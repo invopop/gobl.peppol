@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "b57a9e38f467c4890474833ce3eda8bd73344fab7e23a09f880cb823ffaf0444"
+			"val": "2deaedae37d848713803cda87397887567b8b60e0a1f9da4c5caeef58a4a2341"
 		},
 		"from": "iso6523-actorid-upis::0235:112345678900003",
 		"to": "iso6523-actorid-upis::0235:112345679000003"
@@ -15,11 +15,6 @@
 		"$addons": [
 			"eu-en16931-v2017",
 			"peppol-pint-v1"
-		],
-		"$tags": [
-			"free-trade-zone",
-			"continuous-supply",
-			"e-commerce"
 		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",
@@ -37,7 +32,8 @@
 		"tax": {
 			"rounding": "currency",
 			"ext": {
-				"peppol-pint-ae-transaction-type": "10001010",
+				"pint-ae-beneficiary-id": "189098765401003",
+				"pint-ae-transaction-type": "10001010",
 				"untdid-document-type": "380"
 			},
 			"notes": [
@@ -126,10 +122,6 @@
 					"type": "TL",
 					"code": "112345679000001",
 					"description": "Trade License issuing Authority"
-				},
-				{
-					"key": "beneficiary",
-					"code": "189098765401003"
 				}
 			],
 			"people": [
@@ -196,7 +188,7 @@
 							}
 						},
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "88098432324"
 						}
 					],
@@ -212,6 +204,7 @@
 					"unit": "piece",
 					"origin": "AE",
 					"ext": {
+						"pint-ae-item-type": "G",
 						"untdid-unit": "H87"
 					}
 				},
@@ -261,7 +254,7 @@
 					"name": "Item Name",
 					"identities": [
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "1101"
 						}
 					],
@@ -273,6 +266,7 @@
 					"unit": "piece",
 					"origin": "AE",
 					"ext": {
+						"pint-ae-item-type": "G",
 						"untdid-unit": "H87"
 					}
 				},
@@ -302,8 +296,8 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"untdid-tax-category": "E",
-							"vatex-ae": "DL8.46.2"
+							"pint-ae-exemption": "DL8.46.2",
+							"untdid-tax-category": "E"
 						}
 					}
 				],
@@ -327,7 +321,7 @@
 							"code": "art-to-001"
 						},
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "3450"
 						}
 					],
@@ -345,6 +339,7 @@
 					"unit": "piece",
 					"origin": "AE",
 					"ext": {
+						"pint-ae-item-type": "G",
 						"untdid-unit": "H87"
 					}
 				},
@@ -407,7 +402,7 @@
 							}
 						},
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "5000"
 						}
 					],
@@ -423,7 +418,8 @@
 					"unit": "piece",
 					"origin": "AE",
 					"ext": {
-						"ae-goods-type": "DL8.48.3.1",
+						"pint-ae-goods-type": "DL8.48.3.1",
+						"pint-ae-item-type": "G",
 						"untdid-unit": "H87"
 					}
 				},
@@ -479,7 +475,7 @@
 							}
 						},
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "8680"
 						}
 					],
@@ -497,6 +493,7 @@
 					"unit": "piece",
 					"origin": "AE",
 					"ext": {
+						"pint-ae-item-type": "G",
 						"untdid-unit": "H87"
 					}
 				},
@@ -760,8 +757,8 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"untdid-tax-category": "E",
-									"vatex-ae": "DL8.46.2"
+									"pint-ae-exemption": "DL8.46.2",
+									"untdid-tax-category": "E"
 								},
 								"base": "3900.00",
 								"amount": "0.00"

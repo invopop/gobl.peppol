@@ -14,7 +14,10 @@ preceding:
     issue_date: "2025-01-30"
     series: "AE"
     code: "001"
-    reason: "DL8.61.1.D"
+
+tax:
+  ext:
+    pint-ae-credit-note-reason: "DL8.61.1.D"
 
 supplier:
   name: "Supplier Legal Name"
@@ -25,10 +28,8 @@ supplier:
     - type: "TL"
       code: "112345678900003"
       description: "Trade License issuing Authority"
-  inboxes:
-    - key: "peppol"
-      scheme: "0235"
-      code: "1357902467"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1357902467"
   addresses:
     - street: "Sheikh Zayed Road"
       locality: "Dubai"
@@ -44,10 +45,8 @@ customer:
     - type: "TL"
       code: "112345679000001"
       description: "Trade License issuing Authority"
-  inboxes:
-    - key: "peppol"
-      scheme: "0235"
-      code: "1345678906"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1345678906"
   addresses:
     - street: "Corniche Road"
       locality: "Abu Dhabi"
@@ -55,11 +54,15 @@ customer:
       country: "AE"
 
 lines:
-  - quantity: "20"
+  - quantity: "2"
     item:
-      name: "Item Name"
-      description: "Item Description, returned"
-      price: "10.00"
+      key: "goods"
+      name: "Laptop Computer"
+      description: "14-inch business laptop, returned"
+      price: "3500.00"
+      identities:
+        - key: "hsn"
+          code: "847130"
     taxes:
       - cat: VAT
         key: standard

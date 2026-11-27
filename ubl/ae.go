@@ -6,7 +6,6 @@ import (
 
 	"github.com/invopop/gobl"
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl.peppol/catalogues/uae"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/cef"
@@ -24,27 +23,29 @@ import (
 	"github.com/invopop/gobl/uuid"
 )
 
-// UNTDID 5305 VAT category codes the AE format writes rates and amounts for.
 const (
 	taxCategoryStandard      = "S"
 	taxCategoryExempt        = "E"
 	taxCategoryReverseCharge = "AE"
 	taxCategoryMarginScheme  = "N"
+
+	aedTotalDocumentType         = "aedtotal-incl-vat" // BTAE-20
+	deliveryTermsSchemeIncoterms = "Incoterms"         // BTAE-22
+
+	identityTypePassport cbc.Code = "PAS"  // BTAE-15, BTAE-16
+	tinScheme            cbc.Code = "0235" // ISO 6523 ICD for UAE TIN
+	identitySchemeGTIN   cbc.Code = "0160" // ISO 6523 ICD for GTIN
+
+	identityLabelHS  = "HS"
+	identityLabelSAC = "SAC"
 )
 
-// aedTotalDocumentType is the document type code PINT AE gives the additional
-// document reference that carries the total with VAT in AED (BTAE-20).
-const aedTotalDocumentType = "aedtotal-incl-vat"
+var identityTypesAE = []cbc.Code{
+	ae.IdentityTypeTradeLicense,
+	ae.IdentityTypeEmiratesID,
+	ae.IdentityTypeCabinetDecision,
+}
 
-// deliveryTermsSchemeIncoterms is the scheme of the Incoterms code (BTAE-22),
-// which the syntax binding requires and the official examples write.
-const deliveryTermsSchemeIncoterms = "Incoterms"
-
-// creditNoteReasonVolumeDiscount is the PINT AE credit note reason code (BTAE-03)
-// for a volume discount, mapped to and from pint.TagVolumeDiscount.
-const creditNoteReasonVolumeDiscount = "VD"
-
-// exportAE applies the Peppol PINT AE rules to an exported invoice.
 func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error {
 	out, ok := doc.(*goblubl.Invoice)
 	inv, ok2 := env.Extract().(*bill.Invoice)
@@ -60,6 +61,7 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	exportAEContractValue(out, inv)
 	exportAEPayment(out, inv)
 	exportAECharges(out, inv, aeStandardRate(inv))
+	exportAEMarginScheme(out, inv)
 	exportAELines(out.InvoiceLines, inv)
 	exportAELines(out.CreditNoteLines, inv)
 	for _, p := range goblubl.InvoiceParties(inv, out) {
@@ -78,7 +80,6 @@ func exportAE(_ *goblubl.Format, env *gobl.Envelope, doc goblubl.Document) error
 	return nil
 }
 
-// importAE applies the Peppol PINT AE rules to an imported invoice.
 func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error {
 	in, ok := doc.(*goblubl.Invoice)
 	inv, ok2 := env.Extract().(*bill.Invoice)
@@ -87,8 +88,8 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	}
 	importAEUUID(in, inv)
 	importAEOutsideTaxScope(in, inv)
-	importAEMarginScheme(inv)
 	importAETransactionType(in, inv)
+	importAEMarginScheme(inv)
 	importAECreditNoteReason(in, inv)
 	importAEIncoterms(in, inv)
 	importAEDeliveryPartyID(in, inv)
@@ -108,8 +109,6 @@ func importAE(_ *goblubl.Format, doc goblubl.Document, env *gobl.Envelope) error
 	return nil
 }
 
-// importAEOutsideTaxScope reads 480 and 81, which gobl.ubl imports as "other", as a standard invoice
-// and a credit note; the scenarios give them 480 and 81 again from their lines.
 func importAEOutsideTaxScope(in *goblubl.Invoice, inv *bill.Invoice) {
 	code := in.InvoiceTypeCode
 	if code == nil {
@@ -126,8 +125,37 @@ func importAEOutsideTaxScope(in *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// importAEMarginScheme reads N VAT combos as exempt with the margin-scheme tag, as a user writes them;
-// without a key EN 16931 would make them standard rated.
+// Must run before exportAELines and exportAETaxTotal so rates and line VAT are written for N.
+func exportAEMarginScheme(out *goblubl.Invoice, inv *bill.Invoice) {
+	if !pint.ParseTransactionType(inv.Tax.GetExt(pint.ExtKeyTransactionType)).MarginScheme {
+		return
+	}
+	isVAT := func(s *goblubl.TaxScheme) bool {
+		return s != nil && s.ID.Value == tax.CategoryVAT.String()
+	}
+	rewriteLines := func(lines []goblubl.InvoiceLine) {
+		for i := range lines {
+			if lines[i].Item == nil || lines[i].Item.ClassifiedTaxCategory == nil {
+				continue
+			}
+			c := lines[i].Item.ClassifiedTaxCategory
+			if isVAT(c.TaxScheme) && c.ID != nil && c.ID.Value == taxCategoryExempt {
+				c.ID.Value = taxCategoryMarginScheme
+			}
+		}
+	}
+	rewriteLines(out.InvoiceLines)
+	rewriteLines(out.CreditNoteLines)
+	for i := range out.TaxTotal {
+		for j := range out.TaxTotal[i].TaxSubtotal {
+			c := &out.TaxTotal[i].TaxSubtotal[j].TaxCategory
+			if isVAT(c.TaxScheme) && c.ID != nil && c.ID.Value == taxCategoryExempt {
+				c.ID.Value = taxCategoryMarginScheme
+			}
+		}
+	}
+}
+
 func importAEMarginScheme(inv *bill.Invoice) {
 	var sets []tax.Set
 	for _, l := range inv.Lines {
@@ -142,81 +170,59 @@ func importAEMarginScheme(inv *bill.Invoice) {
 	found := false
 	for _, set := range sets {
 		for _, c := range set {
-			if c.Category == tax.CategoryVAT && c.Ext.Get(untdid.ExtKeyTaxCategory) == pint.TaxCategoryMarginScheme {
+			if c.Category == tax.CategoryVAT && c.Ext.Get(untdid.ExtKeyTaxCategory) == taxCategoryMarginScheme {
 				c.Key = tax.KeyExempt
 				c.Percent = nil
+				c.Ext = c.Ext.Set(untdid.ExtKeyTaxCategory, taxCategoryExempt)
 				found = true
 			}
 		}
 	}
-	if found && !inv.HasTags(pint.TagMarginScheme) {
-		inv.Tags.List = append(inv.Tags.List, pint.TagMarginScheme)
+	if inv.Tax != nil {
+		for _, n := range inv.Tax.Notes {
+			if n != nil && n.Category == tax.CategoryVAT && n.Ext.Get(untdid.ExtKeyTaxCategory) == taxCategoryMarginScheme {
+				n.Ext = n.Ext.Set(untdid.ExtKeyTaxCategory, taxCategoryExempt)
+			}
+		}
+	}
+	if found {
+		cur := inv.Tax.GetExt(pint.ExtKeyTransactionType)
+		if cur == "" || transactionTypeRegexp.MatchString(cur.String()) {
+			tt := pint.ParseTransactionType(cur)
+			tt.MarginScheme = true
+			setAEExt(inv, pint.ExtKeyTransactionType, tt.Code())
+		}
 	}
 }
 
-// exportAEUUID writes the invoice's UUID as cbc:UUID, the unique identifier
-// number (BTAE-07).
 func exportAEUUID(out *goblubl.Invoice, inv *bill.Invoice) {
 	if !inv.UUID.IsZero() {
 		out.UUID = inv.UUID.String()
 	}
 }
 
-// exportAETransactionType writes the transaction type (BTAE-02), and moves the
-// customer's beneficiary (BTAE-01) and supplier's principal (BTAE-14) identities
-// to the dedicated buyer and seller party identifications.
 func exportAETransactionType(out *goblubl.Invoice, inv *bill.Invoice) {
 	out.ProfileExecutionID = inv.Tax.GetExt(pint.ExtKeyTransactionType).String()
-	if inv.Customer != nil {
-		if id := org.IdentityForKey(inv.Customer.Identities, pint.IdentityKeyBeneficiary); id != nil && id.Code != "" {
-			out.BuyerCustomerParty = &goblubl.CustomerParty{Party: identifiedParty(id.Code)}
-			removePartyIdentification(out.AccountingCustomerParty.Party, id.Code)
-		}
+	if id := inv.Tax.GetExt(pint.ExtKeyBeneficiaryID); id != "" {
+		out.BuyerCustomerParty = &goblubl.CustomerParty{Party: identifiedParty(id)}
 	}
-	if inv.Supplier != nil {
-		if id := org.IdentityForKey(inv.Supplier.Identities, pint.IdentityKeyPrincipal); id != nil && id.Code != "" {
-			out.SellerSupplierParty = &goblubl.SupplierParty{Party: identifiedParty(id.Code)}
-			removePartyIdentification(out.AccountingSupplierParty.Party, id.Code)
-		}
+	if id := inv.Tax.GetExt(pint.ExtKeyPrincipalID); id != "" {
+		out.SellerSupplierParty = &goblubl.SupplierParty{Party: identifiedParty(id)}
 	}
 }
 
-// removePartyIdentification removes the first cac:PartyIdentification whose
-// value matches code.
-func removePartyIdentification(p *goblubl.Party, code cbc.Code) {
-	if p == nil {
-		return
-	}
-	val := code.String()
-	for i, pi := range p.PartyIdentification {
-		if pi.ID != nil && pi.ID.Value == val {
-			p.PartyIdentification = append(p.PartyIdentification[:i], p.PartyIdentification[i+1:]...)
-			if len(p.PartyIdentification) == 0 {
-				p.PartyIdentification = nil
-			}
-			return
-		}
-	}
-}
-
-// importAEUUID reads the invoice's UUID back from cbc:UUID (BTAE-07). A value
-// that is not a UUID is left out.
 func importAEUUID(in *goblubl.Invoice, inv *bill.Invoice) {
 	if id, err := uuid.Parse(strings.TrimSpace(in.UUID)); err == nil {
 		inv.UUID = id
 	}
 }
 
-// exportAEIssueTime writes the invoice's issue time as cbc:IssueTime
-// (IBT-168), which gobl.ubl reads but doesn't write.
 func exportAEIssueTime(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.IssueTime != nil {
 		out.IssueTime = inv.IssueTime.String()
 	}
 }
 
-// exportAEContractValue writes each contract's description, PINT AE's contract value (BTAE-05), as its
-// cac:ContractDocumentReference/cbc:DocumentDescription.
 func exportAEContractValue(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Ordering == nil || len(inv.Ordering.Contracts) != len(out.ContractDocumentReference) {
 		return
@@ -229,7 +235,6 @@ func exportAEContractValue(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// exportAEPayment completes the payee account gobl.ubl writes from the first credit transfer.
 func exportAEPayment(out *goblubl.Invoice, inv *bill.Invoice) {
 	if len(out.PaymentMeans) == 0 || inv.Payment == nil {
 		return
@@ -239,13 +244,11 @@ func exportAEPayment(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// exportAECreditTransfer writes the address of the payee account's branch (IBG-34), which gobl.ubl
-// already reads back.
 func exportAECreditTransfer(acc *goblubl.FinancialAccount, ct *pay.CreditTransfer) {
 	if acc == nil || ct == nil {
 		return
 	}
-	// TODO: FormatPINT should write the branch address too (IBG-34); gobl.ubl can't (UBL-CR-432).
+	// TODO: FormatPINT should also write the branch address (IBG-34).
 	if addr := aeAddress(ct.Branch); addr != nil {
 		if acc.FinancialInstitutionBranch == nil {
 			acc.FinancialInstitutionBranch = new(goblubl.Branch)
@@ -254,8 +257,6 @@ func exportAECreditTransfer(acc *goblubl.FinancialAccount, ct *pay.CreditTransfe
 	}
 }
 
-// aeAddress provides the UBL address of a GOBL one, with the lines gobl.ubl
-// writes for a party's address.
 func aeAddress(a *org.Address) *goblubl.PostalAddress {
 	if a == nil {
 		return nil
@@ -277,9 +278,6 @@ func aeAddress(a *org.Address) *goblubl.PostalAddress {
 	return addr
 }
 
-// exportAECharges writes the standard rate on reverse charge allowances and
-// charges, where gobl.ubl writes 0 and PINT AE wants one above 0, and copies
-// UAE VATEX exemption codes onto their TaxCategory elements.
 func exportAECharges(out *goblubl.Invoice, inv *bill.Invoice, standard string) {
 	for _, ac := range out.AllowanceCharge {
 		for _, c := range ac.TaxCategory {
@@ -309,7 +307,7 @@ func exportAETaxCategoryExemption(cats []*goblubl.TaxCategory, taxes tax.Set) {
 	if c == nil {
 		return
 	}
-	code := c.Ext.Get(uae.ExtKeyVATEX)
+	code := c.Ext.Get(pint.ExtKeyExemption)
 	if code == "" {
 		return
 	}
@@ -322,8 +320,6 @@ func exportAETaxCategoryExemption(cats []*goblubl.TaxCategory, taxes tax.Set) {
 	}
 }
 
-// importAEChargeExemptions reads charge and discount exemption reasons from their own cac:TaxCategory;
-// gobl.ubl takes them from the breakdown, which keeps only shared ones.
 func importAEChargeExemptions(in *goblubl.Invoice, inv *bill.Invoice) {
 	if len(in.AllowanceCharge) != len(inv.Charges)+len(inv.Discounts) {
 		return
@@ -347,15 +343,14 @@ func importAEChargeExemptions(in *goblubl.Invoice, inv *bill.Invoice) {
 				continue
 			}
 			if code := cbc.Code(strings.TrimSpace(*cat.TaxExemptionReasonCode)); code != "" {
-				c.Ext = c.Ext.Set(uae.ExtKeyVATEX, code)
+				c.Ext = c.Ext.Set(pint.ExtKeyExemption, code)
 				break
 			}
 		}
 	}
 }
 
-// clearAECEFVATEX removes any cef-vatex copied by gobl.ubl from TaxTotal
-// breakdowns so UAE exemptions live strictly under vatex-ae.
+// Keeps UAE exemptions strictly under pint-ae-exemption rather than cef-vatex.
 func clearAECEFVATEX(inv *bill.Invoice) {
 	clearSet := func(set tax.Set) {
 		for _, c := range set {
@@ -388,44 +383,22 @@ func clearAECEFVATEX(inv *bill.Invoice) {
 	}
 }
 
-// identifiedParty returns a party with only a cac:PartyIdentification.
 func identifiedParty(id cbc.Code) *goblubl.Party {
 	return &goblubl.Party{PartyIdentification: []goblubl.Identification{
 		{ID: &goblubl.IDType{Value: id.String()}},
 	}}
 }
 
-// importAETransactionType reads back what exportAETransactionType writes, and adds the tags of the
-// transaction type's flags.
 func importAETransactionType(in *goblubl.Invoice, inv *bill.Invoice) {
-	code := cbc.Code(strings.TrimSpace(in.ProfileExecutionID))
-	if code != "" {
-		setAEExt(inv, pint.ExtKeyTransactionType, code)
-		for _, tag := range pint.ParseTransactionType(code).Tags() {
-			if !inv.HasTags(tag) {
-				inv.Tags.List = append(inv.Tags.List, tag)
-			}
-		}
+	setAEExt(inv, pint.ExtKeyTransactionType, cbc.Code(strings.TrimSpace(in.ProfileExecutionID)))
+	if in.BuyerCustomerParty != nil {
+		setAEExt(inv, pint.ExtKeyBeneficiaryID, partyIdentificationID(in.BuyerCustomerParty.Party))
 	}
-	if in.BuyerCustomerParty != nil && inv.Customer != nil {
-		if id := partyIdentificationID(in.BuyerCustomerParty.Party); id != "" {
-			inv.Customer.Identities = append(inv.Customer.Identities, &org.Identity{
-				Key:  pint.IdentityKeyBeneficiary,
-				Code: id,
-			})
-		}
-	}
-	if in.SellerSupplierParty != nil && inv.Supplier != nil {
-		if id := partyIdentificationID(in.SellerSupplierParty.Party); id != "" {
-			inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
-				Key:  pint.IdentityKeyPrincipal,
-				Code: id,
-			})
-		}
+	if in.SellerSupplierParty != nil {
+		setAEExt(inv, pint.ExtKeyPrincipalID, partyIdentificationID(in.SellerSupplierParty.Party))
 	}
 }
 
-// partyIdentificationID returns the party's first cac:PartyIdentification ID.
 func partyIdentificationID(p *goblubl.Party) cbc.Code {
 	if p == nil {
 		return ""
@@ -438,7 +411,6 @@ func partyIdentificationID(p *goblubl.Party) cbc.Code {
 	return ""
 }
 
-// setAEExt sets a tax extension on the invoice, when the value isn't empty.
 func setAEExt(inv *bill.Invoice, key cbc.Key, code cbc.Code) {
 	if code == "" {
 		return
@@ -449,52 +421,31 @@ func setAEExt(inv *bill.Invoice, key cbc.Key, code cbc.Code) {
 	inv.Tax.Ext = inv.Tax.Ext.Set(key, code)
 }
 
-// exportAECreditNoteReason writes the credit note reason as
-// cac:DiscrepancyResponse/cbc:ResponseCode (BTAE-03). UBL 2.1 only allows it
-// on credit notes.
 func exportAECreditNoteReason(out *goblubl.Invoice, inv *bill.Invoice) {
 	if out.CreditNoteTypeCode == nil {
 		return
 	}
-	var reason string
-	switch {
-	case inv.HasTags(pint.TagVolumeDiscount):
-		reason = creditNoteReasonVolumeDiscount
-	case len(inv.Preceding) > 0 && inv.Preceding[0] != nil:
-		reason = inv.Preceding[0].Reason
-	}
+	reason := inv.Tax.GetExt(pint.ExtKeyCreditNoteReason)
 	if reason == "" {
 		return
 	}
 	out.DiscrepancyResponse = []goblubl.Response{
-		{ResponseCode: &goblubl.IDType{Value: reason}},
+		{ResponseCode: &goblubl.IDType{Value: reason.String()}},
 	}
 }
 
-// importAECreditNoteReason reads the credit note reason back from the first
-// cac:DiscrepancyResponse with a code, the only one PINT AE allows.
 func importAECreditNoteReason(in *goblubl.Invoice, inv *bill.Invoice) {
 	for _, r := range in.DiscrepancyResponse {
 		if r.ResponseCode == nil {
 			continue
 		}
-		code := strings.TrimSpace(r.ResponseCode.Value)
-		if code == "" {
-			continue
+		if code := cbc.Code(strings.TrimSpace(r.ResponseCode.Value)); code != "" {
+			setAEExt(inv, pint.ExtKeyCreditNoteReason, code)
+			return
 		}
-		if code == creditNoteReasonVolumeDiscount {
-			if !inv.HasTags(pint.TagVolumeDiscount) {
-				inv.Tags.List = append(inv.Tags.List, pint.TagVolumeDiscount)
-			}
-		} else if len(inv.Preceding) > 0 && inv.Preceding[0] != nil {
-			inv.Preceding[0].Reason = code
-		}
-		return
 	}
 }
 
-// exportAELineExemption writes the line's VATEX code (IBT-186) and, except on standard rated lines,
-// its category's tax note as the reason (IBT-185).
 func exportAELineExemption(line *goblubl.InvoiceLine, l *bill.Line, tx *bill.Tax) {
 	if l == nil || line.Item == nil || line.Item.ClassifiedTaxCategory == nil {
 		return
@@ -504,7 +455,7 @@ func exportAELineExemption(line *goblubl.InvoiceLine, l *bill.Line, tx *bill.Tax
 		return
 	}
 	ctc := line.Item.ClassifiedTaxCategory
-	if code := c.Ext.Get(uae.ExtKeyVATEX); code != "" {
+	if code := c.Ext.Get(pint.ExtKeyExemption); code != "" {
 		v := code.String()
 		ctc.TaxExemptionReasonCode = &v
 	}
@@ -516,8 +467,6 @@ func exportAELineExemption(line *goblubl.InvoiceLine, l *bill.Line, tx *bill.Tax
 	}
 }
 
-// aeTaxNote finds the tax note for a combo's category, the way gobl.ubl does
-// for the VAT breakdowns: by tax category and UNTDID 5305 category code.
 func aeTaxNote(notes []*tax.Note, c *tax.Combo) *tax.Note {
 	code := c.Ext.Get(untdid.ExtKeyTaxCategory)
 	if code == "" {
@@ -531,8 +480,6 @@ func aeTaxNote(notes []*tax.Note, c *tax.Combo) *tax.Note {
 	return nil
 }
 
-// importAELineExemptions reads the line VATEX codes back, and a reason text as the category's tax
-// note when the breakdown gave none.
 func importAELineExemptions(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 	if len(lines) == 0 || len(lines) != len(inv.Lines) {
 		return
@@ -545,7 +492,7 @@ func importAELineExemptions(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 		ctc := line.Item.ClassifiedTaxCategory
 		if ctc.TaxExemptionReasonCode != nil {
 			if code := cbc.Code(strings.TrimSpace(*ctc.TaxExemptionReasonCode)); code != "" {
-				c.Ext = c.Ext.Set(uae.ExtKeyVATEX, code)
+				c.Ext = c.Ext.Set(pint.ExtKeyExemption, code)
 			}
 		}
 		if ctc.TaxExemptionReason == nil || strings.TrimSpace(*ctc.TaxExemptionReason) == "" {
@@ -563,26 +510,94 @@ func importAELineExemptions(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 	}
 }
 
-// exportAELineGoods writes the goods type (BTAE-09) as cbc:NatureCode and the GTIN as the standard
-// identifier, where gobl.ubl may write another identity.
+// Rebuilds line item classifications, SAC, and buyer ID so HSN is prepended under listID HS.
+func exportAELineIdentities(line *goblubl.InvoiceLine, l *bill.Line) {
+	if l == nil || l.Item == nil || line.Item == nil {
+		return
+	}
+	var hsClassifications []goblubl.CommodityClassification
+	var otherClassifications []goblubl.CommodityClassification
+	var additional []goblubl.ItemIdentification
+	var buyerID *goblubl.ItemIdentification
+
+	for _, id := range l.Item.Identities {
+		if id == nil || id.Code == "" {
+			continue
+		}
+		hasScheme := id.Ext.Has(iso.ExtKeySchemeID)
+		switch {
+		case id.Key == org.IdentityKeyHSN && !hasScheme:
+			listID := identityLabelHS
+			hsClassifications = append(hsClassifications, goblubl.CommodityClassification{
+				ItemClassificationCode: &goblubl.IDType{
+					Value:  id.Code.String(),
+					ListID: &listID,
+				},
+			})
+		case id.Label == identityLabelSAC && !hasScheme:
+			scheme := identityLabelSAC
+			additional = append(additional, goblubl.ItemIdentification{
+				ID: &goblubl.IDType{
+					SchemeID: &scheme,
+					Value:    id.Code.String(),
+				},
+			})
+		case id.Label != "" && !hasScheme:
+			listID := id.Label
+			otherClassifications = append(otherClassifications, goblubl.CommodityClassification{
+				ItemClassificationCode: &goblubl.IDType{
+					Value:  id.Code.String(),
+					ListID: &listID,
+				},
+			})
+		case !hasScheme:
+			if buyerID == nil {
+				buyerID = &goblubl.ItemIdentification{
+					ID: &goblubl.IDType{
+						Value: id.Code.String(),
+					},
+				}
+			}
+		}
+	}
+
+	classifications := append(hsClassifications, otherClassifications...)
+	if len(classifications) > 0 {
+		line.Item.CommodityClassification = &classifications
+	} else {
+		line.Item.CommodityClassification = nil
+	}
+	if len(additional) > 0 {
+		line.Item.AdditionalItemIdentification = append(line.Item.AdditionalItemIdentification, additional...)
+	}
+	line.Item.BuyersItemIdentification = buyerID
+}
+
+func gtinIdentity(ids []*org.Identity) *org.Identity {
+	for _, id := range ids {
+		if id != nil && id.Ext.Get(iso.ExtKeySchemeID) == identitySchemeGTIN {
+			return id
+		}
+	}
+	return nil
+}
+
 func exportAELineGoods(line *goblubl.InvoiceLine, l *bill.Line) {
 	if l == nil || l.Item == nil || line.Item == nil {
 		return
 	}
-	if code := l.Item.Ext.Get(uae.ExtKeyGoodsType); code != "" {
+	if code := l.Item.Ext.Get(pint.ExtKeyGoodsType); code != "" {
 		v := code.String()
 		aeCommodityClassification(line.Item).NatureCode = &v
 	}
-	if id := pint.GTINIdentity(l.Item.Identities); id != nil {
-		scheme := pint.IdentitySchemeGTIN.String()
+	if id := gtinIdentity(l.Item.Identities); id != nil {
+		scheme := identitySchemeGTIN.String()
 		line.Item.StandardItemIdentification = &goblubl.ItemIdentification{
 			ID: &goblubl.IDType{SchemeID: &scheme, Value: id.Code.String()},
 		}
 	}
 }
 
-// aeCommodityClassification returns the item's first commodity classification, adding one if it has
-// none. The PINT AE item codes go there with the item classification code, as in the official examples.
 func aeCommodityClassification(it *goblubl.Item) *goblubl.CommodityClassification {
 	if it.CommodityClassification == nil || len(*it.CommodityClassification) == 0 {
 		it.CommodityClassification = &[]goblubl.CommodityClassification{{}}
@@ -590,43 +605,16 @@ func aeCommodityClassification(it *goblubl.Item) *goblubl.CommodityClassificatio
 	return &(*it.CommodityClassification)[0]
 }
 
-// exportAELineSAC moves the SAC item classifications gobl.ubl writes to cac:AdditionalItemIdentification
-// with the SAC scheme (BTAE-17).
-func exportAELineSAC(line *goblubl.InvoiceLine) {
-	if line.Item == nil || line.Item.CommodityClassification == nil {
-		return
-	}
-	var kept []goblubl.CommodityClassification
-	for _, cc := range *line.Item.CommodityClassification {
-		code := cc.ItemClassificationCode
-		if code == nil || code.ListID == nil || *code.ListID != pint.IdentityLabelSAC {
-			kept = append(kept, cc)
-			continue
-		}
-		scheme := pint.IdentityLabelSAC
-		line.Item.AdditionalItemIdentification = append(line.Item.AdditionalItemIdentification,
-			goblubl.ItemIdentification{ID: &goblubl.IDType{SchemeID: &scheme, Value: code.Value}})
-	}
-	if len(kept) == 0 {
-		line.Item.CommodityClassification = nil
-		return
-	}
-	line.Item.CommodityClassification = &kept
-}
-
-// exportAELineItemType writes the item type (BTAE-13) of the item's key as
-// its cac:CommodityClassification/cbc:CommodityCode.
 func exportAELineItemType(line *goblubl.InvoiceLine, l *bill.Line) {
 	if l == nil || l.Item == nil || line.Item == nil {
 		return
 	}
-	if typ := pint.ItemTypeAE(l.Item.Key); typ != "" {
+	if typ := l.Item.Ext.Get(pint.ExtKeyItemType); typ != "" {
 		v := typ.String()
 		aeCommodityClassification(line.Item).CommodityCode = &v
 	}
 }
 
-// importAELineGoods reads the goods type back onto the line items. gobl.ubl already reads the GTIN.
 func importAELineGoods(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 	if len(lines) == 0 || len(lines) != len(inv.Lines) {
 		return
@@ -643,16 +631,13 @@ func importAELineGoods(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 				continue
 			}
 			if code := cbc.Code(strings.TrimSpace(*cc.NatureCode)); code != "" {
-				inv.Lines[i].Item.Ext = inv.Lines[i].Item.Ext.Set(uae.ExtKeyGoodsType, code)
+				inv.Lines[i].Item.Ext = inv.Lines[i].Item.Ext.Set(pint.ExtKeyGoodsType, code)
 				break
 			}
 		}
 	}
 }
 
-// importAELineItems reads back what exportAELineSAC and exportAELineItemType
-// write: the service accounting codes as identities with their scheme as
-// label, and the item type as the item's key.
 func importAELineItems(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 	if len(lines) == 0 || len(lines) != len(inv.Lines) {
 		return
@@ -661,6 +646,12 @@ func importAELineItems(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 		it := inv.Lines[i].Item
 		if line.Item == nil || it == nil {
 			continue
+		}
+		for _, id := range it.Identities {
+			if id != nil && id.Label == identityLabelHS && !id.Ext.Has(iso.ExtKeySchemeID) {
+				id.Key = org.IdentityKeyHSN
+				id.Label = ""
+			}
 		}
 		for _, ai := range line.Item.AdditionalItemIdentification {
 			if ai.ID == nil || strings.TrimSpace(ai.ID.Value) == "" {
@@ -679,17 +670,22 @@ func importAELineItems(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 			if cc.CommodityCode == nil {
 				continue
 			}
-			if key := pint.ItemKeyAE(cbc.Code(strings.TrimSpace(*cc.CommodityCode))); key != "" {
-				it.Key = key
-				break
+			typ := cbc.Code(strings.TrimSpace(*cc.CommodityCode))
+			if typ == "" {
+				continue
 			}
+			it.Ext = it.Ext.Set(pint.ExtKeyItemType, typ)
+			switch typ {
+			case pint.ItemTypeGoods:
+				it.Key = org.ItemKeyGoods
+			case pint.ItemTypeServices:
+				it.Key = org.ItemKeyServices
+			}
+			break
 		}
 	}
 }
 
-// exportAEIncoterms writes the delivery's Incoterms rule code, from the ICC
-// Incoterms 2020 or 2010 extension, as cac:Delivery/cac:DeliveryTerms/cbc:ID
-// (BTAE-22) under the Incoterms scheme.
 func exportAEIncoterms(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Delivery == nil {
 		return
@@ -710,9 +706,6 @@ func exportAEIncoterms(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// importAEIncoterms reads the delivery terms back as the ICC Incoterms 2020
-// extension, the current edition, as PINT AE doesn't say which one a code is
-// from. A code only the 2010 edition has is read as that one.
 func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
 	if len(in.Delivery) == 0 || in.Delivery[0] == nil || len(in.Delivery[0].DeliveryTerms) == 0 {
 		return
@@ -731,8 +724,6 @@ func importAEIncoterms(in *goblubl.Invoice, inv *bill.Invoice) {
 	inv.Delivery.Ext = inv.Delivery.Ext.Set(key, code)
 }
 
-// exportAEDeliveryPartyID writes the receiver's UAE TRN, or else TIN, as the Deliver to Party ID
-// (BTAE-23, implementation guide 2.3.11).
 func exportAEDeliveryPartyID(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Delivery == nil {
 		return
@@ -753,7 +744,6 @@ func exportAEDeliveryPartyID(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// aeReceiverID provides the receiver's UAE TRN, or else its TIN.
 func aeReceiverID(p *org.Party) cbc.Code {
 	if p == nil {
 		return ""
@@ -769,9 +759,6 @@ func aeReceiverID(p *org.Party) cbc.Code {
 	return ""
 }
 
-// importAEDeliveryPartyID reads back what exportAEDeliveryPartyID writes: a
-// TRN, 15 digits starting with 1, as the receiver's UAE tax ID, and anything
-// else as a TIN identity, the only other ID the implementation guide allows.
 func importAEDeliveryPartyID(in *goblubl.Invoice, inv *bill.Invoice) {
 	if len(in.Delivery) == 0 || in.Delivery[0] == nil {
 		return
@@ -794,20 +781,16 @@ func importAEDeliveryPartyID(in *goblubl.Invoice, inv *bill.Invoice) {
 	r.Identities = append(r.Identities, &org.Identity{Type: ae.IdentityTypeTIN, Code: code})
 }
 
-// trnPattern is the UAE TRN format: 15 digits starting with its TIN.
-const trnPattern = `^1\d{14}$`
+var (
+	trnRegexp             = regexp.MustCompile("^1[0-9]{14}$")
+	transactionTypeRegexp = regexp.MustCompile("^[01]{8}$")
+)
 
-// trnRegexp matches a UAE TRN.
-var trnRegexp = regexp.MustCompile(trnPattern)
-
-// extensionHasCode reports whether the extension lists the code.
 func extensionHasCode(key cbc.Key, code cbc.Code) bool {
 	def := tax.ExtensionForKey(key)
 	return def != nil && def.HasCode(code)
 }
 
-// exportAELines completes the UBL lines, which gobl.ubl writes in the same
-// order as the invoice's lines.
 func exportAELines(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 	var rate *currency.ExchangeRate
 	if inv.Currency != currency.AED {
@@ -819,14 +802,13 @@ func exportAELines(lines []goblubl.InvoiceLine, inv *bill.Invoice) {
 		if len(lines) == len(inv.Lines) {
 			exportAELineAmounts(&lines[i], inv.Lines[i], inv.Currency, rate)
 			exportAELineExemption(&lines[i], inv.Lines[i], inv.Tax)
-			exportAELineSAC(&lines[i])
+			exportAELineIdentities(&lines[i], inv.Lines[i])
 			exportAELineGoods(&lines[i], inv.Lines[i])
 			exportAELineItemType(&lines[i], inv.Lines[i])
 		}
 	}
 }
 
-// exportAELine completes a line's price details and VAT rate.
 func exportAELine(line *goblubl.InvoiceLine, standard string) {
 	exportAEPrice(line)
 	if line.Item != nil && line.Item.ClassifiedTaxCategory != nil {
@@ -835,8 +817,6 @@ func exportAELine(line *goblubl.InvoiceLine, standard string) {
 	}
 }
 
-// exportAELineAmounts writes the line amount payable (BTAE-10) and VAT (BTAE-08), in AED as the
-// implementation guide (3.1.1) asks. GOBL keeps no VAT per line, so it is the line total at the line's rate.
 func exportAELineAmounts(line *goblubl.InvoiceLine, l *bill.Line, cur currency.Code, rate *currency.ExchangeRate) {
 	if l == nil || l.Total == nil {
 		return
@@ -861,8 +841,6 @@ func exportAELineAmounts(line *goblubl.InvoiceLine, l *bill.Line, cur currency.C
 	line.ItemPriceExtension = ext
 }
 
-// aeLineVAT provides the VAT charged on a line, which only standard rated lines have, and false for
-// exempt lines, which must not have one.
 func aeLineVAT(line *goblubl.InvoiceLine, l *bill.Line) (num.Amount, bool) {
 	zero := num.MakeAmount(0, l.Total.Exp())
 	if line.Item == nil || line.Item.ClassifiedTaxCategory == nil || line.Item.ClassifiedTaxCategory.ID == nil {
@@ -879,8 +857,6 @@ func aeLineVAT(line *goblubl.InvoiceLine, l *bill.Line) (num.Amount, bool) {
 	return zero, true
 }
 
-// exportAEExchangeRate writes, for invoices not in AED, the rate to AED (BTAE-04) as cac:TaxExchangeRate
-// and the total with VAT in AED (BTAE-20).
 func exportAEExchangeRate(out *goblubl.Invoice, inv *bill.Invoice) {
 	if inv.Currency == currency.AED {
 		return
@@ -905,14 +881,11 @@ func exportAEExchangeRate(out *goblubl.Invoice, inv *bill.Invoice) {
 	}
 }
 
-// aeAmount provides a UBL amount in the currency.
 func aeAmount(a num.Amount, cur currency.Code) goblubl.Amount {
 	code := cur.String()
 	return goblubl.Amount{CurrencyID: &code, Value: a.String()}
 }
 
-// exportAEPrice adds the base quantity 1 and the gross price PINT AE requires on every line,
-// with a zero price discount when gobl.ubl writes none.
 func exportAEPrice(line *goblubl.InvoiceLine) {
 	price := line.Price
 	if price == nil {
@@ -932,8 +905,6 @@ func exportAEPrice(line *goblubl.InvoiceLine) {
 	}
 }
 
-// lineUnitCode provides the unit code of the line's invoiced or credited
-// quantity.
 func lineUnitCode(line *goblubl.InvoiceLine) string {
 	if line.InvoicedQuantity != nil {
 		return line.InvoicedQuantity.UnitCode
@@ -944,7 +915,6 @@ func lineUnitCode(line *goblubl.InvoiceLine) string {
 	return ""
 }
 
-// aeStandardRate provides the AE regime's standard VAT rate on the invoice's tax date, as UBL writes it.
 func aeStandardRate(inv *bill.Invoice) string {
 	date := inv.IssueDate
 	if inv.ValueDate != nil {
@@ -960,8 +930,6 @@ func aeStandardRate(inv *bill.Invoice) string {
 	return ""
 }
 
-// aeRate provides the rate PINT AE expects for a VAT category where gobl.ubl writes 0: none for exempt,
-// the standard rate for reverse charge and margin scheme.
 func aeRate(id *goblubl.IDType, percent *string, standard string) *string {
 	if id == nil {
 		return percent
@@ -976,7 +944,6 @@ func aeRate(id *goblubl.IDType, percent *string, standard string) *string {
 	return percent
 }
 
-// exportAEPartyTaxID writes UAE TRNs without the AE prefix gobl.ubl adds.
 func exportAEPartyTaxID(out *goblubl.Party, tID *tax.Identity) {
 	if out == nil || tID == nil || tID.Code == "" || tID.Country.Code() != l10n.AE {
 		return
@@ -990,8 +957,6 @@ func exportAEPartyTaxID(out *goblubl.Party, tID *tax.Identity) {
 	}
 }
 
-// exportAEPartyIdentities writes the PINT AE details of the seller and buyer
-// legal identities that gobl.ubl has no place for.
 func exportAEPartyIdentities(out *goblubl.Party, p *org.Party) {
 	if out == nil || p == nil {
 		return
@@ -999,20 +964,40 @@ func exportAEPartyIdentities(out *goblubl.Party, p *org.Party) {
 	exportAELegalIdentity(out, p)
 }
 
-// exportAETINIdentification writes the scheme of a TIN identity in cac:PartyIdentification as its
-// ISO 6523 ICD, 0235, where gobl.ubl writes its type, TIN, which is not an ICD (ibr-cl-10).
 func exportAETINIdentification(out *goblubl.Party) {
 	for i := range out.PartyIdentification {
 		id := out.PartyIdentification[i].ID
 		if id != nil && id.SchemeID != nil && *id.SchemeID == ae.IdentityTypeTIN.String() {
-			scheme := pint.TINScheme.String()
+			scheme := tinScheme.String()
 			id.SchemeID = &scheme
 		}
 	}
 }
 
-// exportAELegalIdentity writes the PINT AE type of the first legal identity as @schemeAgencyID (BTAE-15/16),
-// and a passport's country or a trade licence's authority as @schemeAgencyName.
+func identityTypeAE(id *org.Identity) cbc.Code {
+	switch {
+	case id == nil:
+		return ""
+	case id.Key == org.IdentityKeyPassport:
+		return identityTypePassport
+	case id.Type.In(identityTypesAE...):
+		return id.Type
+	}
+	return ""
+}
+
+func setIdentityTypeAE(id *org.Identity, typ cbc.Code) bool {
+	switch {
+	case typ == identityTypePassport:
+		id.Key = org.IdentityKeyPassport
+	case typ.In(identityTypesAE...):
+		id.Type = typ
+	default:
+		return false
+	}
+	return true
+}
+
 func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 	if out.PartyLegalEntity == nil || out.PartyLegalEntity.CompanyID == nil {
 		return
@@ -1027,7 +1012,7 @@ func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 	if id == nil {
 		return
 	}
-	typ := pint.IdentityTypeAE(id)
+	typ := identityTypeAE(id)
 	if typ == "" {
 		return
 	}
@@ -1035,7 +1020,7 @@ func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 	agencyID := typ.String()
 	cid.SchemeAgencyID = &agencyID
 	switch typ {
-	case pint.IdentityTypePassport:
+	case identityTypePassport:
 		if id.Country != "" {
 			name := id.Country.String()
 			cid.SchemeAgencyName = &name
@@ -1048,11 +1033,7 @@ func exportAELegalIdentity(out *goblubl.Party, p *org.Party) {
 	}
 }
 
-// importAEPartyIdentities reads back what exportAEPartyIdentities writes, and the supplier's non-VAT
-// tax registration as its TIN (IBT-032).
-//
-// TODO: the seller TIN scheme has no code list (examples use TIN and TAX), so any scheme is read as TIN.
-// TODO: gobl.ubl gives imported tax registrations the address's country; fix there.
+// TODO: seller TIN scheme has no code list (examples use TIN and TAX), so any non-VAT scheme is read as TIN.
 func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 	if in == nil || p == nil {
 		return
@@ -1084,20 +1065,17 @@ func importAEPartyIdentities(in *goblubl.Party, p *org.Party, supplier bool) {
 	}
 }
 
-// importAETINIdentification reads back the TIN identities exportAETINIdentification writes.
 func importAETINIdentification(p *org.Party) {
 	for _, id := range p.Identities {
-		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == pint.TINScheme {
+		if id != nil && id.Scope == "" && id.Ext.Get(iso.ExtKeySchemeID) == tinScheme {
 			id.Type = ae.IdentityTypeTIN
 			id.Ext = id.Ext.Delete(iso.ExtKeySchemeID)
 		}
 	}
 }
 
-// importAELegalIdentity sets the identity's key or type and, from
-// @schemeAgencyName, its issuing country or description.
 func importAELegalIdentity(id *org.Identity, cid *goblubl.IDType) {
-	if !pint.SetIdentityTypeAE(id, cbc.Code(strings.TrimSpace(*cid.SchemeAgencyID))) {
+	if !setIdentityTypeAE(id, cbc.Code(strings.TrimSpace(*cid.SchemeAgencyID))) {
 		return
 	}
 	if cid.SchemeAgencyName == nil {
@@ -1112,10 +1090,6 @@ func importAELegalIdentity(id *org.Identity, cid *goblubl.IDType) {
 	}
 }
 
-// exportAETaxSubtotalExemptions copies UAE VATEX exemption codes from the
-// calculated tax totals onto the matching UBL subtotals before merging.
-// It relies on gobl.ubl emitting one TaxSubtotal per rate in the exact
-// iteration order of inv.Totals.Taxes.Categories[*].Rates[*].
 func exportAETaxSubtotalExemptions(tt *goblubl.TaxTotal, inv *bill.Invoice) {
 	if inv == nil || inv.Totals == nil || inv.Totals.Taxes == nil {
 		return
@@ -1123,7 +1097,7 @@ func exportAETaxSubtotalExemptions(tt *goblubl.TaxTotal, inv *bill.Invoice) {
 	var codes []cbc.Code
 	for _, cat := range inv.Totals.Taxes.Categories {
 		for _, r := range cat.Rates {
-			codes = append(codes, r.Ext.Get(uae.ExtKeyVATEX))
+			codes = append(codes, r.Ext.Get(pint.ExtKeyExemption))
 		}
 	}
 	if len(codes) != len(tt.TaxSubtotal) {
@@ -1137,8 +1111,6 @@ func exportAETaxSubtotalExemptions(tt *goblubl.TaxTotal, inv *bill.Invoice) {
 	}
 }
 
-// exportAETaxTotal fixes the breakdown rates, merges breakdowns left with the same category and rate,
-// and says prices exclude VAT (IBT-200).
 func exportAETaxTotal(tt *goblubl.TaxTotal, standard string) {
 	for i := range tt.TaxSubtotal {
 		c := &tt.TaxSubtotal[i].TaxCategory
@@ -1146,14 +1118,12 @@ func exportAETaxTotal(tt *goblubl.TaxTotal, standard string) {
 	}
 	tt.TaxSubtotal = mergeAETaxSubtotals(tt.TaxSubtotal)
 	if len(tt.TaxSubtotal) > 0 {
-		// gobl.ubl takes the taxes out of prices that include them.
 		included := false
 		tt.TaxIncludedIndicator = &included
 	}
 }
 
-// mergeAETaxSubtotals merges breakdowns with the same category and rate: GOBL makes one per exemption
-// code, PINT AE wants one per category. Codes and reasons that differ are dropped.
+// Merges breakdowns sharing category and rate, dropping differing exemption codes or reasons.
 func mergeAETaxSubtotals(subtotals []goblubl.TaxSubtotal) []goblubl.TaxSubtotal {
 	var merged []goblubl.TaxSubtotal
 	for _, st := range subtotals {
@@ -1175,8 +1145,6 @@ func mergeAETaxSubtotals(subtotals []goblubl.TaxSubtotal) []goblubl.TaxSubtotal 
 	return merged
 }
 
-// indexAETaxSubtotal finds the breakdown with the same category ID, rate and
-// tax scheme, or -1.
 func indexAETaxSubtotal(list []goblubl.TaxSubtotal, c goblubl.TaxCategory) int {
 	for i, st := range list {
 		if sameID(st.TaxCategory.ID, c.ID) &&
@@ -1195,7 +1163,6 @@ func sameID(a, b *goblubl.IDType) bool {
 	return a.Value == b.Value
 }
 
-// samePercent compares rates by value, so "0" and "0.0" match.
 func samePercent(a, b *string) bool {
 	if a == nil || b == nil {
 		return a == b
@@ -1222,7 +1189,6 @@ func sameScheme(a, b *goblubl.TaxScheme) bool {
 	return a.ID.Value == b.ID.Value
 }
 
-// addAmounts adds two decimal amounts, keeping the larger number of decimals.
 func addAmounts(a, b string) string {
 	x, err := num.AmountFromString(a)
 	if err != nil {

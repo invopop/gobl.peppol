@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "d0605ea9aaccc320e88d6d9960e6662ba7647ef3471664311057063c50ab5808"
+			"val": "f4ca6b8461462e6b8eb99fbd2d30db1003fcaa5b13b198e04984513527f6c12c"
 		},
 		"from": "iso6523-actorid-upis::0235:1246801357",
 		"to": "iso6523-actorid-upis::0235:9900000097"
@@ -16,9 +16,6 @@
 			"eu-en16931-v2017",
 			"peppol-pint-v1"
 		],
-		"$tags": [
-			"deemed-supply"
-		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "standard",
 		"code": "AE-001DS-Test",
@@ -27,7 +24,7 @@
 		"tax": {
 			"rounding": "currency",
 			"ext": {
-				"peppol-pint-ae-transaction-type": "01000000",
+				"pint-ae-transaction-type": "01000000",
 				"untdid-document-type": "380"
 			}
 		},
@@ -150,7 +147,7 @@
 					"name": "Item Name",
 					"identities": [
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "88098432"
 						},
 						{
@@ -164,6 +161,7 @@
 					"price": "140.00",
 					"unit": "piece",
 					"ext": {
+						"pint-ae-item-type": "G",
 						"untdid-unit": "H87"
 					}
 				},

@@ -1,0 +1,195 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "8038664fdcc57f05d95d1f40d660cc210c4d2031bfa852e9ae55e41596cf5153"
+		},
+		"from": "iso6523-actorid-upis::0235:1357902467",
+		"to": "iso6523-actorid-upis::0235:9900000099"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a6",
+		"type": "standard",
+		"series": "AE-EXP",
+		"code": "001",
+		"issue_date": "2025-01-30",
+		"currency": "USD",
+		"exchange_rates": [
+			{
+				"from": "USD",
+				"to": "AED",
+				"amount": "3.6725"
+			}
+		],
+		"tax": {
+			"ext": {
+				"pint-ae-transaction-type": "00000001",
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "135790246700003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				},
+				{
+					"scope": "tax",
+					"type": "TIN",
+					"code": "1357902467"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1357902467"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Sheikh Zayed Road",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			]
+		},
+		"customer": {
+			"name": "London Imports Ltd",
+			"identities": [
+				{
+					"scope": "legal",
+					"code": "09123456"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:9900000099"
+				}
+			],
+			"addresses": [
+				{
+					"street": "10 Bishopsgate",
+					"locality": "London",
+					"region": "LDN",
+					"country": "GB"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "25",
+				"item": {
+					"key": "goods",
+					"name": "Industrial Sensor",
+					"identities": [
+						{
+							"key": "hsn",
+							"code": "902519"
+						}
+					],
+					"description": "Exported optical temperature sensor",
+					"price": "200.00",
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "G"
+					}
+				},
+				"sum": "5000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "zero",
+						"percent": "0%",
+						"ext": {
+							"untdid-tax-category": "Z"
+						}
+					}
+				],
+				"total": "5000.00"
+			}
+		],
+		"payment": {
+			"terms": {
+				"key": "due-date",
+				"due_dates": [
+					{
+						"date": "2025-02-28",
+						"amount": "5000.00",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"name": "Emirates NBD"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"delivery": {
+			"receiver": {
+				"name": "London Imports Warehouse",
+				"addresses": [
+					{
+						"street": "22 Docklands Road",
+						"locality": "London",
+						"region": "LDN",
+						"country": "GB"
+					}
+				]
+			},
+			"ext": {
+				"icc-incoterms-2020": "CIF"
+			}
+		},
+		"totals": {
+			"sum": "5000.00",
+			"total": "5000.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "zero",
+								"ext": {
+									"untdid-tax-category": "Z"
+								},
+								"base": "5000.00",
+								"percent": "0%",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "5000.00",
+			"payable": "5000.00"
+		}
+	}
+}

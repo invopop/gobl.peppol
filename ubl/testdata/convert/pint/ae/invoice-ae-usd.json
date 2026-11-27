@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "6af6e52f8872ed948581afd0c1c9c241ed2247bc9dee98c43f1e05df8443a988"
+			"val": "f511f24358463a0a4bdc47c21f7bad35f4d739d8c08d5006e94627b30f634480"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -31,7 +31,7 @@
 		],
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00000000",
+				"pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "380"
 			}
 		},
@@ -101,11 +101,10 @@
 				"i": 1,
 				"quantity": "100",
 				"item": {
-					"key": "goods-services",
 					"name": "Item Name",
 					"identities": [
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "8471"
 						},
 						{
@@ -115,7 +114,10 @@
 					],
 					"description": "Item Description",
 					"price": "10.00",
-					"unit": "one"
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "B"
+					}
 				},
 				"sum": "1000.00",
 				"taxes": [
@@ -138,13 +140,16 @@
 					"name": "Export goods",
 					"identities": [
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "8471"
 						}
 					],
 					"description": "Zero rated supply",
 					"price": "250.00",
-					"unit": "one"
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "G"
+					}
 				},
 				"sum": "500.00",
 				"taxes": [
@@ -173,7 +178,10 @@
 					],
 					"description": "Exempt supply",
 					"price": "120.00",
-					"unit": "one"
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "S"
+					}
 				},
 				"sum": "120.00",
 				"taxes": [
@@ -181,8 +189,8 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"untdid-tax-category": "E",
-							"vatex-ae": "DL8.46.3"
+							"pint-ae-exemption": "DL8.46.3",
+							"untdid-tax-category": "E"
 						}
 					}
 				],
@@ -196,7 +204,7 @@
 					"name": "Electronic devices",
 					"identities": [
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "8517"
 						},
 						{
@@ -210,7 +218,8 @@
 					"price": "33.33",
 					"unit": "one",
 					"ext": {
-						"ae-goods-type": "DL8.48.8.2"
+						"pint-ae-goods-type": "DL8.48.8.2",
+						"pint-ae-item-type": "G"
 					}
 				},
 				"sum": "99.99",
@@ -278,8 +287,8 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"untdid-tax-category": "E",
-									"vatex-ae": "DL8.46.3"
+									"pint-ae-exemption": "DL8.46.3",
+									"untdid-tax-category": "E"
 								},
 								"base": "120.00",
 								"amount": "0.00"

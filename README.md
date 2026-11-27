@@ -59,11 +59,10 @@ See the [`examples`](./examples) directory for complete invoices.
 
 UAE documents with the PINT addon are modelled as usual in GOBL, plus:
 
-- **Transaction type** (BTAE-02): set from the tags `free-trade-zone`,
-  `deemed-supply`, `margin-scheme`, `summary`, `continuous-supply`,
-  `disclosed-agent`, `e-commerce` and `export`. The
-  `peppol-pint-ae-transaction-type` extension is always built from them: a
-  code set there directly is replaced.
+- **Transaction type** (BTAE-02): set directly in the `pint-ae-transaction-type`
+  extension on `tax.ext` as 8 binary flags (in order: free trade zone, deemed
+  supply, profit margin scheme, summary invoice, continuous supply, disclosed
+  agent billing, e-commerce, and exports). Defaults to `00000000` when unset.
 - **Supplier TIN and Peppol address**: when missing, the `TIN` identity and
   the `0235:<TIN>` endpoint are filled in from the supplier's own TIN, given
   as either of the two, or else from the first 10 digits of its TRN. A member
@@ -75,51 +74,53 @@ UAE documents with the PINT addon are modelled as usual in GOBL, plus:
   written.
 - **Emirates**: UAE addresses need the emirate code as the `region`: `AUH`,
   `DXB`, `SHJ`, `UAQ`, `FUJ`, `AJM` or `RAK`.
-- **Items**: every line item needs a `description`; goods need an HS
-  classification, an identity with the label `HS`.
+- **Items**: every line item needs a `description`. Item type (`BTAE-13`) is
+  held in `pint-ae-item-type` (`G`, `S`, or `B`) and derived automatically from
+  `item.key` (`goods` → `G`, `services` → `S`) unless set to `B` explicitly.
+  Goods (`G` or `B`) need an HS classification as an item identity with
+  `key: "hsn"`.
 - **Out of scope documents**: an invoice or credit note whose lines are all
   exempt or outside the scope of VAT is sent with type code 480 or 81, as PINT
   AE requires.
-- **Profit margin scheme**: the AE regime's `margin-scheme` tag with the
-  `exempt` VAT key on every line; the lines are written in category `N`.
-- **Exemption reasons**: `vatex-ae` on exempt VAT combos, with the UAE codes
-  `DL8.46.1` to `DL8.46.4`.
-- **Credit notes**: the reason code (`DL8.61.1.A` to `DL8.61.1.E`) in the
-  first `preceding` reference's `reason`, or the `volume-discount` tag for
-  volume discount credit notes (written as `VD`, with no preceding invoice).
-- **Free trade zone and disclosed agent**: a `beneficiary` identity
-  (`key: "beneficiary"`) on the customer for free trade zone supplies, and a
-  `principal` identity (`key: "principal"`, 15-digit UAE TRN ending in `03`)
-  on the supplier for disclosed agent billing.
-- **Reverse charge**: the type of goods or services of each line item in the
-  `ae-goods-type` extension.
-- **Predefined endpoints**: deemed supplies automatically set the customer
-  endpoint to `0235:9900000097`. A buyer without a Peppol ID takes
-  `0235:9900000098`, or `0235:9900000099` on exports; PINT AE additionally
-  expects a UAE buyer without a TRN to carry its `TIN` identity (not enforced
-  by GOBL).
+- **Profit margin scheme**: set position 3 (`00100000`) of
+  `pint-ae-transaction-type` with the `exempt` VAT key (and no
+  `pint-ae-exemption`) on every line; lines keep `untdid-tax-category: "E"` in
+  GOBL and are written in category `N` in UBL. No automatic margin-scheme note
+  is added — write any required margin-scheme wording in `notes`, or in
+  `tax.notes` with `category: "VAT"` and `key: "exempt"` (normalized to
+  `untdid-tax-category: "E"`) so it exports as the `N` `TaxExemptionReason`.
+- **Exemption reasons**: `pint-ae-exemption` on exempt VAT combos, with the UAE
+  codes `DL8.46.1` to `DL8.46.4`.
+- **Credit notes**: set the reason code (`DL8.61.1.A` to `DL8.61.1.E`, or `VD`
+  for volume discounts) in `tax.ext["pint-ae-credit-note-reason"]`. Volume
+  discount credit notes (`VD`) must not carry a `preceding` invoice reference,
+  so they cannot be built with `gobl correct` (which always populates
+  `preceding`); construct them directly instead.
+- **Free trade zone and disclosed agent**: set `pint-ae-beneficiary-id` in
+  `tax.ext` for free trade zone supplies (position 1, `10000000`), and
+  `pint-ae-principal-id` (15-digit UAE TRN ending in `03`) in `tax.ext` for
+  disclosed agent billing (position 6, `00000100`).
+- **Reverse charge**: set the type of goods or services of each line item in
+  the `pint-ae-goods-type` extension.
+- **Predefined endpoints**: deemed supplies (position 2, `01000000`, of
+  `pint-ae-transaction-type`) automatically set the customer endpoint to
+  `0235:9900000097`. A buyer without a Peppol ID takes `0235:9900000098`, or
+  `0235:9900000099` on exports; PINT AE additionally expects a UAE buyer
+  without a TRN to carry its `TIN` identity (not enforced by GOBL).
 
 #### Extensions
 
+These extensions are only used on UAE (`AE`) documents:
+
 | Key | Schema | Description |
 | --- | --- | --- |
-| `peppol-pint-ae-transaction-type` | `bill/tax` | PINT AE invoice transaction type (BTAE-02): 8 binary flags built automatically from the transaction tags (`00000000` when none apply). |
-| `vatex-ae` | `tax/combo` | UAE VAT exemption reason under Federal Decree-Law No. 8 of 2017 Art. 46. Code list in [`data/catalogues/uae.json`](./data/catalogues/uae.json). |
-| `ae-goods-type` | `org/item` | Type of goods or services subject to UAE domestic reverse charge under Art. 48 (BTAE-09). Code list in [`data/catalogues/uae.json`](./data/catalogues/uae.json). |
-
-#### Tags
-
-| Tag | Meaning |
-| --- | --- |
-| `free-trade-zone` | Free trade zone supply (BTAE-02 flag 1); requires a `beneficiary` identity on the customer. |
-| `deemed-supply` | Deemed supply (BTAE-02 flag 2); sets customer endpoint to `0235:9900000097`. |
-| `margin-scheme` | Profit margin scheme (BTAE-02 flag 3, from the `AE` regime); lines use `exempt` VAT (without a UAE exemption reason), export in category `N`, and no document-level discounts or charges are allowed. |
-| `summary` | Summary invoice (BTAE-02 flag 4); requires `ordering.period`. |
-| `continuous-supply` | Continuous supply (BTAE-02 flag 5). |
-| `disclosed-agent` | Disclosed agent billing (BTAE-02 flag 6); requires a `principal` identity on the supplier. |
-| `e-commerce` | E-commerce supply (BTAE-02 flag 7); requires `delivery.receiver` with an address (`street`, `locality`, `region`). |
-| `export` | Export supply (BTAE-02 flag 8, GOBL core `export` tag); requires `delivery.receiver` with an address (`street`, `locality`, `region`) and a `country` other than `AE`. |
-| `volume-discount` | Volume discount credit note (BTAE-03 reason `VD`); must have no `preceding` invoice. |
+| `pint-ae-transaction-type` | `bill/tax` | PINT AE invoice transaction type (BTAE-02): 8 binary flags (`00000000` when none apply). |
+| `pint-ae-credit-note-reason` | `bill/tax` | PINT AE credit note reason (BTAE-03): `DL8.61.1.A`–`DL8.61.1.E` or `VD` (volume discount, no `preceding` reference). |
+| `pint-ae-beneficiary-id` | `bill/tax` | Free trade zone beneficiary identifier (BTAE-01), required when position 1 (`10000000`) of `pint-ae-transaction-type` is set. |
+| `pint-ae-principal-id` | `bill/tax` | Disclosed agent principal TRN (BTAE-14, 15 digits starting with `1` and ending with `03`), required when position 6 (`00000100`) of `pint-ae-transaction-type` is set. |
+| `pint-ae-exemption` | `tax/combo` | UAE VAT exemption reason under Federal Decree-Law No. 8 of 2017 Art. 46 (`DL8.46.1`–`DL8.46.4`). |
+| `pint-ae-goods-type` | `org/item` | Type of goods or services subject to UAE domestic reverse charge under Art. 48 (BTAE-09): `DL8.48.8.1`–`DL8.48.8.3`, `DL8.48.3.1`–`DL8.48.3.3`. |
+| `pint-ae-item-type` | `org/item` | PINT AE item type (BTAE-13): `G` (goods), `S` (services), or `B` (both goods and services). Derived from `item.key` unless set to `B`. |
 
 #### Example
 
@@ -132,9 +133,11 @@ documents):
 $regime: "AE"
 $addons:
   - "peppol-pint-v1"
-$tags:
-  - "free-trade-zone"
-  - "disclosed-agent"
+tax:
+  ext:
+    pint-ae-transaction-type: "10000100"
+    pint-ae-beneficiary-id: "189098765401003"
+    pint-ae-principal-id: "155667745601003"
 supplier:
   tax_id:
     country: "AE"
@@ -143,14 +146,8 @@ supplier:
     - type: "TL"
       code: "112345678900003"
       description: "Dubai Department of Economy and Tourism"
-    - key: "principal"
-      code: "155667745601003"
   endpoints:
     - uri: "iso6523-actorid-upis::0235:1357902467"
-customer:
-  identities:
-    - key: "beneficiary"
-      code: "189098765401003"
 lines:
   - quantity: "1"
     item:
@@ -159,10 +156,13 @@ lines:
       description: "24k gold bar"
       price: "1000.00"
       identities:
-        - label: "HS"
+        - key: "hsn"
           code: "7108"
+        - code: "4006381333931"
+          ext:
+            iso-scheme-id: "0160"
       ext:
-        ae-goods-type: "DL8.48.8.1"
+        pint-ae-goods-type: "DL8.48.8.1"
     taxes:
       - cat: "VAT"
         key: "reverse-charge"
@@ -190,9 +190,6 @@ with its type as the scheme and fails validation, so give it the
   normalizers, scenarios and validation rules that register into GOBL on
   import. These packages are kept dependency-light so importing them never
   pulls in conversion tooling.
-- `catalogues/` — external code lists used by the addons, such as
-  `catalogues/uae` for the UAE FTA `vatex-ae` and `ae-goods-type` lists.
-- `data/` — embedded JSON definitions for `catalogues/`.
 - `ubl/` — the Peppol BIS and PINT UBL formats, registered with `gobl.ubl` and
   GOBL's `convert` register.
 - `cii/` — the Peppol BIS CII format, registered with `gobl.cii` and GOBL's

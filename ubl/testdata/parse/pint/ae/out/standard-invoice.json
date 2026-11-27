@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "da55e110028a5e7248ae4daafd2f53ed96168cff74ac6f002cbcd20a83d15c81"
+			"val": "03a0eb12c65d6bd8b03e33002b6d1a46cd30cfd58b1a50751baf6f4556840726"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902468",
 		"to": "iso6523-actorid-upis::0235:1345678901"
@@ -24,7 +24,7 @@
 		"tax": {
 			"rounding": "currency",
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00000000",
+				"pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "380"
 			}
 		},
@@ -110,7 +110,7 @@
 					"name": "Item Name",
 					"identities": [
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "aaa"
 						}
 					],
@@ -119,6 +119,7 @@
 					"price": "10.00",
 					"unit": "piece",
 					"ext": {
+						"pint-ae-item-type": "G",
 						"untdid-unit": "H87"
 					}
 				},

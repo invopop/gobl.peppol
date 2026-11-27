@@ -1,7 +1,6 @@
 package pint
 
 import (
-	"github.com/invopop/gobl.peppol/catalogues/uae"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
@@ -12,7 +11,6 @@ import (
 	"github.com/invopop/gobl/tax"
 )
 
-// billLineRules validates invoice lines on PINT documents, with stricter rules for A-NZ and UAE.
 func billLineRules() *rules.Set {
 	return rules.For(new(bill.Line),
 		rules.When(
@@ -39,17 +37,17 @@ func billLineRules() *rules.Set {
 				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
 				rules.Field("item",
 					rules.Field("ext",
-						rules.Assert("04", "reverse charge line item needs the type of goods or services in the ae-goods-type extension (IBR-166-AE)",
-							tax.ExtensionsRequire(uae.ExtKeyGoodsType),
+						rules.Assert("04", "reverse charge line item needs the type of goods or services in the pint-ae-goods-type extension (IBR-166-AE)",
+							tax.ExtensionsRequire(ExtKeyGoodsType),
 						),
 					),
 				),
 			),
-			// The IBR-006-AE test checks every goods type, not only those of reverse charge lines as its text says.
+			// IBR-006-AE checks every goods type, not only reverse charge lines.
 			rules.Field("item",
 				rules.Field("ext",
 					rules.Assert("05", "type of goods or services must be from the PINT AE code list (IBR-006-AE)",
-						tax.ExtensionHasValidCode(uae.ExtKeyGoodsType),
+						tax.ExtensionHasValidCode(ExtKeyGoodsType),
 					),
 				),
 			),
@@ -57,14 +55,13 @@ func billLineRules() *rules.Set {
 				is.Func("reverse charge VAT", lineHasReverseChargeVAT),
 				rules.Field("item",
 					rules.Field("identities",
-						rules.Assert("06", `reverse charge line item needs a GTIN identity (key "gtin") (IBR-174-AE)`,
-							org.IdentitiesExtensionIn(iso.ExtKeySchemeID, IdentitySchemeGTIN),
+						rules.Assert("06", "reverse charge line item needs a GTIN identity (key \"gtin\") (IBR-174-AE)",
+							org.IdentitiesExtensionIn(iso.ExtKeySchemeID, identitySchemeGTIN),
 						),
 					),
 				),
 			),
 		),
-		// A-NZ and AE ask for their own category above.
 		rules.When(
 			is.Not(is.InContext(tax.RegimeIn(append(regimesAUNZ, regimesAE...)...))),
 			rules.Field("taxes",
@@ -74,7 +71,6 @@ func billLineRules() *rules.Set {
 	)
 }
 
-// lineHasReverseChargeVAT reports whether the line's VAT category is AE, reverse charge.
 func lineHasReverseChargeVAT(val any) bool {
 	l, ok := val.(*bill.Line)
 	if !ok || l == nil {

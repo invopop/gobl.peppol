@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "d924a491f980aeff6dd9b1d5f21f22f7bbc602574cef0080551546a052896f71"
+			"val": "3e6d5f891d9b909b9d36e5ac59839eb100f171b8992f925bbca7bfa06d58dabf"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -24,7 +24,7 @@
 		"currency": "AED",
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00000000",
+				"pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "380"
 			}
 		},
@@ -50,13 +50,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0235:1357902467"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1357902467"
 				}
 			],
 			"addresses": [
@@ -87,13 +80,6 @@
 					"uri": "iso6523-actorid-upis::0235:1345678906"
 				}
 			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1345678906"
-				}
-			],
 			"addresses": [
 				{
 					"street": "Corniche Road",
@@ -106,14 +92,24 @@
 		"lines": [
 			{
 				"i": 1,
-				"quantity": "100",
+				"quantity": "10",
 				"item": {
-					"name": "Item Name",
-					"description": "Item Description",
-					"price": "10.00",
-					"unit": "one"
+					"key": "goods",
+					"name": "Laptop Computer",
+					"identities": [
+						{
+							"key": "hsn",
+							"code": "847130"
+						}
+					],
+					"description": "14-inch business laptop",
+					"price": "3500.00",
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "G"
+					}
 				},
-				"sum": "1000.00",
+				"sum": "35000.00",
 				"taxes": [
 					{
 						"cat": "VAT",
@@ -124,7 +120,59 @@
 						}
 					}
 				],
-				"total": "1000.00"
+				"total": "35000.00"
+			},
+			{
+				"i": 2,
+				"quantity": "5",
+				"item": {
+					"key": "services",
+					"name": "IT Setup",
+					"description": "On-site workstation setup and configuration",
+					"price": "400.00",
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "S"
+					}
+				},
+				"sum": "2000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "2000.00"
+			},
+			{
+				"i": 3,
+				"quantity": "1",
+				"item": {
+					"key": "services",
+					"name": "Financing Fee",
+					"description": "Exempt financial service fee",
+					"price": "250.00",
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "S"
+					}
+				},
+				"sum": "250.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"pint-ae-exemption": "DL8.46.1",
+							"untdid-tax-category": "E"
+						}
+					}
+				],
+				"total": "250.00"
 			}
 		],
 		"payment": {
@@ -133,7 +181,7 @@
 				"due_dates": [
 					{
 						"date": "2025-02-06",
-						"amount": "1050.00",
+						"amount": "39100.00",
 						"percent": "100%"
 					}
 				]
@@ -152,8 +200,8 @@
 			}
 		},
 		"totals": {
-			"sum": "1000.00",
-			"total": "1000.00",
+			"sum": "37250.00",
+			"total": "37250.00",
 			"taxes": {
 				"categories": [
 					{
@@ -164,19 +212,28 @@
 								"ext": {
 									"untdid-tax-category": "S"
 								},
-								"base": "1000.00",
+								"base": "37000.00",
 								"percent": "5%",
-								"amount": "50.00"
+								"amount": "1850.00"
+							},
+							{
+								"key": "exempt",
+								"ext": {
+									"pint-ae-exemption": "DL8.46.1",
+									"untdid-tax-category": "E"
+								},
+								"base": "250.00",
+								"amount": "0.00"
 							}
 						],
-						"amount": "50.00"
+						"amount": "1850.00"
 					}
 				],
-				"sum": "50.00"
+				"sum": "1850.00"
 			},
-			"tax": "50.00",
-			"total_with_tax": "1050.00",
-			"payable": "1050.00"
+			"tax": "1850.00",
+			"total_with_tax": "39100.00",
+			"payable": "39100.00"
 		}
 	}
 }

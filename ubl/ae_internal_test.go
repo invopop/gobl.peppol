@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl.peppol/catalogues/uae"
 	goblubl "github.com/invopop/gobl.ubl"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/cef"
 	"github.com/invopop/gobl/catalogues/icc"
+	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/catalogues/untdid"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/currency"
@@ -125,8 +125,6 @@ func TestImportAEPartyIdentities(t *testing.T) {
 		}
 		return &goblubl.Party{PartyLegalEntity: &goblubl.PartyLegalEntity{CompanyID: cid}}
 	}
-	// imported builds the GOBL party the way gobl.ubl imports it, then reads
-	// the AE details.
 	imported := func(in *goblubl.Party, supplier bool) *org.Party {
 		p := goblubl.ParseParty(in)
 		importAEPartyIdentities(in, p, supplier)
@@ -199,29 +197,74 @@ func TestExportAEPartyIdentities(t *testing.T) {
 	})
 }
 
-func TestImportAETransactionType(t *testing.T) {
-	t.Run("existing tags are not repeated", func(t *testing.T) {
-		inv := &bill.Invoice{Tags: tax.WithTags(tax.TagExport)}
-		importAETransactionType(&goblubl.Invoice{ProfileExecutionID: "00000001"}, inv)
-		assert.Equal(t, []cbc.Key{tax.TagExport}, inv.Tags.List)
-	})
+func TestIdentityTypeAE(t *testing.T) {
+	tests := []struct {
+		id   *org.Identity
+		want cbc.Code
+	}{
+		{&org.Identity{Type: ae.IdentityTypeTradeLicense}, "TL"},
+		{&org.Identity{Type: ae.IdentityTypeEmiratesID}, "EID"},
+		{&org.Identity{Key: org.IdentityKeyPassport}, identityTypePassport},
+		{&org.Identity{Type: ae.IdentityTypeCabinetDecision}, "CD"},
+		{&org.Identity{Type: ae.IdentityTypeTIN}, ""},
+		{&org.Identity{}, ""},
+		{nil, ""},
+	}
+	for _, tt := range tests {
+		assert.Equal(t, tt.want, identityTypeAE(tt.id), tt.id)
+	}
+}
 
-	t.Run("reads beneficiary and principal IDs into party identities", func(t *testing.T) {
+func TestSetIdentityTypeAE(t *testing.T) {
+	tests := map[cbc.Code]org.Identity{
+		"TL":  {Type: ae.IdentityTypeTradeLicense},
+		"EID": {Type: ae.IdentityTypeEmiratesID},
+		"PAS": {Key: org.IdentityKeyPassport},
+		"CD":  {Type: ae.IdentityTypeCabinetDecision},
+		"XYZ": {},
+		"":    {},
+	}
+	for typ, want := range tests {
+		id := new(org.Identity)
+		known := want.Key != "" || want.Type != ""
+		assert.Equal(t, known, setIdentityTypeAE(id, typ), typ)
+		assert.Equal(t, want, *id, typ)
+	}
+}
+
+func TestExportAETransactionType(t *testing.T) {
+	t.Run("writes beneficiary and principal IDs even without flags", func(t *testing.T) {
+		out := new(goblubl.Invoice)
 		inv := &bill.Invoice{
-			Supplier: &org.Party{Name: "Supplier"},
-			Customer: &org.Party{Name: "Customer"},
+			Tax: &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{
+				pint.ExtKeyTransactionType: "00000000",
+				pint.ExtKeyBeneficiaryID:   "189098765401003",
+				pint.ExtKeyPrincipalID:     "155667745601003",
+			})},
 		}
+		exportAETransactionType(out, inv)
+		assert.Equal(t, "00000000", out.ProfileExecutionID)
+		require.NotNil(t, out.BuyerCustomerParty)
+		assert.Equal(t, "189098765401003", out.BuyerCustomerParty.Party.PartyIdentification[0].ID.Value)
+		require.NotNil(t, out.SellerSupplierParty)
+		assert.Equal(t, "155667745601003", out.SellerSupplierParty.Party.PartyIdentification[0].ID.Value)
+	})
+}
+
+func TestImportAETransactionType(t *testing.T) {
+	t.Run("reads transaction type, beneficiary and principal IDs into tax extensions", func(t *testing.T) {
+		inv := new(bill.Invoice)
 		in := &goblubl.Invoice{
+			ProfileExecutionID:  "10000100",
 			BuyerCustomerParty:  &goblubl.CustomerParty{Party: identifiedParty("189098765401003")},
 			SellerSupplierParty: &goblubl.SupplierParty{Party: identifiedParty("155667745601003")},
 		}
 		importAETransactionType(in, inv)
-		require.Len(t, inv.Customer.Identities, 1)
-		assert.Equal(t, pint.IdentityKeyBeneficiary, inv.Customer.Identities[0].Key)
-		assert.Equal(t, cbc.Code("189098765401003"), inv.Customer.Identities[0].Code)
-		require.Len(t, inv.Supplier.Identities, 1)
-		assert.Equal(t, pint.IdentityKeyPrincipal, inv.Supplier.Identities[0].Key)
-		assert.Equal(t, cbc.Code("155667745601003"), inv.Supplier.Identities[0].Code)
+		require.NotNil(t, inv.Tax)
+		assert.Equal(t, cbc.Code("10000100"), inv.Tax.GetExt(pint.ExtKeyTransactionType))
+		assert.Equal(t, cbc.Code("189098765401003"), inv.Tax.GetExt(pint.ExtKeyBeneficiaryID))
+		assert.Equal(t, cbc.Code("155667745601003"), inv.Tax.GetExt(pint.ExtKeyPrincipalID))
+		assert.Empty(t, inv.Tags.List)
 	})
 
 	t.Run("nothing to read leaves the invoice alone", func(t *testing.T) {
@@ -232,30 +275,280 @@ func TestImportAETransactionType(t *testing.T) {
 	})
 }
 
-func TestAECreditNoteReason(t *testing.T) {
-	t.Run("volume discount tag exports as VD and imports back as tag without duplicating", func(t *testing.T) {
-		out := &goblubl.Invoice{CreditNoteTypeCode: &goblubl.IDType{Value: "381"}}
-		exportAECreditNoteReason(out, &bill.Invoice{Tags: tax.WithTags(pint.TagVolumeDiscount)})
-		require.Len(t, out.DiscrepancyResponse, 1)
-		assert.Equal(t, "VD", out.DiscrepancyResponse[0].ResponseCode.Value)
+func TestExportAEMarginScheme(t *testing.T) {
+	buildUBL := func() *goblubl.Invoice {
+		vatScheme := &goblubl.TaxScheme{ID: goblubl.IDType{Value: "VAT"}}
+		return &goblubl.Invoice{
+			InvoiceLines: []goblubl.InvoiceLine{
+				{Item: &goblubl.Item{ClassifiedTaxCategory: &goblubl.ClassifiedTaxCategory{ID: &goblubl.IDType{Value: "E"}, TaxScheme: vatScheme}}},
+				{Item: &goblubl.Item{ClassifiedTaxCategory: &goblubl.ClassifiedTaxCategory{ID: &goblubl.IDType{Value: "S"}, TaxScheme: vatScheme}}},
+			},
+			CreditNoteLines: []goblubl.InvoiceLine{
+				{Item: &goblubl.Item{ClassifiedTaxCategory: &goblubl.ClassifiedTaxCategory{ID: &goblubl.IDType{Value: "E"}, TaxScheme: vatScheme}}},
+			},
+			TaxTotal: []goblubl.TaxTotal{
+				{TaxSubtotal: []goblubl.TaxSubtotal{
+					{TaxCategory: aeCategory("E", nil)},
+					{TaxCategory: aeCategory("S", strPtr("5"))},
+				}},
+			},
+		}
+	}
 
-		inv := new(bill.Invoice)
-		importAECreditNoteReason(out, inv)
-		importAECreditNoteReason(out, inv)
-		assert.Equal(t, []cbc.Key{pint.TagVolumeDiscount}, inv.Tags.List)
+	t.Run("rewrites E to N on invoice lines, credit note lines and tax subtotals when flag is set", func(t *testing.T) {
+		out := buildUBL()
+		inv := &bill.Invoice{
+			Tax: &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyTransactionType: "00100000"})},
+		}
+		exportAEMarginScheme(out, inv)
+
+		assert.Equal(t, "N", out.InvoiceLines[0].Item.ClassifiedTaxCategory.ID.Value)
+		assert.Equal(t, "S", out.InvoiceLines[1].Item.ClassifiedTaxCategory.ID.Value)
+		assert.Equal(t, "N", out.CreditNoteLines[0].Item.ClassifiedTaxCategory.ID.Value)
+		assert.Equal(t, "N", out.TaxTotal[0].TaxSubtotal[0].TaxCategory.ID.Value)
+		assert.Equal(t, "S", out.TaxTotal[0].TaxSubtotal[1].TaxCategory.ID.Value)
 	})
 
-	t.Run("non-VD reason exports from and imports into first preceding reference", func(t *testing.T) {
-		out := &goblubl.Invoice{CreditNoteTypeCode: &goblubl.IDType{Value: "381"}}
-		exportAECreditNoteReason(out, &bill.Invoice{
-			Preceding: []*org.DocumentRef{{Code: "INV-1", Reason: "DL8.61.1.E"}},
-		})
-		require.Len(t, out.DiscrepancyResponse, 1)
-		assert.Equal(t, "DL8.61.1.E", out.DiscrepancyResponse[0].ResponseCode.Value)
+	t.Run("leaves E untouched when margin scheme flag is unset", func(t *testing.T) {
+		out := buildUBL()
+		inv := &bill.Invoice{
+			Tax: &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyTransactionType: "00000000"})},
+		}
+		exportAEMarginScheme(out, inv)
 
-		inv := &bill.Invoice{Preceding: []*org.DocumentRef{{Code: "INV-1"}}}
-		importAECreditNoteReason(out, inv)
-		assert.Equal(t, "DL8.61.1.E", inv.Preceding[0].Reason)
+		assert.Equal(t, "E", out.InvoiceLines[0].Item.ClassifiedTaxCategory.ID.Value)
+		assert.Equal(t, "E", out.CreditNoteLines[0].Item.ClassifiedTaxCategory.ID.Value)
+		assert.Equal(t, "E", out.TaxTotal[0].TaxSubtotal[0].TaxCategory.ID.Value)
+	})
+}
+
+func TestImportAEMarginScheme(t *testing.T) {
+	marginInv := func() *bill.Invoice {
+		return &bill.Invoice{
+			Lines: []*bill.Line{{
+				Taxes: tax.Set{{
+					Category: tax.CategoryVAT,
+					Percent:  num.NewPercentage(5, 2),
+					Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: taxCategoryMarginScheme}),
+				}},
+			}},
+		}
+	}
+
+	t.Run("rewrites N to exempt E and sets MarginScheme bit while preserving other flags", func(t *testing.T) {
+		inv := marginInv()
+		inv.Tax = &bill.Tax{Notes: []*tax.Note{{
+			Category: tax.CategoryVAT,
+			Text:     "Margin scheme",
+			Ext:      tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyTaxCategory: taxCategoryMarginScheme}),
+		}}}
+		importAETransactionType(&goblubl.Invoice{ProfileExecutionID: "10000000"}, inv)
+		importAEMarginScheme(inv)
+
+		assert.Equal(t, tax.KeyExempt, inv.Lines[0].Taxes[0].Key)
+		assert.Nil(t, inv.Lines[0].Taxes[0].Percent)
+		assert.Equal(t, cbc.Code(taxCategoryExempt), inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory))
+		assert.Equal(t, cbc.Code(taxCategoryExempt), inv.Tax.Notes[0].Ext.Get(untdid.ExtKeyTaxCategory))
+		assert.Equal(t, cbc.Code("10100000"), inv.Tax.GetExt(pint.ExtKeyTransactionType))
+		assert.Empty(t, inv.Tags.List)
+	})
+
+	t.Run("empty ProfileExecutionID with N lines produces 00100000", func(t *testing.T) {
+		inv := marginInv()
+		importAETransactionType(&goblubl.Invoice{}, inv)
+		importAEMarginScheme(inv)
+
+		assert.Equal(t, tax.KeyExempt, inv.Lines[0].Taxes[0].Key)
+		assert.Equal(t, cbc.Code(taxCategoryExempt), inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory))
+		assert.Equal(t, cbc.Code("00100000"), inv.Tax.GetExt(pint.ExtKeyTransactionType))
+	})
+
+	t.Run("malformed ProfileExecutionID is not silently sanitized", func(t *testing.T) {
+		inv := marginInv()
+		importAETransactionType(&goblubl.Invoice{ProfileExecutionID: "0010000X"}, inv)
+		importAEMarginScheme(inv)
+
+		assert.Equal(t, tax.KeyExempt, inv.Lines[0].Taxes[0].Key)
+		assert.Equal(t, cbc.Code(taxCategoryExempt), inv.Lines[0].Taxes[0].Ext.Get(untdid.ExtKeyTaxCategory))
+		assert.Equal(t, cbc.Code("0010000X"), inv.Tax.GetExt(pint.ExtKeyTransactionType))
+	})
+}
+
+func TestAECreditNoteReason(t *testing.T) {
+	t.Run("exports from and imports into pint-ae-credit-note-reason without modifying tags or preceding", func(t *testing.T) {
+		for _, code := range []cbc.Code{pint.CreditNoteReasonVolumeDiscount, "DL8.61.1.E"} {
+			out := &goblubl.Invoice{CreditNoteTypeCode: &goblubl.IDType{Value: "381"}}
+			exportAECreditNoteReason(out, &bill.Invoice{
+				Tax: &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyCreditNoteReason: code})},
+			})
+			require.Len(t, out.DiscrepancyResponse, 1)
+			assert.Equal(t, code.String(), out.DiscrepancyResponse[0].ResponseCode.Value)
+
+			inv := &bill.Invoice{Preceding: []*org.DocumentRef{{Code: "INV-1"}}}
+			importAECreditNoteReason(out, inv)
+			assert.Equal(t, code, inv.Tax.GetExt(pint.ExtKeyCreditNoteReason))
+			assert.Empty(t, inv.Tags.List)
+			assert.Empty(t, inv.Preceding[0].Reason)
+		}
+	})
+}
+
+func TestAELineIdentitiesAndItemType(t *testing.T) {
+	t.Run("preserves buyer ID, GTIN, HSN, SAC and other classification, prepending HS", func(t *testing.T) {
+		l := &bill.Line{
+			Item: &org.Item{
+				Key: org.ItemKeyGoods,
+				Ext: tax.ExtensionsOf(cbc.CodeMap{
+					pint.ExtKeyItemType:  pint.ItemTypeGoods,
+					pint.ExtKeyGoodsType: "DL8.48.8.1",
+				}),
+				Identities: []*org.Identity{
+					{Code: "BUYER-1"},
+					{Code: "4006381333931", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: identitySchemeGTIN})},
+					{Label: "UNSPSC", Code: "43211500"},
+					{Key: org.IdentityKeyHSN, Code: "8471"},
+					{Label: "SAC", Code: "998713"},
+				},
+			},
+		}
+		line := &goblubl.InvoiceLine{
+			Item: &goblubl.Item{
+				BuyersItemIdentification: &goblubl.ItemIdentification{ID: &goblubl.IDType{Value: "BUYER-1"}},
+			},
+		}
+		exportAELineIdentities(line, l)
+		exportAELineGoods(line, l)
+		exportAELineItemType(line, l)
+
+		require.NotNil(t, line.Item.BuyersItemIdentification)
+		assert.Equal(t, "BUYER-1", line.Item.BuyersItemIdentification.ID.Value)
+
+		require.NotNil(t, line.Item.StandardItemIdentification)
+		assert.Equal(t, "4006381333931", line.Item.StandardItemIdentification.ID.Value)
+		assert.Equal(t, "0160", *line.Item.StandardItemIdentification.ID.SchemeID)
+
+		require.NotNil(t, line.Item.CommodityClassification)
+		ccs := *line.Item.CommodityClassification
+		require.Len(t, ccs, 2)
+		// HS is prepended so NatureCode (BTAE-09) and CommodityCode (BTAE-13) land on it.
+		assert.Equal(t, "HS", *ccs[0].ItemClassificationCode.ListID)
+		assert.Equal(t, "8471", ccs[0].ItemClassificationCode.Value)
+		assert.Equal(t, "DL8.48.8.1", *ccs[0].NatureCode)
+		assert.Equal(t, "G", *ccs[0].CommodityCode)
+		assert.Equal(t, "UNSPSC", *ccs[1].ItemClassificationCode.ListID)
+		assert.Equal(t, "43211500", ccs[1].ItemClassificationCode.Value)
+
+		require.Len(t, line.Item.AdditionalItemIdentification, 1)
+		assert.Equal(t, "SAC", *line.Item.AdditionalItemIdentification[0].ID.SchemeID)
+		assert.Equal(t, "998713", line.Item.AdditionalItemIdentification[0].ID.Value)
+	})
+
+	t.Run("schemed hsn identity is not duplicated into CommodityClassification", func(t *testing.T) {
+		l := &bill.Line{
+			Item: &org.Item{
+				Identities: []*org.Identity{
+					{Key: org.IdentityKeyHSN, Code: "8471", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: "0088"})},
+				},
+			},
+		}
+		line := &goblubl.InvoiceLine{
+			Item: &goblubl.Item{
+				StandardItemIdentification: &goblubl.ItemIdentification{
+					ID: &goblubl.IDType{SchemeID: strPtr("0088"), Value: "8471"},
+				},
+			},
+		}
+		exportAELineIdentities(line, l)
+		assert.Nil(t, line.Item.CommodityClassification)
+		assert.Nil(t, line.Item.BuyersItemIdentification)
+		require.NotNil(t, line.Item.StandardItemIdentification)
+		assert.Equal(t, "8471", line.Item.StandardItemIdentification.ID.Value)
+	})
+
+	t.Run("user-written label HS lands after key hsn and existing AdditionalItemIdentification is preserved", func(t *testing.T) {
+		l := &bill.Line{
+			Item: &org.Item{
+				Identities: []*org.Identity{
+					{Label: "HS", Code: "9999"},
+					{Key: org.IdentityKeyHSN, Code: "8471"},
+					{Label: "SAC", Code: "998713"},
+				},
+			},
+		}
+		existing := goblubl.ItemIdentification{ID: &goblubl.IDType{SchemeID: strPtr("OTHER"), Value: "X1"}}
+		line := &goblubl.InvoiceLine{
+			Item: &goblubl.Item{
+				AdditionalItemIdentification: []goblubl.ItemIdentification{existing},
+			},
+		}
+		exportAELineIdentities(line, l)
+		require.NotNil(t, line.Item.CommodityClassification)
+		ccs := *line.Item.CommodityClassification
+		require.Len(t, ccs, 2)
+		assert.Equal(t, "8471", ccs[0].ItemClassificationCode.Value)
+		assert.Equal(t, "HS", *ccs[0].ItemClassificationCode.ListID)
+		assert.Equal(t, "9999", ccs[1].ItemClassificationCode.Value)
+		assert.Equal(t, "HS", *ccs[1].ItemClassificationCode.ListID)
+
+		require.Len(t, line.Item.AdditionalItemIdentification, 2)
+		assert.Equal(t, existing, line.Item.AdditionalItemIdentification[0])
+		assert.Equal(t, "998713", line.Item.AdditionalItemIdentification[1].ID.Value)
+	})
+
+	t.Run("clears BuyersItemIdentification when only HSN is present", func(t *testing.T) {
+		l := &bill.Line{
+			Item: &org.Item{
+				Identities: []*org.Identity{{Key: org.IdentityKeyHSN, Code: "8471"}},
+			},
+		}
+		line := &goblubl.InvoiceLine{
+			Item: &goblubl.Item{
+				BuyersItemIdentification: &goblubl.ItemIdentification{ID: &goblubl.IDType{Value: "8471"}},
+			},
+		}
+		exportAELineIdentities(line, l)
+		assert.Nil(t, line.Item.BuyersItemIdentification)
+		require.NotNil(t, line.Item.CommodityClassification)
+		require.Len(t, *line.Item.CommodityClassification, 1)
+		assert.Equal(t, "HS", *(*line.Item.CommodityClassification)[0].ItemClassificationCode.ListID)
+		assert.Equal(t, "8471", (*line.Item.CommodityClassification)[0].ItemClassificationCode.Value)
+	})
+
+	t.Run("import converts HS label to key hsn and restores pint-ae-item-type and item key", func(t *testing.T) {
+		for _, tc := range []struct {
+			code    string
+			wantKey cbc.Key
+		}{
+			{"G", org.ItemKeyGoods},
+			{"S", org.ItemKeyServices},
+			{"B", ""},
+		} {
+			inLine := goblubl.InvoiceLine{
+				Item: &goblubl.Item{
+					CommodityClassification: &[]goblubl.CommodityClassification{{
+						CommodityCode: strPtr(tc.code),
+					}},
+				},
+			}
+			inv := &bill.Invoice{
+				Lines: []*bill.Line{{
+					Item: &org.Item{
+						Identities: []*org.Identity{
+							{Label: "HS", Code: "8471"},
+							{Label: "UNSPSC", Code: "43211500"},
+						},
+					},
+				}},
+			}
+			importAELineItems([]goblubl.InvoiceLine{inLine}, inv)
+			it := inv.Lines[0].Item
+			assert.Equal(t, cbc.Code(tc.code), it.Ext.Get(pint.ExtKeyItemType), tc.code)
+			assert.Equal(t, tc.wantKey, it.Key, tc.code)
+			assert.Equal(t, org.IdentityKeyHSN, it.Identities[0].Key)
+			assert.Empty(t, it.Identities[0].Label)
+			assert.Equal(t, "UNSPSC", it.Identities[1].Label)
+			assert.Empty(t, it.Identities[1].Key)
+		}
 	})
 }
 
@@ -392,12 +685,12 @@ func TestExportAECreditTransfer(t *testing.T) {
 
 func TestImportAEChargeExemptions(t *testing.T) {
 	t.Run("charges that don't match are skipped", func(t *testing.T) {
-		exempt := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt, Ext: tax.ExtensionsOf(cbc.CodeMap{uae.ExtKeyVATEX: "DL8.46.1"})}
+		exempt := &tax.Combo{Category: tax.CategoryVAT, Key: tax.KeyExempt, Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyExemption: "DL8.46.1"})}
 		inv := &bill.Invoice{Discounts: []*bill.Discount{{Taxes: tax.Set{exempt}}}}
 		category := []*goblubl.TaxCategory{{ID: &goblubl.IDType{Value: "E"}, TaxExemptionReasonCode: strPtr("DL8.46.2")}}
 		in := &goblubl.Invoice{AllowanceCharge: []goblubl.AllowanceCharge{{TaxCategory: category}, {TaxCategory: category}}}
 		importAEChargeExemptions(in, inv)
-		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Discounts[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
 	})
 }
 
@@ -405,25 +698,25 @@ func TestClearAECEFVATEX(t *testing.T) {
 	t.Run("clears cef-vatex copied by gobl.ubl", func(t *testing.T) {
 		inv := &bill.Invoice{
 			Lines: []*bill.Line{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
-				cef.ExtKeyVATEX: "DL8.46.1",
-				uae.ExtKeyVATEX: "DL8.46.1",
+				cef.ExtKeyVATEX:      "DL8.46.1",
+				pint.ExtKeyExemption: "DL8.46.1",
 			})}}}},
 			Discounts: []*bill.Discount{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
-				cef.ExtKeyVATEX: "DL8.46.2",
-				uae.ExtKeyVATEX: "DL8.46.2",
+				cef.ExtKeyVATEX:      "DL8.46.2",
+				pint.ExtKeyExemption: "DL8.46.2",
 			})}}}},
 			Charges: []*bill.Charge{{Taxes: tax.Set{{Category: tax.CategoryVAT, Ext: tax.ExtensionsOf(cbc.CodeMap{
-				cef.ExtKeyVATEX: "DL8.46.3",
-				uae.ExtKeyVATEX: "DL8.46.3",
+				cef.ExtKeyVATEX:      "DL8.46.3",
+				pint.ExtKeyExemption: "DL8.46.3",
 			})}}}},
 		}
 		clearAECEFVATEX(inv)
 		assert.False(t, inv.Lines[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
-		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Lines[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.1"), inv.Lines[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
 		assert.False(t, inv.Discounts[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
-		assert.Equal(t, cbc.Code("DL8.46.2"), inv.Discounts[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.2"), inv.Discounts[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
 		assert.False(t, inv.Charges[0].Taxes[0].Ext.Has(cef.ExtKeyVATEX))
-		assert.Equal(t, cbc.Code("DL8.46.3"), inv.Charges[0].Taxes[0].Ext.Get(uae.ExtKeyVATEX))
+		assert.Equal(t, cbc.Code("DL8.46.3"), inv.Charges[0].Taxes[0].Ext.Get(pint.ExtKeyExemption))
 	})
 }
 

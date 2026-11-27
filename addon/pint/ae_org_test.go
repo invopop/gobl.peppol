@@ -6,7 +6,6 @@ import (
 	"github.com/invopop/gobl.peppol/addon/pint"
 	"github.com/invopop/gobl/addons/eu/en16931"
 	"github.com/invopop/gobl/bill"
-	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
 	"github.com/invopop/gobl/l10n"
 	"github.com/invopop/gobl/norm"
@@ -23,9 +22,13 @@ func TestNormalizeDeemedSupplyAE(t *testing.T) {
 		norm.Normalize(inv, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(regime))
 	}
 
+	deemedTax := func() *bill.Tax {
+		return &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyTransactionType: "01000000"})}
+	}
+
 	t.Run("sets deemed supply endpoint when customer has none", func(t *testing.T) {
 		inv := &bill.Invoice{
-			Tags:     tax.WithTags(pint.TagDeemedSupply),
+			Tax:      deemedTax(),
 			Customer: &org.Party{Name: "Buyer"},
 		}
 		normalize(l10n.AE.Tax(), inv)
@@ -34,7 +37,7 @@ func TestNormalizeDeemedSupplyAE(t *testing.T) {
 
 	t.Run("overrides existing customer endpoints", func(t *testing.T) {
 		inv := &bill.Invoice{
-			Tags: tax.WithTags(pint.TagDeemedSupply),
+			Tax: deemedTax(),
 			Customer: &org.Party{
 				Name:      "Buyer",
 				Endpoints: uaeEndpoints("1345678906"),
@@ -46,7 +49,7 @@ func TestNormalizeDeemedSupplyAE(t *testing.T) {
 
 	t.Run("overrides endpoint and Peppol inbox while keeping non-Peppol inboxes, and stays idempotent", func(t *testing.T) {
 		inv := &bill.Invoice{
-			Tags: tax.WithTags(pint.TagDeemedSupply),
+			Tax: deemedTax(),
 			Customer: &org.Party{
 				Name: "Buyer",
 				Inboxes: []*org.Inbox{
@@ -69,7 +72,7 @@ func TestNormalizeDeemedSupplyAE(t *testing.T) {
 		assert.Equal(t, wantInboxes, inv.Customer.Inboxes)
 	})
 
-	t.Run("leaves customer untouched without the deemed-supply tag or outside AE", func(t *testing.T) {
+	t.Run("leaves customer untouched without the deemed supply flag or outside AE", func(t *testing.T) {
 		orig := uaeEndpoints("1345678906")
 		inv := &bill.Invoice{
 			Customer: &org.Party{Name: "Buyer", Endpoints: orig},
@@ -78,7 +81,7 @@ func TestNormalizeDeemedSupplyAE(t *testing.T) {
 		assert.Equal(t, orig, inv.Customer.Endpoints)
 
 		inv = &bill.Invoice{
-			Tags:     tax.WithTags(pint.TagDeemedSupply),
+			Tax:      deemedTax(),
 			Customer: &org.Party{Name: "Buyer", Endpoints: orig},
 		}
 		normalize(l10n.AU.Tax(), inv)
@@ -297,41 +300,6 @@ func TestOrgAddressRulesAE(t *testing.T) {
 	})
 }
 
-func TestIdentityTypeAE(t *testing.T) {
-	tests := []struct {
-		id   *org.Identity
-		want cbc.Code
-	}{
-		{&org.Identity{Type: ae.IdentityTypeTradeLicense}, "TL"},
-		{&org.Identity{Type: ae.IdentityTypeEmiratesID}, "EID"},
-		{&org.Identity{Key: org.IdentityKeyPassport}, pint.IdentityTypePassport},
-		{&org.Identity{Type: ae.IdentityTypeCabinetDecision}, "CD"},
-		{&org.Identity{Type: ae.IdentityTypeTIN}, ""},
-		{&org.Identity{}, ""},
-		{nil, ""},
-	}
-	for _, tt := range tests {
-		assert.Equal(t, tt.want, pint.IdentityTypeAE(tt.id), tt.id)
-	}
-}
-
-func TestSetIdentityTypeAE(t *testing.T) {
-	tests := map[cbc.Code]org.Identity{
-		"TL":  {Type: ae.IdentityTypeTradeLicense},
-		"EID": {Type: ae.IdentityTypeEmiratesID},
-		"PAS": {Key: org.IdentityKeyPassport},
-		"CD":  {Type: ae.IdentityTypeCabinetDecision},
-		"XYZ": {},
-		"":    {},
-	}
-	for typ, want := range tests {
-		id := new(org.Identity)
-		known := want.Key != "" || want.Type != ""
-		assert.Equal(t, known, pint.SetIdentityTypeAE(id, typ), typ)
-		assert.Equal(t, want, *id, typ)
-	}
-}
-
 func TestNormalizeIdentityScopes(t *testing.T) {
 	scopes := func(p *org.Party) []cbc.Key {
 		out := make([]cbc.Key, len(p.Identities))
@@ -428,7 +396,6 @@ func TestOrgIdentityRulesAE(t *testing.T) {
 	const (
 		fault          = "GOBL-PEPPOL-PINT-ORG-IDENTITY-01"
 		faultAuthority = "GOBL-PEPPOL-PINT-ORG-IDENTITY-02"
-		faultPrincipal = "GOBL-PEPPOL-PINT-ORG-IDENTITY-03"
 	)
 
 	t.Run("passport needs the issuing country (IBR-012-AE, IBR-010-AE)", func(t *testing.T) {
@@ -457,63 +424,95 @@ func TestOrgIdentityRulesAE(t *testing.T) {
 
 		assert.NotContains(t, aeFaults(t, aeIdentityDocument()), faultAuthority)
 	})
-	t.Run("principal identity code must match UAE TRN ending with 03 (IBR-132-AE)", func(t *testing.T) {
-		// Checked without the disclosed-agent tag too, as the identity is written whenever present.
-		inv := aeIdentityDocument()
-		inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
-			Key:  pint.IdentityKeyPrincipal,
-			Code: "155667745601003",
-		})
-		assert.NotContains(t, aeFaults(t, inv), faultPrincipal)
+}
 
-		for _, code := range []cbc.Code{"255667745601003", "155667745601004"} {
-			inv = aeIdentityDocument()
-			inv.Supplier.Identities = append(inv.Supplier.Identities, &org.Identity{
-				Key:  pint.IdentityKeyPrincipal,
-				Code: code,
-			})
-			assert.Contains(t, aeFaults(t, inv), faultPrincipal, code)
+func TestNormalizeOrgItemAE(t *testing.T) {
+	normalize := func(regime l10n.TaxCountryCode, it *org.Item) {
+		norm.Normalize(it, tax.AddonContext(en16931.V2017, pint.V1), tax.RegimeContext(regime))
+	}
+
+	t.Run("maps goods to G and services to S, updating when key changes", func(t *testing.T) {
+		it := &org.Item{Key: org.ItemKeyGoods, Name: "Laptop"}
+		normalize(l10n.AE.Tax(), it)
+		assert.Equal(t, pint.ItemTypeGoods, it.Ext.Get(pint.ExtKeyItemType))
+
+		// Changing goods -> services must not leave stale G behind.
+		it.Key = org.ItemKeyServices
+		normalize(l10n.AE.Tax(), it)
+		assert.Equal(t, pint.ItemTypeServices, it.Ext.Get(pint.ExtKeyItemType))
+
+		// Changing services -> goods must not leave stale S behind.
+		it.Key = org.ItemKeyGoods
+		normalize(l10n.AE.Tax(), it)
+		assert.Equal(t, pint.ItemTypeGoods, it.Ext.Get(pint.ExtKeyItemType))
+	})
+
+	t.Run("preserves manual B even when item key is goods or services", func(t *testing.T) {
+		for _, key := range []cbc.Key{org.ItemKeyGoods, org.ItemKeyServices, ""} {
+			it := &org.Item{
+				Key:  key,
+				Name: "Bundle",
+				Ext:  tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyItemType: pint.ItemTypeGoodsServices}),
+			}
+			normalize(l10n.AE.Tax(), it)
+			assert.Equal(t, pint.ItemTypeGoodsServices, it.Ext.Get(pint.ExtKeyItemType), key)
 		}
+	})
+
+	t.Run("leaves empty key untouched and does not run outside AE", func(t *testing.T) {
+		it := &org.Item{Name: "Item"}
+		normalize(l10n.AE.Tax(), it)
+		assert.Empty(t, it.Ext.Get(pint.ExtKeyItemType))
+
+		auItem := &org.Item{Key: org.ItemKeyGoods, Name: "Laptop"}
+		normalize(l10n.AU.Tax(), auItem)
+		assert.Empty(t, auItem.Ext.Get(pint.ExtKeyItemType))
 	})
 }
 
-func TestItemKeyAE(t *testing.T) {
-	tests := map[cbc.Code]cbc.Key{
-		"G": org.ItemKeyGoods,
-		"S": org.ItemKeyServices,
-		"B": pint.ItemKeyGoodsServices,
-		"X": "",
-		"":  "",
-	}
-	for typ, want := range tests {
-		assert.Equal(t, want, pint.ItemKeyAE(typ), typ)
-	}
-}
-
 func TestOrgItemRulesAE(t *testing.T) {
-	const faultGoodsHS = "GOBL-PEPPOL-PINT-ORG-ITEM-01"
-	hs := &org.Identity{Label: pint.IdentityLabelHS, Code: "8471"}
-	sac := &org.Identity{Label: pint.IdentityLabelSAC, Code: "998713"}
-	item := func(key cbc.Key, ids ...*org.Identity) *bill.Invoice {
+	const (
+		faultGoodsHS  = "GOBL-PEPPOL-PINT-ORG-ITEM-01"
+		faultItemType = "GOBL-PEPPOL-PINT-ORG-ITEM-02"
+	)
+	hsn := &org.Identity{Key: org.IdentityKeyHSN, Code: "8471"}
+	sac := &org.Identity{Label: "SAC", Code: "998713"}
+	itemWithKey := func(key cbc.Key, ids ...*org.Identity) *bill.Invoice {
 		inv := aeDocument(bill.InvoiceTypeStandard)
 		inv.Lines[0].Item.Key = key
 		inv.Lines[0].Item.Identities = ids
 		return inv
 	}
+	itemWithType := func(typ cbc.Code, ids ...*org.Identity) *bill.Invoice {
+		inv := aeDocument(bill.InvoiceTypeStandard)
+		inv.Lines[0].Item.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyItemType: typ})
+		inv.Lines[0].Item.Identities = ids
+		return inv
+	}
 
-	t.Run("goods and goods-services need an HS classification (IBR-184-AE, IBR-186-AE)", func(t *testing.T) {
-		for _, key := range []cbc.Key{org.ItemKeyGoods, pint.ItemKeyGoodsServices} {
-			assert.Contains(t, aeFaults(t, item(key)), faultGoodsHS, key)
-			assert.Contains(t, aeFaults(t, item(key, sac)), faultGoodsHS, key)
-			assert.NotContains(t, aeFaults(t, item(key, hs)), faultGoodsHS, key)
+	t.Run("G and B items need an HS classification with key hsn (IBR-184-AE, IBR-186-AE)", func(t *testing.T) {
+		for _, typ := range []cbc.Code{pint.ItemTypeGoods, pint.ItemTypeGoodsServices} {
+			out := aeFaults(t, itemWithType(typ))
+			assert.Contains(t, out, faultGoodsHS, typ)
+			assert.Contains(t, out, `"hsn"`, typ)
+			assert.Contains(t, aeFaults(t, itemWithType(typ, sac)), faultGoodsHS, typ)
+			assert.Contains(t, aeFaults(t, itemWithType(typ, &org.Identity{Label: "HS", Code: "8471"})), faultGoodsHS, typ)
+			assert.NotContains(t, aeFaults(t, itemWithType(typ, hsn)), faultGoodsHS, typ)
 		}
 
-		// An identity with a scheme ID isn't written as a classification.
-		withScheme := &org.Identity{Label: pint.IdentityLabelHS, Code: "8471", Ext: tax.ExtensionsOf(cbc.CodeMap{iso.ExtKeySchemeID: "0088"})}
-		assert.Contains(t, aeFaults(t, item(org.ItemKeyGoods, withScheme)), faultGoodsHS)
+		// Via item key "goods" (normalized to pint-ae-item-type: G).
+		assert.Contains(t, aeFaults(t, itemWithKey(org.ItemKeyGoods)), faultGoodsHS)
+		assert.NotContains(t, aeFaults(t, itemWithKey(org.ItemKeyGoods, hsn)), faultGoodsHS)
+
+		// Services and empty item type need no HS classification.
+		assert.NotContains(t, aeFaults(t, itemWithKey(org.ItemKeyServices)), faultGoodsHS)
+		assert.NotContains(t, aeFaults(t, itemWithKey("")), faultGoodsHS)
 	})
 
-	t.Run("no item type needs no HS classification", func(t *testing.T) {
-		assert.NotContains(t, aeFaults(t, item("")), faultGoodsHS)
+	t.Run("item type must be G, S or B (BTAE-13)", func(t *testing.T) {
+		for _, typ := range []cbc.Code{pint.ItemTypeGoods, pint.ItemTypeServices, pint.ItemTypeGoodsServices} {
+			assert.NotContains(t, aeFaults(t, itemWithType(typ, hsn)), faultItemType, typ)
+		}
+		assert.Contains(t, aeFaults(t, itemWithType("X")), faultItemType)
 	})
 }

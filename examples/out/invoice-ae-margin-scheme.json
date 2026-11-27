@@ -1,0 +1,186 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
+		"dig": {
+			"alg": "sha256",
+			"val": "4babe181bb3e35cf3cb30d0eb693966a857e86da9e9a023876b25600f22e9732"
+		},
+		"from": "iso6523-actorid-upis::0235:1357902467",
+		"to": "iso6523-actorid-upis::0235:1345678906"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a4",
+		"type": "standard",
+		"series": "AE-MS",
+		"code": "001",
+		"issue_date": "2025-01-30",
+		"currency": "AED",
+		"tax": {
+			"ext": {
+				"pint-ae-transaction-type": "00100000",
+				"untdid-document-type": "380"
+			},
+			"notes": [
+				{
+					"cat": "VAT",
+					"key": "exempt",
+					"text": "VAT charged under the Profit Margin Scheme",
+					"ext": {
+						"untdid-tax-category": "E"
+					}
+				}
+			]
+		},
+		"supplier": {
+			"name": "Heritage Watches LLC",
+			"tax_id": {
+				"country": "AE",
+				"code": "135790246700003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345678900003",
+					"description": "Dubai Department of Economy and Tourism"
+				},
+				{
+					"scope": "tax",
+					"type": "TIN",
+					"code": "1357902467"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1357902467"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Sheikh Zayed Road",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			]
+		},
+		"customer": {
+			"name": "Collector Trading LLC",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890600003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345679000001",
+					"description": "Abu Dhabi Department of Economic Development"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1345678906"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Corniche Road",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "1",
+				"item": {
+					"key": "goods",
+					"name": "Vintage Wristwatch",
+					"identities": [
+						{
+							"key": "hsn",
+							"code": "910211"
+						}
+					],
+					"description": "Pre-owned mechanical wristwatch sold under profit margin scheme",
+					"price": "15000.00",
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "G"
+					}
+				},
+				"sum": "15000.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "exempt",
+						"ext": {
+							"untdid-tax-category": "E"
+						}
+					}
+				],
+				"total": "15000.00"
+			}
+		],
+		"payment": {
+			"terms": {
+				"key": "due-date",
+				"due_dates": [
+					{
+						"date": "2025-02-06",
+						"amount": "15000.00",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"name": "Emirates NBD"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"totals": {
+			"sum": "15000.00",
+			"total": "15000.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "exempt",
+								"ext": {
+									"untdid-tax-category": "E"
+								},
+								"base": "15000.00",
+								"amount": "0.00"
+							}
+						],
+						"amount": "0.00"
+					}
+				],
+				"sum": "0.00"
+			},
+			"tax": "0.00",
+			"total_with_tax": "15000.00",
+			"payable": "15000.00"
+		}
+	}
+}

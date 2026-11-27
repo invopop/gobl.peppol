@@ -101,6 +101,17 @@ func TestInvoiceScenarios(t *testing.T) {
 		assert.Equal(t, cbc.Code("261"), documentType(t, scenarioInvoice(ae, bill.InvoiceTypeCreditNote, tax.TagSelfBilled)))
 	})
 
+	t.Run("margin scheme documents with exempt lines keep 380 and 381", func(t *testing.T) {
+		margin := func(typ cbc.Key) *bill.Invoice {
+			inv := scenarioInvoice(ae, typ)
+			inv.Tax = &bill.Tax{Ext: tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyTransactionType: "00100000"})}
+			inv.Lines[0].Taxes = tax.Set{{Category: tax.CategoryVAT, Key: tax.KeyExempt}}
+			return inv
+		}
+		assert.Equal(t, cbc.Code("380"), documentType(t, margin(bill.InvoiceTypeStandard)))
+		assert.Equal(t, cbc.Code("381"), documentType(t, margin(bill.InvoiceTypeCreditNote)))
+	})
+
 	t.Run("documents outside AE keep 380 and 381", func(t *testing.T) {
 		assert.Equal(t, cbc.Code("380"), documentType(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeStandard)))
 		assert.Equal(t, cbc.Code("381"), documentType(t, scenarioInvoice(l10n.AU.Tax(), bill.InvoiceTypeCreditNote)))

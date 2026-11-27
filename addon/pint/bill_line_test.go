@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/invopop/gobl.peppol/addon/pint"
-	"github.com/invopop/gobl.peppol/catalogues/uae"
 	"github.com/invopop/gobl/bill"
 	"github.com/invopop/gobl/catalogues/iso"
 	"github.com/invopop/gobl/cbc"
@@ -90,7 +89,7 @@ func TestBillGoodsTypeRulesAE(t *testing.T) {
 		inv.Lines[0].Taxes = tax.Set{lineCombo(tax.KeyReverseCharge)}
 		inv.Lines[0].Item.Identities = ids
 		if goodsType != "" {
-			inv.Lines[0].Item.Ext = tax.ExtensionsOf(cbc.CodeMap{uae.ExtKeyGoodsType: goodsType})
+			inv.Lines[0].Item.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyGoodsType: goodsType})
 		}
 		return inv
 	}
@@ -108,7 +107,7 @@ func TestBillGoodsTypeRulesAE(t *testing.T) {
 		assert.Contains(t, aeFaults(t, reverseCharge("DL8.48.9", gtin("0160"))), faultGoodsTypeValue)
 
 		inv := aeDocument(bill.InvoiceTypeStandard)
-		inv.Lines[0].Item.Ext = tax.ExtensionsOf(cbc.CodeMap{uae.ExtKeyGoodsType: "OTHER"})
+		inv.Lines[0].Item.Ext = tax.ExtensionsOf(cbc.CodeMap{pint.ExtKeyGoodsType: "OTHER"})
 		assert.Contains(t, aeFaults(t, inv), faultGoodsTypeValue)
 	})
 

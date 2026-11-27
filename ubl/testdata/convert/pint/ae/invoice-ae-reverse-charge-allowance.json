@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "014ff85c605a758b37edb2342fdb8c062ca03050173399b9264eb3a7ca1d7fbc"
+			"val": "68f1f113359452880860e94add551ca902b2f92f7607afab31899e80ac2016ed"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -24,7 +24,7 @@
 		"currency": "AED",
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00000000",
+				"pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "380"
 			}
 		},
@@ -107,7 +107,7 @@
 					"price": "10.00",
 					"unit": "one",
 					"ext": {
-						"ae-goods-type": "DL8.48.8.1"
+						"pint-ae-goods-type": "DL8.48.8.1"
 					}
 				},
 				"sum": "1000.00",

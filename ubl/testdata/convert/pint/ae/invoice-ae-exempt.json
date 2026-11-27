@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "1b3d5af733bfcb5ab2fcf94d6080a3a4f7567313e50ae269c71684f49a9aaef2"
+			"val": "ee33d792af741eab45976baf963070ac43bd41d9cb0fc5a79cfcb11acae50acd"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -24,7 +24,7 @@
 		"currency": "AED",
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00000000",
+				"pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "380"
 			},
 			"notes": [
@@ -137,8 +137,8 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"untdid-tax-category": "E",
-							"vatex-ae": "DL8.46.1"
+							"pint-ae-exemption": "DL8.46.1",
+							"untdid-tax-category": "E"
 						}
 					}
 				],
@@ -159,8 +159,8 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"untdid-tax-category": "E",
-							"vatex-ae": "DL8.46.2"
+							"pint-ae-exemption": "DL8.46.2",
+							"untdid-tax-category": "E"
 						}
 					}
 				],
@@ -177,8 +177,8 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"untdid-tax-category": "E",
-							"vatex-ae": "DL8.46.1"
+							"pint-ae-exemption": "DL8.46.1",
+							"untdid-tax-category": "E"
 						}
 					}
 				],
@@ -249,8 +249,8 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"untdid-tax-category": "E",
-									"vatex-ae": "DL8.46.1"
+									"pint-ae-exemption": "DL8.46.1",
+									"untdid-tax-category": "E"
 								},
 								"base": "180.00",
 								"amount": "0.00"
@@ -258,8 +258,8 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"untdid-tax-category": "E",
-									"vatex-ae": "DL8.46.2"
+									"pint-ae-exemption": "DL8.46.2",
+									"untdid-tax-category": "E"
 								},
 								"base": "300.00",
 								"amount": "0.00"

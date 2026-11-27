@@ -17,10 +17,8 @@ supplier:
     - type: "TL"
       code: "112345678900003"
       description: "Trade License issuing Authority"
-  inboxes:
-    - key: "peppol"
-      scheme: "0235"
-      code: "1357902467"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1357902467"
   addresses:
     - street: "Sheikh Zayed Road"
       locality: "Dubai"
@@ -36,10 +34,8 @@ customer:
     - type: "TL"
       code: "112345679000001"
       description: "Trade License issuing Authority"
-  inboxes:
-    - key: "peppol"
-      scheme: "0235"
-      code: "1345678906"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1345678906"
   addresses:
     - street: "Corniche Road"
       locality: "Abu Dhabi"
@@ -47,15 +43,40 @@ customer:
       country: "AE"
 
 lines:
-  - quantity: "100"
+  - quantity: "10"
     item:
-      name: "Item Name"
-      description: "Item Description"
-      price: "10.00"
+      key: "goods"
+      name: "Laptop Computer"
+      description: "14-inch business laptop"
+      price: "3500.00"
+      identities:
+        - key: "hsn"
+          code: "847130"
     taxes:
       - cat: VAT
         key: standard
         percent: "5%"
+  - quantity: "5"
+    item:
+      key: "services"
+      name: "IT Setup"
+      description: "On-site workstation setup and configuration"
+      price: "400.00"
+    taxes:
+      - cat: VAT
+        key: standard
+        percent: "5%"
+  - quantity: "1"
+    item:
+      key: "services"
+      name: "Financing Fee"
+      description: "Exempt financial service fee"
+      price: "250.00"
+    taxes:
+      - cat: VAT
+        key: exempt
+        ext:
+          pint-ae-exemption: "DL8.46.1"
 
 payment:
   terms:

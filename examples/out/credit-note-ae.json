@@ -4,7 +4,7 @@
 		"uuid": "8a51fd30-2a27-11ee-be56-0242ac120002",
 		"dig": {
 			"alg": "sha256",
-			"val": "2e74b6721f4d8a5c6a9a2dca5ee939f06594c270dc628d4d02b582bca14f2659"
+			"val": "1200d180c1f7214bee9235ada0f6c3749853468c83e59a3f0baa52e7ea1f2586"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -27,13 +27,13 @@
 				"type": "standard",
 				"issue_date": "2025-01-30",
 				"series": "AE",
-				"code": "001",
-				"reason": "DL8.61.1.D"
+				"code": "001"
 			}
 		],
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00000000",
+				"pint-ae-credit-note-reason": "DL8.61.1.D",
+				"pint-ae-transaction-type": "00000000",
 				"untdid-document-type": "381"
 			}
 		},
@@ -59,13 +59,6 @@
 			"endpoints": [
 				{
 					"uri": "iso6523-actorid-upis::0235:1357902467"
-				}
-			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1357902467"
 				}
 			],
 			"addresses": [
@@ -96,13 +89,6 @@
 					"uri": "iso6523-actorid-upis::0235:1345678906"
 				}
 			],
-			"inboxes": [
-				{
-					"key": "peppol",
-					"scheme": "0235",
-					"code": "1345678906"
-				}
-			],
 			"addresses": [
 				{
 					"street": "Corniche Road",
@@ -115,14 +101,24 @@
 		"lines": [
 			{
 				"i": 1,
-				"quantity": "20",
+				"quantity": "2",
 				"item": {
-					"name": "Item Name",
-					"description": "Item Description, returned",
-					"price": "10.00",
-					"unit": "one"
+					"key": "goods",
+					"name": "Laptop Computer",
+					"identities": [
+						{
+							"key": "hsn",
+							"code": "847130"
+						}
+					],
+					"description": "14-inch business laptop, returned",
+					"price": "3500.00",
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "G"
+					}
 				},
-				"sum": "200.00",
+				"sum": "7000.00",
 				"taxes": [
 					{
 						"cat": "VAT",
@@ -133,12 +129,12 @@
 						}
 					}
 				],
-				"total": "200.00"
+				"total": "7000.00"
 			}
 		],
 		"totals": {
-			"sum": "200.00",
-			"total": "200.00",
+			"sum": "7000.00",
+			"total": "7000.00",
 			"taxes": {
 				"categories": [
 					{
@@ -149,19 +145,19 @@
 								"ext": {
 									"untdid-tax-category": "S"
 								},
-								"base": "200.00",
+								"base": "7000.00",
 								"percent": "5%",
-								"amount": "10.00"
+								"amount": "350.00"
 							}
 						],
-						"amount": "10.00"
+						"amount": "350.00"
 					}
 				],
-				"sum": "10.00"
+				"sum": "350.00"
 			},
-			"tax": "10.00",
-			"total_with_tax": "210.00",
-			"payable": "210.00"
+			"tax": "350.00",
+			"total_with_tax": "7350.00",
+			"payable": "7350.00"
 		}
 	}
 }

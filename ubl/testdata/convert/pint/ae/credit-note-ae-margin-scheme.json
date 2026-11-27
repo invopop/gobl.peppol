@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "a411fccf5da545fed426ec451ed035d46719e54ba9af19735afd9cf629bd5fe9"
+			"val": "2cce95ce91934915315b9b8f8535ba48ba458d60b722c9c4b3ad8e1340ed4d52"
 		},
 		"from": "iso6523-actorid-upis::0235:1357902467",
 		"to": "iso6523-actorid-upis::0235:1345678906"
@@ -16,9 +16,6 @@
 			"eu-en16931-v2017",
 			"peppol-pint-v1"
 		],
-		"$tags": [
-			"margin-scheme"
-		],
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"type": "credit-note",
 		"series": "AE",
@@ -29,25 +26,15 @@
 			{
 				"issue_date": "2025-01-30",
 				"series": "AE",
-				"code": "MARGIN-001",
-				"reason": "DL8.61.1.E"
+				"code": "MARGIN-001"
 			}
 		],
 		"tax": {
 			"ext": {
-				"peppol-pint-ae-transaction-type": "00100000",
+				"pint-ae-credit-note-reason": "DL8.61.1.E",
+				"pint-ae-transaction-type": "00100000",
 				"untdid-document-type": "381"
-			},
-			"notes": [
-				{
-					"cat": "VAT",
-					"key": "margin-scheme",
-					"text": "VAT charged under the Profit Margin Scheme",
-					"ext": {
-						"untdid-tax-category": "N"
-					}
-				}
-			]
+			}
 		},
 		"supplier": {
 			"name": "Supplier Legal Name",
@@ -119,13 +106,16 @@
 					"name": "Second-hand watch",
 					"identities": [
 						{
-							"label": "HS",
+							"key": "hsn",
 							"code": "9102"
 						}
 					],
 					"description": "Item Description",
 					"price": "10.00",
-					"unit": "one"
+					"unit": "one",
+					"ext": {
+						"pint-ae-item-type": "G"
+					}
 				},
 				"sum": "1000.00",
 				"taxes": [
@@ -133,7 +123,7 @@
 						"cat": "VAT",
 						"key": "exempt",
 						"ext": {
-							"untdid-tax-category": "N"
+							"untdid-tax-category": "E"
 						}
 					}
 				],
@@ -174,7 +164,7 @@
 							{
 								"key": "exempt",
 								"ext": {
-									"untdid-tax-category": "N"
+									"untdid-tax-category": "E"
 								},
 								"base": "1000.00",
 								"amount": "0.00"
