@@ -1,0 +1,331 @@
+{
+	"$schema": "https://gobl.org/draft-0/envelope",
+	"head": {
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"dig": {
+			"alg": "sha256",
+			"val": "ae57799f1a789ce3146d09033a845a83a3d6cdae96f2958e043453448a81eb60"
+		},
+		"from": "iso6523-actorid-upis::0235:1357902467",
+		"to": "iso6523-actorid-upis::0235:1345678906"
+	},
+	"doc": {
+		"$schema": "https://gobl.org/draft-0/bill/invoice",
+		"$regime": "AE",
+		"$addons": [
+			"eu-en16931-v2017",
+			"peppol-pint-v1"
+		],
+		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
+		"type": "standard",
+		"series": "AE",
+		"code": "SF-001",
+		"issue_date": "2025-01-30",
+		"issue_time": "17:31:00",
+		"value_date": "2025-01-28",
+		"currency": "AED",
+		"tax": {
+			"ext": {
+				"pint-ae-transaction-type": "00000010",
+				"untdid-document-type": "380"
+			}
+		},
+		"supplier": {
+			"name": "Supplier Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "135790246700003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"type": "TL",
+					"code": "112345678900003",
+					"description": "Trade License issuing Authority"
+				},
+				{
+					"scope": "tax",
+					"type": "TIN",
+					"code": "1357902467"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1357902467"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Sheikh Zayed Road",
+					"street_extra": "Trade Centre",
+					"locality": "Dubai",
+					"region": "DXB",
+					"country": "AE"
+				}
+			]
+		},
+		"customer": {
+			"name": "Buyer Legal Name",
+			"tax_id": {
+				"country": "AE",
+				"code": "134567890600003"
+			},
+			"identities": [
+				{
+					"scope": "legal",
+					"country": "IN",
+					"key": "passport",
+					"code": "P1234567890"
+				},
+				{
+					"type": "TIN",
+					"code": "1345678906"
+				}
+			],
+			"endpoints": [
+				{
+					"uri": "iso6523-actorid-upis::0235:1345678906"
+				}
+			],
+			"addresses": [
+				{
+					"street": "Corniche Road",
+					"street_extra": "Al Bateen",
+					"locality": "Abu Dhabi",
+					"region": "AUH",
+					"country": "AE"
+				}
+			]
+		},
+		"lines": [
+			{
+				"i": 1,
+				"quantity": "10",
+				"item": {
+					"name": "Office Chair",
+					"description": "Ergonomic office chair",
+					"price": "200.00",
+					"unit": "one"
+				},
+				"sum": "2000.00",
+				"discounts": [
+					{
+						"reason": "Loyalty discount",
+						"percent": "10%",
+						"amount": "200.00",
+						"ext": {
+							"untdid-allowance": "95"
+						}
+					}
+				],
+				"charges": [
+					{
+						"reason": "Assembly",
+						"percent": "5%",
+						"amount": "100.00",
+						"ext": {
+							"untdid-charge": "ABL"
+						}
+					}
+				],
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "1900.00",
+				"notes": [
+					{
+						"key": "general",
+						"text": "Delivered in two batches.",
+						"ext": {
+							"untdid-text-subject": "AAI"
+						}
+					}
+				]
+			},
+			{
+				"i": 2,
+				"quantity": "4",
+				"item": {
+					"name": "Desk Lamp",
+					"description": "LED desk lamp",
+					"price": "50.00",
+					"unit": "one"
+				},
+				"sum": "200.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"total": "200.00"
+			}
+		],
+		"discounts": [
+			{
+				"i": 1,
+				"reason": "Early order discount",
+				"base": "2100.00",
+				"percent": "2%",
+				"amount": "42.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"ext": {
+					"untdid-allowance": "95"
+				}
+			}
+		],
+		"charges": [
+			{
+				"i": 1,
+				"reason": "Handling",
+				"base": "2100.00",
+				"percent": "1%",
+				"amount": "21.00",
+				"taxes": [
+					{
+						"cat": "VAT",
+						"key": "standard",
+						"percent": "5%",
+						"ext": {
+							"untdid-tax-category": "S"
+						}
+					}
+				],
+				"ext": {
+					"untdid-charge": "ABL"
+				}
+			}
+		],
+		"ordering": {
+			"seller": {
+				"name": "Tax Representative LLC",
+				"tax_id": {
+					"country": "AE",
+					"code": "124681357800003"
+				},
+				"addresses": [
+					{
+						"street": "Al Maktoum Road",
+						"street_extra": "Deira",
+						"locality": "Dubai",
+						"region": "DXB",
+						"country": "AE"
+					}
+				]
+			}
+		},
+		"payment": {
+			"payee": {
+				"name": "Payee Collections LLC",
+				"identities": [
+					{
+						"scope": "legal",
+						"code": "112345679100002"
+					},
+					{
+						"type": "TIN",
+						"code": "1234567897"
+					}
+				]
+			},
+			"terms": {
+				"due_dates": [
+					{
+						"date": "2025-02-28",
+						"amount": "2182.95",
+						"percent": "100%"
+					}
+				]
+			},
+			"instructions": {
+				"key": "credit-transfer",
+				"credit_transfer": [
+					{
+						"iban": "AE070331234567890123456",
+						"name": "Payee Collections LLC"
+					}
+				],
+				"ext": {
+					"untdid-payment-means": "30"
+				}
+			}
+		},
+		"delivery": {
+			"receiver": {
+				"name": "Buyer Warehouse",
+				"tax_id": {
+					"country": "AE",
+					"code": "155667745601003"
+				},
+				"addresses": [
+					{
+						"street": "Industrial Area 4",
+						"street_extra": "Musaffah",
+						"locality": "Abu Dhabi",
+						"region": "AUH",
+						"country": "AE"
+					}
+				]
+			},
+			"date": "2025-01-27"
+		},
+		"totals": {
+			"sum": "2100.00",
+			"discount": "42.00",
+			"charge": "21.00",
+			"total": "2079.00",
+			"taxes": {
+				"categories": [
+					{
+						"code": "VAT",
+						"rates": [
+							{
+								"key": "standard",
+								"ext": {
+									"untdid-tax-category": "S"
+								},
+								"base": "2079.00",
+								"percent": "5%",
+								"amount": "103.95"
+							}
+						],
+						"amount": "103.95"
+					}
+				],
+				"sum": "103.95"
+			},
+			"tax": "103.95",
+			"total_with_tax": "2182.95",
+			"payable": "2182.95"
+		},
+		"notes": [
+			{
+				"key": "general",
+				"text": "Goods remain the property of the seller until paid in full.",
+				"ext": {
+					"untdid-text-subject": "AAI"
+				}
+			}
+		]
+	}
+}

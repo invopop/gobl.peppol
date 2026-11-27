@@ -1,0 +1,69 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "AE"
+$addons:
+  - "peppol-pint-v1"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a3"
+type: "credit-note"
+currency: "AED"
+issue_date: "2025-02-10"
+series: "AE-CN"
+code: "001"
+
+preceding:
+  - type: "standard"
+    issue_date: "2025-01-30"
+    series: "AE"
+    code: "001"
+
+tax:
+  ext:
+    pint-ae-credit-note-reason: "DL8.61.1.D"
+
+supplier:
+  name: "Supplier Legal Name"
+  tax_id:
+    country: "AE"
+    code: "135790246700003"
+  identities:
+    - type: "TL"
+      code: "112345678900003"
+      description: "Trade License issuing Authority"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1357902467"
+  addresses:
+    - street: "Sheikh Zayed Road"
+      locality: "Dubai"
+      region: "DXB"
+      country: "AE"
+
+customer:
+  name: "Buyer Legal Name"
+  tax_id:
+    country: "AE"
+    code: "134567890600003"
+  identities:
+    - type: "TL"
+      code: "112345679000001"
+      description: "Trade License issuing Authority"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1345678906"
+  addresses:
+    - street: "Corniche Road"
+      locality: "Abu Dhabi"
+      region: "AUH"
+      country: "AE"
+
+lines:
+  - quantity: "2"
+    item:
+      key: "goods"
+      name: "Laptop Computer"
+      description: "14-inch business laptop, returned"
+      price: "3500.00"
+      identities:
+        - key: "hsn"
+          code: "847130"
+    taxes:
+      - cat: VAT
+        key: standard
+        percent: "5%"

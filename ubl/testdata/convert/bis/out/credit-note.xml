@@ -51,9 +51,9 @@
         <cbc:Name>Sample Consumer</cbc:Name>
       </cac:PartyName>
       <cac:PostalAddress>
-        <cbc:StreetName>Werner-Heisenberg-Allee 25</cbc:StreetName>
-        <cbc:CityName>München</cbc:CityName>
-        <cbc:PostalZone>80939</cbc:PostalZone>
+        <cbc:StreetName>Avenue de la Liberté 25</cbc:StreetName>
+        <cbc:CityName>Luxembourg</cbc:CityName>
+        <cbc:PostalZone>1931</cbc:PostalZone>
         <cac:Country>
           <cbc:IdentificationCode>LU</cbc:IdentificationCode>
         </cac:Country>

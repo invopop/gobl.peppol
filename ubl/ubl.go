@@ -26,6 +26,8 @@ const (
 	KeyPINT cbc.Key = "ubl+peppol+pint-v1"
 	// KeyAUNZ identifies the Peppol PINT A-NZ format.
 	KeyAUNZ cbc.Key = "ubl+peppol+pint+aunz-v1"
+	// KeyAE identifies the Peppol PINT AE format.
+	KeyAE cbc.Key = "ubl+peppol+pint+ae-v1"
 )
 
 var (
@@ -93,8 +95,8 @@ var FormatPINT = goblubl.Format{
 	ProfileID:       "urn:peppol:bis:billing",
 	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
-		Invoice:    "org.peppol.pint:invoice:1.1.2",
-		CreditNote: "org.peppol.pint:credit-note:1.1.2",
+		Invoice:    "org.peppol.pint:invoice:1.1.3",
+		CreditNote: "org.peppol.pint:credit-note:1.1.3",
 	},
 	ImportFuncs: []goblubl.ImportFunc{importPINT, importEndpoints},
 	// A jurisdiction specialization no dedicated format claimed still follows
@@ -114,8 +116,8 @@ var FormatAUNZ = goblubl.Format{
 	ProfileID:       "urn:peppol:bis:billing",
 	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
-		Invoice:    "org.peppol.pint.aunz:invoice:1.1.2",
-		CreditNote: "org.peppol.pint.aunz:creditnote:1.1.2",
+		Invoice:    "org.peppol.pint.aunz:invoice:1.1.3",
+		CreditNote: "org.peppol.pint.aunz:creditnote:1.1.3",
 	},
 	Specifications: []goblubl.Specification{
 		SpecificationAUNZSelfBilling,
@@ -131,8 +133,45 @@ var SpecificationAUNZSelfBilling = goblubl.Specification{
 	ProfileID:       "urn:peppol:bis:selfbilling",
 	Addons:          []cbc.Key{pint.V1},
 	VESIDs: goblubl.VESIDMapping{
-		Invoice:    "org.peppol.pint.aunz:invoice-self-billing:1.1.2",
-		CreditNote: "org.peppol.pint.aunz:creditnote-self-billing:1.1.2",
+		Invoice:    "org.peppol.pint.aunz:invoice-self-billing:1.1.3",
+		CreditNote: "org.peppol.pint.aunz:creditnote-self-billing:1.1.3",
+	},
+	Applies: isSelfBilled,
+}
+
+// FormatAE defines the Peppol PINT AE format. Invoices are written with
+// PINT AE Billing, and self-billed invoices with PINT AE Self-Billing.
+var FormatAE = goblubl.Format{
+	Key:             KeyAE,
+	Name:            i18n.NewString("UBL Peppol PINT AE 1"),
+	Countries:       []l10n.Code{l10n.AE},
+	Import:          []schema.ID{invoiceSchema},
+	Export:          []schema.ID{invoiceSchema},
+	CustomizationID: "urn:peppol:pint:billing-1@ae-1",
+	ProfileID:       "urn:peppol:bis:billing",
+	Addons:          []cbc.Key{pint.V1},
+	VESIDs: goblubl.VESIDMapping{
+		Invoice:    "org.peppol.pint.ae:invoice:2026.11",
+		CreditNote: "org.peppol.pint.ae:creditnote:2026.11",
+	},
+	Specifications: []goblubl.Specification{
+		SpecificationAESelfBilling,
+	},
+	ExportFuncs: []goblubl.ExportFunc{exportAE},
+	// No importPINT: it reads a non-VAT tax registration as the tax ID, which in PINT AE is the seller's TIN.
+	ImportFuncs: []goblubl.ImportFunc{importAE, importEndpoints},
+	Match:       matchCustomization("urn:peppol:pint:billing-1@ae-1", "urn:peppol:pint:selfbilling-1@ae-1"),
+}
+
+// SpecificationAESelfBilling is Peppol PINT AE Self-Billing, used for
+// self-billed invoices.
+var SpecificationAESelfBilling = goblubl.Specification{
+	CustomizationID: "urn:peppol:pint:selfbilling-1@ae-1",
+	ProfileID:       "urn:peppol:bis:selfbilling",
+	Addons:          []cbc.Key{pint.V1},
+	VESIDs: goblubl.VESIDMapping{
+		Invoice:    "org.peppol.pint.ae:invoice-self-billing:2026.11",
+		CreditNote: "org.peppol.pint.ae:creditnote-self-billing:2026.11",
 	},
 	Applies: isSelfBilled,
 }
@@ -158,5 +197,5 @@ func isSelfBilled(doc any) bool {
 }
 
 func init() {
-	goblubl.RegisterFormats(FormatBIS, FormatPINT, FormatAUNZ)
+	goblubl.RegisterFormats(FormatBIS, FormatPINT, FormatAUNZ, FormatAE)
 }

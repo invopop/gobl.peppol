@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDataTypes-2" xmlns:udt="urn:oasis:names:specification:ubl:schema:xsd:UnqualifiedDataTypes-2" xmlns:ccts="urn:un:unece:uncefact:documentation:2" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xsi:schemaLocation="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2 http://docs.oasis-open.org/ubl/os-UBL-2.1/xsd/maindoc/UBL-Invoice-2.1.xsd">
+  <cbc:CustomizationID>urn:peppol:pint:billing-1@ae-1</cbc:CustomizationID>
+  <cbc:ProfileID>urn:peppol:bis:billing</cbc:ProfileID>
+  <cbc:ProfileExecutionID>00000010</cbc:ProfileExecutionID>
+  <cbc:ID>AE-SF-001</cbc:ID>
+  <cbc:UUID>0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2</cbc:UUID>
+  <cbc:IssueDate>2025-01-30</cbc:IssueDate>
+  <cbc:IssueTime>17:31:00</cbc:IssueTime>
+  <cbc:DueDate>2025-02-28</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>#AAI#Goods remain the property of the seller until paid in full.</cbc:Note>
+  <cbc:TaxPointDate>2025-01-28</cbc:TaxPointDate>
+  <cbc:DocumentCurrencyCode>AED</cbc:DocumentCurrencyCode>
+  <cac:OrderReference>
+    <cbc:ID>NA</cbc:ID>
+  </cac:OrderReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0235">1357902467</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>Supplier Legal Name</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Sheikh Zayed Road</cbc:StreetName>
+        <cbc:AdditionalStreetName>Trade Centre</cbc:AdditionalStreetName>
+        <cbc:CityName>Dubai</cbc:CityName>
+        <cbc:CountrySubentity>DXB</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>AE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>135790246700003</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>1357902467</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>TIN</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Supplier Legal Name</cbc:RegistrationName>
+        <cbc:CompanyID schemeAgencyID="TL" schemeAgencyName="Trade License issuing Authority">112345678900003</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0235">1345678906</cbc:EndpointID>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="0235">1345678906</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyName>
+        <cbc:Name>Buyer Legal Name</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Corniche Road</cbc:StreetName>
+        <cbc:AdditionalStreetName>Al Bateen</cbc:AdditionalStreetName>
+        <cbc:CityName>Abu Dhabi</cbc:CityName>
+        <cbc:CountrySubentity>AUH</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>AE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>134567890600003</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Buyer Legal Name</cbc:RegistrationName>
+        <cbc:CompanyID schemeAgencyID="PAS" schemeAgencyName="IN">P1234567890</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:PayeeParty>
+    <cac:PartyIdentification>
+      <cbc:ID schemeID="0235">1234567897</cbc:ID>
+    </cac:PartyIdentification>
+    <cac:PartyName>
+      <cbc:Name>Payee Collections LLC</cbc:Name>
+    </cac:PartyName>
+    <cac:PartyLegalEntity>
+      <cbc:CompanyID>112345679100002</cbc:CompanyID>
+    </cac:PartyLegalEntity>
+  </cac:PayeeParty>
+  <cac:TaxRepresentativeParty>
+    <cac:PartyName>
+      <cbc:Name>Tax Representative LLC</cbc:Name>
+    </cac:PartyName>
+    <cac:PostalAddress>
+      <cbc:StreetName>Al Maktoum Road</cbc:StreetName>
+      <cbc:AdditionalStreetName>Deira</cbc:AdditionalStreetName>
+      <cbc:CityName>Dubai</cbc:CityName>
+      <cbc:CountrySubentity>DXB</cbc:CountrySubentity>
+      <cac:Country>
+        <cbc:IdentificationCode>AE</cbc:IdentificationCode>
+      </cac:Country>
+    </cac:PostalAddress>
+    <cac:PartyTaxScheme>
+      <cbc:CompanyID>124681357800003</cbc:CompanyID>
+      <cac:TaxScheme>
+        <cbc:ID>VAT</cbc:ID>
+      </cac:TaxScheme>
+    </cac:PartyTaxScheme>
+    <cac:PartyLegalEntity>
+      <cbc:RegistrationName>Tax Representative LLC</cbc:RegistrationName>
+    </cac:PartyLegalEntity>
+  </cac:TaxRepresentativeParty>
+  <cac:Delivery>
+    <cbc:ActualDeliveryDate>2025-01-27</cbc:ActualDeliveryDate>
+    <cac:DeliveryLocation>
+      <cac:Address>
+        <cbc:StreetName>Industrial Area 4</cbc:StreetName>
+        <cbc:AdditionalStreetName>Musaffah</cbc:AdditionalStreetName>
+        <cbc:CityName>Abu Dhabi</cbc:CityName>
+        <cbc:CountrySubentity>AUH</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>AE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:Address>
+    </cac:DeliveryLocation>
+    <cac:DeliveryParty>
+      <cac:PartyIdentification>
+        <cbc:ID>155667745601003</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyName>
+        <cbc:Name>Buyer Warehouse</cbc:Name>
+      </cac:PartyName>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Buyer Warehouse</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:DeliveryParty>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>AE070331234567890123456</cbc:ID>
+      <cbc:Name>Payee Collections LLC</cbc:Name>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:AllowanceCharge>
+    <cbc:ChargeIndicator>true</cbc:ChargeIndicator>
+    <cbc:AllowanceChargeReasonCode>ABL</cbc:AllowanceChargeReasonCode>
+    <cbc:AllowanceChargeReason>Handling</cbc:AllowanceChargeReason>
+    <cbc:MultiplierFactorNumeric>1</cbc:MultiplierFactorNumeric>
+    <cbc:Amount currencyID="AED">21.00</cbc:Amount>
+    <cbc:BaseAmount currencyID="AED">2100.00</cbc:BaseAmount>
+    <cac:TaxCategory>
+      <cbc:ID>S</cbc:ID>
+      <cbc:Percent>5</cbc:Percent>
+      <cac:TaxScheme>
+        <cbc:ID>VAT</cbc:ID>
+      </cac:TaxScheme>
+    </cac:TaxCategory>
+  </cac:AllowanceCharge>
+  <cac:AllowanceCharge>
+    <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+    <cbc:AllowanceChargeReasonCode>95</cbc:AllowanceChargeReasonCode>
+    <cbc:AllowanceChargeReason>Early order discount</cbc:AllowanceChargeReason>
+    <cbc:MultiplierFactorNumeric>2</cbc:MultiplierFactorNumeric>
+    <cbc:Amount currencyID="AED">42.00</cbc:Amount>
+    <cbc:BaseAmount currencyID="AED">2100.00</cbc:BaseAmount>
+    <cac:TaxCategory>
+      <cbc:ID>S</cbc:ID>
+      <cbc:Percent>5</cbc:Percent>
+      <cac:TaxScheme>
+        <cbc:ID>VAT</cbc:ID>
+      </cac:TaxScheme>
+    </cac:TaxCategory>
+  </cac:AllowanceCharge>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="AED">103.95</cbc:TaxAmount>
+    <cbc:TaxIncludedIndicator>false</cbc:TaxIncludedIndicator>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="AED">2079.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="AED">103.95</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>5</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="AED">2100.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="AED">2079.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="AED">2182.95</cbc:TaxInclusiveAmount>
+    <cbc:AllowanceTotalAmount currencyID="AED">42.00</cbc:AllowanceTotalAmount>
+    <cbc:ChargeTotalAmount currencyID="AED">21.00</cbc:ChargeTotalAmount>
+    <cbc:PayableAmount currencyID="AED">2182.95</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:Note>#AAI#Delivered in two batches.</cbc:Note>
+    <cbc:InvoicedQuantity unitCode="C62">10</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="AED">1900.00</cbc:LineExtensionAmount>
+    <cac:AllowanceCharge>
+      <cbc:ChargeIndicator>true</cbc:ChargeIndicator>
+      <cbc:AllowanceChargeReasonCode>ABL</cbc:AllowanceChargeReasonCode>
+      <cbc:AllowanceChargeReason>Assembly</cbc:AllowanceChargeReason>
+      <cbc:MultiplierFactorNumeric>5</cbc:MultiplierFactorNumeric>
+      <cbc:Amount currencyID="AED">100.00</cbc:Amount>
+      <cbc:BaseAmount currencyID="AED">2000.00</cbc:BaseAmount>
+    </cac:AllowanceCharge>
+    <cac:AllowanceCharge>
+      <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+      <cbc:AllowanceChargeReasonCode>95</cbc:AllowanceChargeReasonCode>
+      <cbc:AllowanceChargeReason>Loyalty discount</cbc:AllowanceChargeReason>
+      <cbc:MultiplierFactorNumeric>10</cbc:MultiplierFactorNumeric>
+      <cbc:Amount currencyID="AED">200.00</cbc:Amount>
+      <cbc:BaseAmount currencyID="AED">2000.00</cbc:BaseAmount>
+    </cac:AllowanceCharge>
+    <cac:Item>
+      <cbc:Description>Ergonomic office chair</cbc:Description>
+      <cbc:Name>Office Chair</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>5</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="AED">200.00</cbc:PriceAmount>
+      <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
+      <cac:AllowanceCharge>
+        <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+        <cbc:Amount currencyID="AED">0.00</cbc:Amount>
+        <cbc:BaseAmount currencyID="AED">200.00</cbc:BaseAmount>
+      </cac:AllowanceCharge>
+    </cac:Price>
+    <cac:ItemPriceExtension>
+      <cbc:Amount currencyID="AED">1995.00</cbc:Amount>
+      <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="AED">95.00</cbc:TaxAmount>
+      </cac:TaxTotal>
+    </cac:ItemPriceExtension>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">4</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="AED">200.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>LED desk lamp</cbc:Description>
+      <cbc:Name>Desk Lamp</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>5</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="AED">50.00</cbc:PriceAmount>
+      <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
+      <cac:AllowanceCharge>
+        <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+        <cbc:Amount currencyID="AED">0.00</cbc:Amount>
+        <cbc:BaseAmount currencyID="AED">50.00</cbc:BaseAmount>
+      </cac:AllowanceCharge>
+    </cac:Price>
+    <cac:ItemPriceExtension>
+      <cbc:Amount currencyID="AED">210.00</cbc:Amount>
+      <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="AED">10.00</cbc:TaxAmount>
+      </cac:TaxTotal>
+    </cac:ItemPriceExtension>
+  </cac:InvoiceLine>
+</Invoice>

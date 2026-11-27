@@ -11,6 +11,7 @@ import (
 	"github.com/invopop/gobl/rules"
 	"github.com/invopop/gobl/tax"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func instructionsWithMeansCode(code string) *pay.Instructions {
@@ -38,15 +39,10 @@ func TestPayInstructionsRules(t *testing.T) {
 	})
 
 	t.Run("credit transfer without account details is rejected (ALIGNED-IBRP-018)", func(t *testing.T) {
-		instr := instructionsWithMeansCode("30")
-		err := validate(instr)
-		assert.ErrorContains(t, err, "credit transfer instructions must include a payment account identifier")
-	})
-
-	t.Run("SEPA credit transfer without account details is rejected (ALIGNED-IBRP-018)", func(t *testing.T) {
-		instr := instructionsWithMeansCode("58")
-		err := validate(instr)
-		assert.ErrorContains(t, err, "credit transfer instructions must include a payment account identifier")
+		for _, code := range []string{"30", "58"} {
+			err := validate(instructionsWithMeansCode(code))
+			assert.ErrorContains(t, err, "credit transfer instructions must include a payment account identifier", "means %s", code)
+		}
 	})
 
 	t.Run("credit transfer entry missing both IBAN and number is rejected (ALIGNED-IBRP-016)", func(t *testing.T) {
@@ -85,5 +81,67 @@ func TestPayInstructionsRules(t *testing.T) {
 		instr.CreditTransfer = []*pay.CreditTransfer{{Name: "Bank"}}
 		err := rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
 		assert.NoError(t, err)
+	})
+}
+
+func TestPayInstructionsRulesAE(t *testing.T) {
+	validate := func(instr *pay.Instructions) error {
+		return rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AE.Tax()))
+	}
+
+	t.Run("credit transfer with IBAN is accepted", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{{IBAN: "AE070331234567890123456"}}
+		assert.NoError(t, validate(instr))
+	})
+
+	t.Run("credit transfer without credit transfer details is rejected (IBR-192-AE)", func(t *testing.T) {
+		err := validate(instructionsWithMeansCode("30"))
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-02")
+	})
+
+	t.Run("credit transfer without IBAN or account number is rejected (IBR-192-AE)", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD", Name: "Emirates NBD"}}
+		err := validate(instr)
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-03")
+	})
+
+	t.Run("every credit transfer needs an IBAN or account number (IBR-192-AE)", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{
+			{IBAN: "AE070331234567890123456"},
+			{Name: "Emirates NBD"},
+		}
+		err := validate(instr)
+		assert.ErrorContains(t, err, "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-03")
+	})
+
+	t.Run("other payment means are not checked", func(t *testing.T) {
+		instr := instructionsWithMeansCode("58")
+		assert.NoError(t, validate(instr))
+		instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD"}}
+		assert.NoError(t, validate(instr))
+	})
+
+	t.Run("the A-NZ account rules do not apply", func(t *testing.T) {
+		instr := &pay.Instructions{
+			Key:            pay.MeansKeyOnline,
+			Ext:            tax.ExtensionsOf(cbc.CodeMap{untdid.ExtKeyPaymentMeans: "68"}),
+			CreditTransfer: []*pay.CreditTransfer{{Name: "Emirates NBD"}},
+		}
+		assert.NoError(t, validate(instr))
+	})
+
+	t.Run("the AE rule does not apply outside AE", func(t *testing.T) {
+		instr := instructionsWithMeansCode("30")
+		instr.CreditTransfer = []*pay.CreditTransfer{{BIC: "EBILAEAD"}}
+		err := rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.SG.Tax()))
+		assert.NoError(t, err)
+
+		// A-NZ documents get their own rule for the same case, not the AE one.
+		err = rules.Validate(instr, tax.AddonContext(pint.V1), tax.RegimeContext(l10n.AU.Tax()))
+		require.Error(t, err)
+		assert.NotContains(t, err.Error(), "GOBL-PEPPOL-PINT-PAY-INSTRUCTIONS-03")
 	})
 }

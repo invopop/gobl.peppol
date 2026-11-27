@@ -1,0 +1,79 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "AE"
+$addons:
+  - "peppol-pint-v1"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a4"
+currency: "AED"
+issue_date: "2025-01-30"
+series: "AE-MS"
+code: "001"
+
+tax:
+  ext:
+    pint-ae-transaction-type: "00100000"
+  notes:
+    - cat: VAT
+      key: exempt
+      text: "VAT charged under the Profit Margin Scheme"
+
+supplier:
+  name: "Heritage Watches LLC"
+  tax_id:
+    country: "AE"
+    code: "135790246700003"
+  identities:
+    - type: "TL"
+      code: "112345678900003"
+      description: "Dubai Department of Economy and Tourism"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1357902467"
+  addresses:
+    - street: "Sheikh Zayed Road"
+      locality: "Dubai"
+      region: "DXB"
+      country: "AE"
+
+customer:
+  name: "Collector Trading LLC"
+  tax_id:
+    country: "AE"
+    code: "134567890600003"
+  identities:
+    - type: "TL"
+      code: "112345679000001"
+      description: "Abu Dhabi Department of Economic Development"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1345678906"
+  addresses:
+    - street: "Corniche Road"
+      locality: "Abu Dhabi"
+      region: "AUH"
+      country: "AE"
+
+lines:
+  - quantity: "1"
+    item:
+      key: "goods"
+      name: "Vintage Wristwatch"
+      description: "Pre-owned mechanical wristwatch sold under profit margin scheme"
+      price: "15000.00"
+      identities:
+        - key: "hsn"
+          code: "910211"
+    taxes:
+      - cat: VAT
+        key: exempt
+
+payment:
+  terms:
+    key: "due-date"
+    due_dates:
+      - date: "2025-02-06"
+        percent: "100%"
+  instructions:
+    key: "credit-transfer"
+    ext:
+      untdid-payment-means: "30"
+    credit_transfer:
+      - iban: "AE070331234567890123456"
+        name: "Emirates NBD"

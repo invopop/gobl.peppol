@@ -4,7 +4,7 @@
 		"uuid": "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a2",
 		"dig": {
 			"alg": "sha256",
-			"val": "2108ac1aec0fea19dd67ef37d6c33c95ffeeba7c88d8145f9af6744089479e2e"
+			"val": "516bcdfa3752d06731662ef8d6b375dbcbbbbda2b119d413c8123541c2aab2f3"
 		},
 		"from": "iso6523-actorid-upis::9930:111111125",
 		"to": "iso6523-actorid-upis::9920:282741168"
@@ -104,10 +104,10 @@
 			"addresses": [
 				{
 					"num": "25",
-					"street": "Werner-Heisenberg-Allee",
-					"locality": "München",
-					"code": "80939",
-					"country": "DE"
+					"street": "Avenue de la Liberté",
+					"locality": "Luxembourg",
+					"code": "1931",
+					"country": "LU"
 				}
 			],
 			"emails": [

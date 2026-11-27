@@ -9,6 +9,7 @@ Released under the Apache 2.0 [LICENSE](https://github.com/invopop/gobl.peppol/b
 [![Lint](https://github.com/invopop/gobl.peppol/actions/workflows/lint.yaml/badge.svg)](https://github.com/invopop/gobl.peppol/actions/workflows/lint.yaml)
 [![Test Go](https://github.com/invopop/gobl.peppol/actions/workflows/test.yaml/badge.svg)](https://github.com/invopop/gobl.peppol/actions/workflows/test.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/invopop/gobl.peppol)](https://goreportcard.com/report/github.com/invopop/gobl.peppol)
+[![codecov](https://codecov.io/gh/invopop/gobl.peppol/graph/badge.svg)](https://codecov.io/gh/invopop/gobl.peppol)
 [![GoDoc](https://godoc.org/github.com/invopop/gobl.peppol?status.svg)](https://godoc.org/github.com/invopop/gobl.peppol)
 ![Latest Tag](https://img.shields.io/github/v/tag/invopop/gobl.peppol)
 
@@ -24,7 +25,9 @@ This module implements the Peppol billing models as a set of GOBL tax addons:
   beyond VAT (such as GST). Jurisdiction-specific rules are applied according
   to the document's tax regime: Australian (`AU`) and New Zealand (`NZ`)
   documents are also validated against the
-  [PINT A-NZ](https://docs.peppol.eu/poac/aunz/pint-aunz/bis/) rules.
+  [PINT A-NZ](https://docs.peppol.eu/poac/aunz/pint-aunz/bis/) rules, and UAE
+  (`AE`) documents against the
+  [PINT AE](https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/) rules.
 
 A document must declare the addon that applies to it.
 
@@ -52,15 +55,147 @@ $addons:
 
 See the [`examples`](./examples) directory for complete invoices.
 
+### PINT AE
+
+UAE documents with the PINT addon are modelled as usual in GOBL, plus:
+
+- **Transaction type** (BTAE-02): set directly in the `pint-ae-transaction-type`
+  extension on `tax.ext` as 8 binary flags (in order: free trade zone, deemed
+  supply, profit margin scheme, summary invoice, continuous supply, disclosed
+  agent billing, e-commerce, and exports). Defaults to `00000000` when unset.
+- **Supplier TIN and Peppol address**: when missing, the `TIN` identity and
+  the `0235:<TIN>` endpoint are filled in from the supplier's own TIN, given
+  as either of the two, or else from the first 10 digits of its TRN. A member
+  of a VAT tax group invoices with the group's TRN, so it must give its own
+  TIN, as the identity or as the endpoint.
+- **Legal registrations**: identities of type `TL` (trade licence, with the
+  issuing authority as its `description`), `EID` or `CD`, or the `passport`
+  key. Issuing authorities on `EID` and `CD` (BTAE-11, BTAE-12) are not
+  written.
+- **Emirates**: UAE addresses need the emirate code as the `region`: `AUH`,
+  `DXB`, `SHJ`, `UAQ`, `FUJ`, `AJM` or `RAK`.
+- **Items**: every line item needs a `description`. Item type (`BTAE-13`) is
+  held in `pint-ae-item-type` (`G`, `S`, or `B`) and derived automatically from
+  `item.key` (`goods` → `G`, `services` → `S`) unless set to `B` explicitly.
+  Goods (`G` or `B`) need an HS classification as an item identity with
+  `key: "hsn"`.
+- **Out of scope documents**: an invoice or credit note whose lines are all
+  exempt or outside the scope of VAT is sent with type code 480 or 81, as PINT
+  AE requires.
+- **Profit margin scheme**: set position 3 (`00100000`) of
+  `pint-ae-transaction-type` with the `exempt` VAT key (and no
+  `pint-ae-exemption`) on every line; lines keep `untdid-tax-category: "E"` in
+  GOBL and are written in category `N` in UBL. No automatic margin-scheme note
+  is added — write any required margin-scheme wording in `notes`, or in
+  `tax.notes` with `category: "VAT"` and `key: "exempt"` (normalized to
+  `untdid-tax-category: "E"`) so it exports as the `N` `TaxExemptionReason`.
+- **Exemption reasons**: `pint-ae-exemption` on exempt VAT combos, with the UAE
+  codes `DL8.46.1` to `DL8.46.4`.
+- **Credit notes**: set the reason code (`DL8.61.1.A` to `DL8.61.1.E`, or `VD`
+  for volume discounts) in `tax.ext["pint-ae-credit-note-reason"]`. Volume
+  discount credit notes (`VD`) must not carry a `preceding` invoice reference,
+  so they cannot be built with `gobl correct` (which always populates
+  `preceding`); construct them directly instead.
+- **Free trade zone and disclosed agent**: set `pint-ae-beneficiary-id` in
+  `tax.ext` for free trade zone supplies (position 1, `10000000`), and
+  `pint-ae-principal-id` (15-digit UAE TRN ending in `03`) in `tax.ext` for
+  disclosed agent billing (position 6, `00000100`).
+- **Reverse charge**: set the type of goods or services of each line item in
+  the `pint-ae-goods-type` extension.
+- **Predefined endpoints**: deemed supplies (position 2, `01000000`, of
+  `pint-ae-transaction-type`) automatically set the customer endpoint to
+  `0235:9900000097`. A buyer without a Peppol ID takes `0235:9900000098`, or
+  `0235:9900000099` on exports; PINT AE additionally expects a UAE buyer
+  without a TRN to carry its `TIN` identity (not enforced by GOBL).
+
+#### Extensions
+
+These extensions are only used on UAE (`AE`) documents:
+
+| Key | Schema | Description |
+| --- | --- | --- |
+| `pint-ae-transaction-type` | `bill/tax` | PINT AE invoice transaction type (BTAE-02): 8 binary flags (`00000000` when none apply). |
+| `pint-ae-credit-note-reason` | `bill/tax` | PINT AE credit note reason (BTAE-03): `DL8.61.1.A`–`DL8.61.1.E` or `VD` (volume discount, no `preceding` reference). |
+| `pint-ae-beneficiary-id` | `bill/tax` | Free trade zone beneficiary identifier (BTAE-01), required when position 1 (`10000000`) of `pint-ae-transaction-type` is set. |
+| `pint-ae-principal-id` | `bill/tax` | Disclosed agent principal TRN (BTAE-14, 15 digits starting with `1` and ending with `03`), required when position 6 (`00000100`) of `pint-ae-transaction-type` is set. |
+| `pint-ae-exemption` | `tax/combo` | UAE VAT exemption reason under Federal Decree-Law No. 8 of 2017 Art. 46 (`DL8.46.1`–`DL8.46.4`). |
+| `pint-ae-goods-type` | `org/item` | Type of goods or services subject to UAE domestic reverse charge under Art. 48 (BTAE-09): `DL8.48.8.1`–`DL8.48.8.3`, `DL8.48.3.1`–`DL8.48.3.3`. |
+| `pint-ae-item-type` | `org/item` | PINT AE item type (BTAE-13): `G` (goods), `S` (services), or `B` (both goods and services). Derived from `item.key` unless set to `B`. |
+
+#### Example
+
+Partial fragment showing the PINT AE-specific fields (see
+[`examples/invoice-ae.yaml`](./examples/invoice-ae.yaml) and
+[`examples/credit-note-ae.yaml`](./examples/credit-note-ae.yaml) for complete
+documents):
+
+```yaml
+$regime: "AE"
+$addons:
+  - "peppol-pint-v1"
+tax:
+  ext:
+    pint-ae-transaction-type: "10000100"
+    pint-ae-beneficiary-id: "189098765401003"
+    pint-ae-principal-id: "155667745601003"
+supplier:
+  tax_id:
+    country: "AE"
+    code: "135790246700003"
+  identities:
+    - type: "TL"
+      code: "112345678900003"
+      description: "Dubai Department of Economy and Tourism"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1357902467"
+lines:
+  - quantity: "1"
+    item:
+      key: "goods"
+      name: "Gold bar"
+      description: "24k gold bar"
+      price: "1000.00"
+      identities:
+        - key: "hsn"
+          code: "7108"
+        - code: "4006381333931"
+          ext:
+            iso-scheme-id: "0160"
+      ext:
+        pint-ae-goods-type: "DL8.48.8.1"
+    taxes:
+      - cat: "VAT"
+        key: "reverse-charge"
+```
+
+The supplier and customer need an electronic address (`endpoints`). An email
+inbox can stay on the party, but isn't written when the party has an endpoint.
+
+PINT allows one note on the document and one per line, and only the payment
+due date (IBT-009) is written, so invoices with more notes or more than one due
+date are rejected. A single due date is written without its amount (a partial
+due date is therefore written as if for the full amount due). On credit notes
+the due date is written inside the payment means, so a credit note without
+payment instructions is sent without its due date.
+
+PINT only accepts ISO 6523 schemes on party identifiers: the identities other
+than the first legal one and the tax ones. A `TIN` is written as `0235`, but
+any other identity with a `type` and no `iso-scheme-id` extension is written
+with its type as the scheme and fails validation, so give it the
+`iso-scheme-id` or leave the type out.
+
 ## Layout
 
-- `addon/` — the GOBL addons: normalizers, scenarios and validation rules that
-  register into GOBL on import. These packages are kept dependency-light so
-  importing them never pulls in conversion tooling.
+- `addon/` — the GOBL addons (`addon/bis` and `addon/pint`): extensions,
+  normalizers, scenarios and validation rules that register into GOBL on
+  import. These packages are kept dependency-light so importing them never
+  pulls in conversion tooling.
 - `ubl/` — the Peppol BIS and PINT UBL formats, registered with `gobl.ubl` and
   GOBL's `convert` register.
 - `cii/` — the Peppol BIS CII format, registered with `gobl.cii` and GOBL's
   `convert` register.
+- `examples/` — sample GOBL documents and their golden calculated envelopes
+  under `examples/out/`, verified with GOBL's `pkg/examples` helpers.
 
 ## Conversion
 
@@ -74,8 +209,8 @@ import (
 	_ "github.com/invopop/gobl.peppol/ubl"
 )
 
-out, err := convert.Export(env, "ubl+peppol+pint+aunz")   // GOBL -> UBL
-env, err := convert.Import(data)                          // UBL -> GOBL
+out, err := convert.Export(env, "ubl+peppol+pint+aunz-v1")   // GOBL -> UBL
+env, err := convert.Import(data)                             // UBL -> GOBL
 ```
 
 The format is picked from the document's `CustomizationID` and `ProfileID` on
@@ -84,8 +219,9 @@ import, and the exported XML carries them back:
 | Format | Key | CustomizationID (`ibt-024`) | ProfileID (`ibt-023`) |
 | --- | --- | --- | --- |
 | `FormatBIS` | `ubl+peppol+bis-v3` | `urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0` | `urn:fdc:peppol.eu:2017:poacc:billing:01:1.0` |
-| `FormatPINT` | `ubl+peppol+pint` | `urn:peppol:pint:billing-1` | `urn:peppol:bis:billing` |
-| `FormatAUNZ` | `ubl+peppol+pint+aunz` | `urn:peppol:pint:billing-1@aunz-1` | `urn:peppol:bis:billing` |
+| `FormatPINT` | `ubl+peppol+pint-v1` | `urn:peppol:pint:billing-1` | `urn:peppol:bis:billing` |
+| `FormatAUNZ` | `ubl+peppol+pint+aunz-v1` | `urn:peppol:pint:billing-1@aunz-1` | `urn:peppol:bis:billing` |
+| `FormatAE` | `ubl+peppol+pint+ae-v1` | `urn:peppol:pint:billing-1@ae-1` | `urn:peppol:bis:billing` |
 
 `FormatBIS` writes self-billed invoices with `SpecificationBISSelfBilling`
 (Peppol BIS Self-Billing 3.0) and statuses (`bill.Status`) as Peppol Invoice
@@ -97,12 +233,17 @@ as Peppol BIS allows a single note.
 `FormatAUNZ` writes self-billed invoices (those tagged `self-billed`) with its
 `SpecificationAUNZSelfBilling` instead: `urn:peppol:pint:selfbilling-1@aunz-1`
 and `urn:peppol:bis:selfbilling`. Documents carrying either are imported with
-`FormatAUNZ`.
+`FormatAUNZ`. `FormatAE` does the same with `SpecificationAESelfBilling`
+(`urn:peppol:pint:selfbilling-1@ae-1`).
+
+`FormatAE` also writes the PINT AE fields and adjustments the rules ask for
+(such as the invoice UUID, the transaction type, line amounts with VAT in AED
+and the exchange rate to AED) and reads them back.
 
 Each one's Peppol document type identifier is
 `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##<CustomizationID>::2.1`,
 with `CreditNote-2::CreditNote` replacing `Invoice-2::Invoice` for credit notes.
-The A-NZ formats also claim the wildcard customizations the SMP registrations
+The A-NZ and AE formats also claim the wildcard customizations the SMP registrations
 are made under, and `FormatPINT` is the jurisdiction-neutral base: it takes any
 other `urn:peppol:pint:billing-1@…` specialization and validates it against the
 base PINT rule set.
@@ -157,5 +298,31 @@ so a plain `go test ./...` needs no phorm service:
 go test ./ubl/ ./cii/ -args -validate=true   # posts to $PHORM_URL, default http://localhost:8080
 ```
 
-CI runs it against a `phelger/phorm:latest` service container (see
+CI runs it against a `phelger/phorm:2.2.15` service container (see
 `.github/workflows/test.yaml`).
+
+## Development
+
+Run the full test suite:
+
+```sh
+go test ./...
+```
+
+After intentional changes to addon normalization or examples, regenerate the
+golden envelopes under `examples/out/` (verified via GOBL's `pkg/examples`
+helpers):
+
+```sh
+go test . -run TestExamples -update
+```
+
+## Sources
+
+- [Peppol BIS Billing 3.0](https://docs.peppol.eu/poacc/billing/3.0/) and
+  [UBL business rules](https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-peppol/)
+- [Peppol PINT specifications](https://docs.peppol.eu/poac/pint/)
+- [Peppol PINT A-NZ Billing specification](https://docs.peppol.eu/poac/aunz/pint-aunz/bis/)
+  and [jurisdiction-aligned rules](https://docs.peppol.eu/poac/aunz/pint-aunz/trn-invoice/rule/PINT-jurisdiction-aligned-rules/)
+- [Peppol PINT AE Billing specification (1.0.5)](https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/bis/)
+  and [jurisdiction-aligned rules (1.0.5)](https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/)

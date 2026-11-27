@@ -28,6 +28,9 @@ const (
 // regimesAUNZ lists the tax regimes the PINT A-NZ jurisdiction rules apply to.
 var regimesAUNZ = []l10n.TaxCountryCode{l10n.AU.Tax(), l10n.NZ.Tax()}
 
+// regimesAE lists the tax regimes the PINT AE jurisdiction rules apply to.
+var regimesAE = []l10n.TaxCountryCode{l10n.AE.Tax()}
+
 func init() {
 	tax.RegisterAddonDef(newV1Addon())
 	rules.RegisterWithGuard(
@@ -35,14 +38,29 @@ func init() {
 		rules.GOBL.Add(Namespace),
 		is.InContext(tax.AddonIn(V1)),
 		billInvoiceRules(),
+		billChargeRules(),
+		billLineRules(),
 		taxComboRules(),
 		taxCategoryTotalRules(),
+		orgPartyRules(),
+		orgAddressRules(),
+		orgItemRules(),
+		orgIdentityRules(),
 		payInstructionsRules(),
 		creditTransferRules(),
 	)
 	norm.RegisterWithGuard(
 		is.InContext(tax.AddonIn(V1)),
 		norm.For(normalizeTaxCombo),
+		norm.When(
+			is.InContext(tax.RegimeIn(regimesAE...)),
+			norm.For(normalizeTransactionType),
+			norm.For(normalizeExchangeRateAE),
+			norm.For(normalizeDeemedSupplyAE),
+			norm.For(normalizeSupplierAE),
+			norm.For(normalizeIdentityScopes),
+			norm.For(normalizeOrgItemAE),
+		),
 	)
 }
 
@@ -68,7 +86,8 @@ func newV1Addon() *tax.AddonDef {
 
 				Jurisdiction-specific requirements are applied according to the
 				document's tax regime: Australian and New Zealand documents are also
-				validated against the PINT A-NZ rules.
+				validated against the PINT A-NZ rules, and UAE documents against the
+				PINT AE rules.
 			`),
 		},
 		Sources: []*cbc.Source{
@@ -84,6 +103,18 @@ func newV1Addon() *tax.AddonDef {
 				Title: i18n.NewString("PINT A-NZ jurisdiction-aligned rules"),
 				URL:   "https://docs.peppol.eu/poac/aunz/pint-aunz/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
 			},
+			{
+				Title: i18n.NewString("Peppol PINT AE Billing specification"),
+				URL:   "https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/bis/",
+			},
+			{
+				Title: i18n.NewString("PINT AE jurisdiction-aligned rules"),
+				URL:   "https://docs.peppol.eu/poac/ae/v1.0.5/pint-ae/trn-invoice/rule/PINT-jurisdiction-aligned-rules/",
+			},
+		},
+		Extensions: extensions,
+		Scenarios: []*tax.ScenarioSet{
+			invoiceScenarios,
 		},
 	}
 }

@@ -1,0 +1,87 @@
+$schema: "https://gobl.org/draft-0/bill/invoice"
+$regime: "AE"
+$addons:
+  - "peppol-pint-v1"
+uuid: "0195ce71-dc9c-72c8-bf2c-9890a4a9f0a6"
+currency: "USD"
+exchange_rates:
+  - from: "USD"
+    to: "AED"
+    amount: "3.6725"
+issue_date: "2025-01-30"
+series: "AE-EXP"
+code: "001"
+
+tax:
+  ext:
+    pint-ae-transaction-type: "00000001"
+
+supplier:
+  name: "Supplier Legal Name"
+  tax_id:
+    country: "AE"
+    code: "135790246700003"
+  identities:
+    - type: "TL"
+      code: "112345678900003"
+      description: "Trade License issuing Authority"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:1357902467"
+  addresses:
+    - street: "Sheikh Zayed Road"
+      locality: "Dubai"
+      region: "DXB"
+      country: "AE"
+
+customer:
+  name: "London Imports Ltd"
+  identities:
+    - scope: "legal"
+      code: "09123456"
+  endpoints:
+    - uri: "iso6523-actorid-upis::0235:9900000099"
+  addresses:
+    - street: "10 Bishopsgate"
+      locality: "London"
+      region: "LDN"
+      country: "GB"
+
+delivery:
+  ext:
+    icc-incoterms-2020: "CIF"
+  receiver:
+    name: "London Imports Warehouse"
+    addresses:
+      - street: "22 Docklands Road"
+        locality: "London"
+        region: "LDN"
+        country: "GB"
+
+lines:
+  - quantity: "25"
+    item:
+      key: "goods"
+      name: "Industrial Sensor"
+      description: "Exported optical temperature sensor"
+      price: "200.00"
+      identities:
+        - key: "hsn"
+          code: "902519"
+    taxes:
+      - cat: VAT
+        key: zero
+        percent: "0%"
+
+payment:
+  terms:
+    key: "due-date"
+    due_dates:
+      - date: "2025-02-28"
+        percent: "100%"
+  instructions:
+    key: "credit-transfer"
+    ext:
+      untdid-payment-means: "30"
+    credit_transfer:
+      - iban: "AE070331234567890123456"
+        name: "Emirates NBD"
